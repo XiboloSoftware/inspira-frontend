@@ -3,7 +3,7 @@ import { apiPOST } from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 
 // Cambia esto por el id_servicio REAL de tu servicio 002 en la BD
-const SERVICIO_MASTER_ID = 2;
+const SERVICIO_MASTER_ID = "002";
 
 export default function Hero() {
   const { user } = useAuth();
