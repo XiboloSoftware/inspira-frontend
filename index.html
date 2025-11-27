@@ -4,10 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Inspira Legal - Migración & Estudios</title>
+    <title>Inspira Legal - Migración & Estudios</title>
   </head>
+
   <body>
     <div id="root"></div>
+
+    <!-- Script de tu app -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- 🔥 FIX para el botón Atrás que muestra estado viejo de login -->
+    <script>
+      window.addEventListener("pageshow", function (e) {
+        if (e.persisted) {
+          window.location.reload();
+        }
+      });
+    </script>
   </body>
 </html>
