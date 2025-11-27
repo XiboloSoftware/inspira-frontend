@@ -8,6 +8,7 @@ import Dashboard from "./dashboard/Dashboard";
 import Diagnosticos from "./diagnosticos/Diagnosticos";
 import PreciosServicios from "./precios/PreciosServicios";
 import UsuariosSettings from "./settings/UsuariosSettings";
+import Clientes from "./clientes/Clientes";
 
 
 export default function BackofficeApp() {
