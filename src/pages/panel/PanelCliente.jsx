@@ -2,200 +2,38 @@
 import { useEffect, useState } from "react";
 import { apiGET } from "../../services/api";
 
-/* --------- Helpers de UI --------- */
+/* ---------- Componentes de UI ---------- */
 
 function SidebarItem({ label, active, onClick }) {
   return (
     <button
-      type="button"
       onClick={onClick}
       className={
-        "w-full flex items-center gap-2 px-4 py-3 text-sm rounded-xl text-left transition " +
+        "w-full text-left px-4 py-3 text-sm rounded-xl mb-1 transition " +
         (active
-          ? "bg-white/15 text-white font-medium"
+          ? "bg-white/15 text-white font-semibold"
           : "text-white/80 hover:bg-white/10 hover:text-white")
       }
     >
-      <span>•</span>
-      <span>{label}</span>
+      {label}
     </button>
   );
 }
 
-function BadgeEstado({ estado }) {
-  const map = {
-    pendiente_pago: {
-      label: "Pendiente de pago",
-      className: "bg-amber-100 text-amber-700",
-    },
-    pagado: {
-      label: "Pagado",
-      className: "bg-emerald-100 text-emerald-700",
-    },
-    cancelado: {
-      label: "Cancelado",
-      className: "bg-rose-100 text-rose-700",
-    },
-  };
-
-  const cfg = map[estado] || {
-    label: estado,
-    className: "bg-neutral-100 text-neutral-700",
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${cfg.className}`}>
-      {cfg.label}
-    </span>
-  );
-}
-
-/* --------- Vistas del contenido --------- */
-
-function VistaPerfil({ user }) {
-  if (!user) return null;
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-4">Perfil</h2>
-      <div className="space-y-2 text-sm text-neutral-700">
-        <p>
-          <span className="font-medium">Nombre: </span>
-          {user.nombre || user.name}
-        </p>
-        <p>
-          <span className="font-medium">Correo: </span>
-          {user.email || user.correo}
-        </p>
-        {user.telefono && (
-          <p>
-            <span className="font-medium">Teléfono: </span>
-            {user.telefono}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function VistaCitas({ citas, loading }) {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-4">Historial de citas</h2>
-
-      {loading && <p className="text-sm text-neutral-500">Cargando citas…</p>}
-
-      {!loading && (!citas || citas.length === 0) && (
-        <p className="text-sm text-neutral-500">
-          Aún no tienes citas registradas. Reserva tu diagnóstico para empezar.
-        </p>
-      )}
-
-      <div className="space-y-3">
-        {citas.map((cita) => (
-          <div
-            key={cita.id_pre_reserva || cita.id}
-            className="flex flex-col md:flex-row md:items-center justify-between gap-2 border border-neutral-100 rounded-xl px-4 py-3 hover:bg-neutral-50"
-          >
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-neutral-900">
-                {cita.fecha_formateada || cita.fecha_hora || cita.fecha}
-              </p>
-              <p className="text-xs text-neutral-500">
-                {cita.servicio || "Diagnóstico de inmigración"}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs text-neutral-500">Importe</p>
-                <p className="text-sm font-semibold text-neutral-900">
-                  {cita.monto?.toFixed
-                    ? cita.monto.toFixed(2)
-                    : cita.monto}{" "}
-                  {cita.moneda || "€"}
-                </p>
-              </div>
-              <BadgeEstado estado={cita.estado} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VistaServicios() {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-2">
-        Mis servicios
-      </h2>
-      <p className="text-sm text-neutral-600">
-        Aquí aparecerán tus servicios contratados (trámites, paquetes, etc.).
-      </p>
-    </div>
-  );
-}
-
-function VistaRequerimientos() {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-2">
-        Requerimientos
-      </h2>
-      <p className="text-sm text-neutral-600">
-        Próximamente verás aquí los documentos y pasos pendientes para tus
-        trámites.
-      </p>
-    </div>
-  );
-}
-
-function VistaNotificaciones() {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-2">
-        Notificaciones
-      </h2>
-      <p className="text-sm text-neutral-600">
-        Aún no tienes notificaciones. Te avisaremos aquí sobre cambios en tus
-        citas y trámites.
-      </p>
-    </div>
-  );
-}
-
-function VistaTelegram() {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-neutral-900 mb-2">
-        Grupo de Telegram
-      </h2>
-      <p className="text-sm text-neutral-600">
-        Accede al grupo privado para recibir avisos, recordatorios y tips sobre
-        tu proceso migratorio.
-      </p>
-    </div>
-  );
-}
-
-/* --------- Componente principal --------- */
+/* ---------- Panel principal ---------- */
 
 export default function PanelCliente() {
-  const [section, setSection] = useState("citas"); // citas, servicios, requerimientos, notificaciones, telegram
+  const [tab, setTab] = useState("citas"); // "perfil" | "citas" | "servicios"
   const [user, setUser] = useState(null);
-  const [citas, setCitas] = useState([]);
-  const [loadingCitas, setLoadingCitas] = useState(false);
 
   useEffect(() => {
     cargarMe();
-    cargarCitas();
   }, []);
 
   async function cargarMe() {
     try {
       const r = await apiGET("/auth/me");
-      if (r?.ok) {
+      if (r.ok) {
         setUser(r.user || r.cliente || r);
       }
     } catch (e) {
@@ -203,66 +41,43 @@ export default function PanelCliente() {
     }
   }
 
-  async function cargarCitas() {
-    setLoadingCitas(true);
-    try {
-      // Ajusta la URL si tu endpoint de historial es diferente
-      const r = await apiGET("/diagnostico/citas");
-      if (r?.ok) {
-        setCitas(r.citas || r.data || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingCitas(false);
-    }
-  }
-
   return (
     <div className="min-h-screen flex bg-neutral-50">
-      {/* Sidebar izquierda */}
+      {/* SIDEBAR IZQUIERDO */}
       <aside className="w-72 bg-gradient-to-b from-[#023A4B] to-[#046C8C] text-white flex flex-col">
+        {/* Header usuario */}
         <div className="px-6 pt-6 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold">
-              {user?.nombre?.[0] || user?.name?.[0] || "U"}
+            <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-sm font-semibold">
+              {user?.nombre?.[0] || user?.email?.[0] || "U"}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">
-                {user?.nombre || user?.name || "Mi panel Inspira"}
+              <span className="text-sm font-semibold truncate">
+                {user?.nombre || "Mi panel Inspira"}
               </span>
-              <span className="text-xs text-white/70">
-                {user?.email || user?.correo || ""}
+              <span className="text-xs text-white/70 truncate">
+                {user?.email}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 px-3 py-4 space-y-1">
+        {/* Menú */}
+        <div className="flex-1 px-4 py-4">
           <SidebarItem
             label="Mis citas"
-            active={section === "citas"}
-            onClick={() => setSection("citas")}
+            active={tab === "citas"}
+            onClick={() => setTab("citas")}
+          />
+          <SidebarItem
+            label="Perfil"
+            active={tab === "perfil"}
+            onClick={() => setTab("perfil")}
           />
           <SidebarItem
             label="Mis servicios"
-            active={section === "servicios"}
-            onClick={() => setSection("servicios")}
-          />
-          <SidebarItem
-            label="Requerimientos"
-            active={section === "requerimientos"}
-            onClick={() => setSection("requerimientos")}
-          />
-          <SidebarItem
-            label="Notificaciones"
-            active={section === "notificaciones"}
-            onClick={() => setSection("notificaciones")}
-          />
-          <SidebarItem
-            label="Grupo de Telegram"
-            active={section === "telegram"}
-            onClick={() => setSection("telegram")}
+            active={tab === "servicios"}
+            onClick={() => setTab("servicios")}
           />
         </div>
 
@@ -271,29 +86,178 @@ export default function PanelCliente() {
         </div>
       </aside>
 
-      {/* Contenido principal */}
+      {/* CONTENIDO DERECHA */}
       <main className="flex-1 px-8 py-8">
         <header className="mb-6">
           <p className="text-xs font-medium text-primary uppercase tracking-wide">
             Panel de cliente
           </p>
-          <h1 className="text-2xl font-semibold text-neutral-900">Mi panel</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Mi panel</h1>
         </header>
 
-        <div className="space-y-4">
-          {/* Mostrar perfil siempre arriba */}
-          <VistaPerfil user={user} />
-
-          {/* Contenido según sección */}
-          {section === "citas" && (
-            <VistaCitas citas={citas} loading={loadingCitas} />
-          )}
-          {section === "servicios" && <VistaServicios />}
-          {section === "requerimientos" && <VistaRequerimientos />}
-          {section === "notificaciones" && <VistaNotificaciones />}
-          {section === "telegram" && <VistaTelegram />}
+        <div className="max-w-4xl">
+          {tab === "perfil" && <PerfilCliente user={user} />}
+          {tab === "citas" && <MisCitas />}
+          {tab === "servicios" && <MisServicios />}
         </div>
       </main>
+    </div>
+  );
+}
+
+/* ---------- Perfil (igual que tenías) ---------- */
+
+function PerfilCliente({ user }) {
+  if (!user) return <p>Cargando datos...</p>;
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+      <p className="mb-2">
+        <strong>Nombre:</strong> {user.nombre}
+      </p>
+      <p className="mb-2">
+        <strong>Email:</strong> {user.email}
+      </p>
+    </div>
+  );
+}
+
+/* ---------- Mis Citas (MISMA LÓGICA QUE TU CÓDIGO) ---------- */
+
+function MisCitas() {
+  const [citas, setCitas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    cargarCitas();
+  }, []);
+
+  async function cargarCitas() {
+    setLoading(true);
+    try {
+      const r = await apiGET("/diagnostico/mis-citas"); // SE MANTIENE TU ENDPOINT
+      if (r.ok) {
+        setCitas(r.citas || []);
+      } else {
+        setCitas([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setCitas([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) return <p>Cargando tus citas...</p>;
+
+  if (!citas || citas.length === 0) {
+    return (
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+        <p className="text-neutral-600">
+          Aún no tienes citas de diagnóstico registradas.
+        </p>
+      </div>
+    );
+  }
+
+  const ahora = new Date();
+  const futuras = [];
+  const pasadas = [];
+
+  citas.forEach((c) => {
+    const fechaStr = c.fecha;
+    const hi = c.hora_inicio || "00:00";
+    const [h, m] = hi.split(":");
+    const d = new Date(fechaStr);
+    if (!isNaN(d)) {
+      d.setHours(Number(h || 0), Number(m || 0), 0, 0);
+      if (d >= ahora) futuras.push(c);
+      else pasadas.push(c);
+    } else {
+      futuras.push(c);
+    }
+  });
+
+  function badgeEstado(estado) {
+    if (!estado) return null;
+    const base =
+      "inline-block px-2 py-0.5 text-xs rounded-full font-medium mr-2";
+    if (estado === "pendiente_pago")
+      return (
+        <span className={base + " bg-amber-100 text-amber-700"}>
+          Pendiente de pago
+        </span>
+      );
+    if (estado === "pagado")
+      return (
+        <span className={base + " bg-emerald-100 text-emerald-700"}>
+          Pagado
+        </span>
+      );
+    if (estado === "cancelado")
+      return (
+        <span className={base + " bg-red-100 text-red-700"}>Cancelado</span>
+      );
+    return (
+      <span className={base + " bg-neutral-100 text-neutral-700"}>
+        {estado}
+      </span>
+    );
+  }
+
+  function renderLista(lista, titulo) {
+    return (
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-primary mb-2">{titulo}</h3>
+        <div className="space-y-3">
+          {lista.map((c) => (
+            <div
+              key={c.id_pre_reserva}
+              className="border border-neutral-200 rounded-xl bg-white px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between shadow-sm"
+            >
+              <div>
+                <div className="font-semibold text-neutral-900">
+                  {c.fecha}{" "}
+                  {c.hora_inicio && c.hora_fin
+                    ? `· ${c.hora_inicio} – ${c.hora_fin}`
+                    : ""}
+                </div>
+                <div className="text-sm text-neutral-600 mt-1">
+                  Diagnóstico de inmigración
+                </div>
+              </div>
+              <div className="mt-2 md:mt-0 text-sm text-right">
+                {badgeEstado(c.estado)}
+                {c.monto && (
+                  <div className="text-neutral-700 mt-1">
+                    Importe: {Number(c.monto).toFixed(2)} €
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {futuras.length > 0 && renderLista(futuras, "Próximas citas")}
+      {pasadas.length > 0 && renderLista(pasadas, "Historial de citas")}
+    </div>
+  );
+}
+
+/* ---------- Mis Servicios (igual que tenías) ---------- */
+
+function MisServicios() {
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+      <p className="text-neutral-600">
+        Aquí aparecerán tus servicios contratados (trámites, paquetes, etc.).
+      </p>
     </div>
   );
 }
