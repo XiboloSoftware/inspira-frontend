@@ -19,8 +19,9 @@ export default function AuthSuccess() {
     localStorage.setItem("token_cliente", token);
     setUserFromToken(token);
 
+    // ⬅️ CAMBIO IMPORTANTE: fallback a "/"
     const redirect =
-      localStorage.getItem("post_login_redirect") || "/diagnostico";
+      localStorage.getItem("post_login_redirect") || "/";
 
     localStorage.removeItem("post_login_redirect");
 
