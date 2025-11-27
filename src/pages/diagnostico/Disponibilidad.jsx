@@ -49,8 +49,12 @@ export default function Disponibilidad() {
       localStorage.setItem("last_pre_reserva_id", String(preReserva.id_pre_reserva));
 
       // 4) Redirigir a Checkout (sandbox en TEST)
-      const url = pref.sandbox_init_point || pref.init_point;
-      window.location.href = url;
+      // usar SIEMPRE el init_point “normal”
+      if (pref.init_point) {
+        window.location.href = pref.init_point;
+      } else {
+        throw new Error("La preferencia no tiene init_point");
+      }
 
     } catch (e) {
       alert(e.message);

@@ -39,8 +39,18 @@ export default function StepPago({ bloque, comentario, onBack }) {
         return;
       }
 
-      const url =
-        r2.preferencia.sandbox_init_point || r2.preferencia.init_point;
+            const pref = r2.preferencia;
+
+
+      if (pref.init_point) {
+        window.location.href = pref.init_point; // siempre flujo “oficial”
+      } else {
+        alert("No se pudo obtener la URL de pago.");
+        setLoading(false);
+      }
+
+
+
 
       // ✅ ya no necesitas seguir en la app, MP toma el control
       window.location.href = url;
