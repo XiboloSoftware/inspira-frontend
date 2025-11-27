@@ -1,6 +1,3 @@
-// src/pages/auth/AuthSuccess.jsx
-// F:\PROGRAMACION\paginaweb_insipira\inspira-frontend\src\pages\auth\AuthSuccess.jsx
-
 import { useEffect } from "react";
 
 export default function AuthSuccess() {
@@ -8,7 +5,9 @@ export default function AuthSuccess() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
 
-    // si no viene token, igual redirigimos a donde tenga sentido
+    console.log("AUTH SUCCESS token:", token);
+
+    // si NO viene token
     if (!token) {
       const redirect = localStorage.getItem("post_login_redirect") || "/";
       localStorage.removeItem("post_login_redirect");
@@ -16,20 +15,21 @@ export default function AuthSuccess() {
       return;
     }
 
-    // guardar token (clave que realmente uses en tu AuthContext; yo asumo token_cliente)
-    localStorage.setItem("token_cliente", token);
+    // 1) Guardar el token EXACTAMENTE como antes
+    localStorage.setItem("token", token);
 
-    // limpiar el query ?token=...
+    // 2) Limpiar la URL (quitar ?token=...)
     const cleanUrl = window.location.origin + window.location.pathname;
     window.history.replaceState({}, "", cleanUrl);
 
-    // leer destino deseado (si alguien lo guardó antes de ir a /auth/google)
-    const redirect = localStorage.getItem("post_login_redirect") || "/";
+    // 3) Leer el destino deseado, si existe
+    const redirect =
+      localStorage.getItem("post_login_redirect") || "/";
 
-    // limpiar para no reutilizarlo
+    // 4) Limpiar la clave para no reutilizarla
     localStorage.removeItem("post_login_redirect");
 
-    // redirigir
+    // 5) Redirigir a donde corresponde
     window.location.replace(redirect);
   }, []);
 
