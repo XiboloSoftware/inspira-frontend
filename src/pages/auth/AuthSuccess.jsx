@@ -7,29 +7,29 @@ export default function AuthSuccess() {
 
     console.log("AUTH SUCCESS token:", token);
 
-    // si NO viene token
+    // Si no hay token -> ir al destino guardado o home
     if (!token) {
-      const redirect = localStorage.getItem("post_login_redirect") || "/";
+      const fallback = localStorage.getItem("post_login_redirect") || "/";
       localStorage.removeItem("post_login_redirect");
-      window.location.replace(redirect);
+      window.location.replace(fallback);
       return;
     }
 
-    // 1) Guardar el token EXACTAMENTE como antes
+    // Guardar token (igual que antes lo tenías)
     localStorage.setItem("token", token);
 
-    // 2) Limpiar la URL (quitar ?token=...)
+    // Limpiar la URL (?token=...)
     const cleanUrl = window.location.origin + window.location.pathname;
     window.history.replaceState({}, "", cleanUrl);
 
-    // 3) Leer el destino deseado, si existe
+    // Leer la ruta donde el usuario quería ir
     const redirect =
       localStorage.getItem("post_login_redirect") || "/";
 
-    // 4) Limpiar la clave para no reutilizarla
+    // Limpiar clave
     localStorage.removeItem("post_login_redirect");
 
-    // 5) Redirigir a donde corresponde
+    // Redirigir
     window.location.replace(redirect);
   }, []);
 
