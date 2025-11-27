@@ -5,32 +5,43 @@ import { useAuth } from "../../../context/AuthContext";
 // Cambia esto por el id_servicio REAL de tu servicio 002 en la BD
 const SERVICIO_MASTER_ID = "002";
 
+// URL del backend para login con Google
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
+
 export default function Hero() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   async function manejarPago() {
     if (loading) return;
+
+    // 1) Si no está logueado, mandarlo a login y salir
+    if (!user) {
+      // opcional: puedes mostrar un mensaje antes
+      // alert("Debes iniciar sesión con tu cuenta de Google para contratar el programa.");
+      window.location.href = `${API_URL}/auth/google`;
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // 2) Usuario logueado: crear preferencia de servicio
       const r = await apiPOST("/mercadopago/servicio/preferencia", {
         id_servicio: SERVICIO_MASTER_ID,
       });
 
-      if (r.ok && r.preferencia?.init_point) {
-        // Redirigir a Mercado Pago
+      if (r?.ok && r.preferencia?.init_point) {
         window.location.href = r.preferencia.init_point;
         return;
       }
 
-      // Si no ok, mostrar mensaje claro
+      // 3) Error con token vencido u otro 401
       const msg =
-        r.msg ||
-        r.message ||
-        (!user
-          ? "Debes iniciar sesión con tu cuenta de Google (botón 'Iniciar con Google' arriba) antes de contratar el programa."
-          : "No se pudo iniciar el pago. Inténtalo de nuevo.");
+        r?.msg ||
+        r?.message ||
+        "No se pudo iniciar el pago. Inténtalo de nuevo.";
       alert(msg);
     } catch (e) {
       console.error(e);
