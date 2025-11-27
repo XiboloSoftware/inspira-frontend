@@ -1,15 +1,32 @@
 import { useEffect, useState } from "react";
 import { apiGET } from "../../services/api";
 
-const hoyISO = new Date().toISOString().slice(0, 10);
+
+function hoyLocalISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+const hoyISO = hoyLocalISO();
+
+
+
+
 
 function formatoFechaLarga(fechaISO) {
-  const f = new Date(fechaISO);
+  // fechaISO = "YYYY-MM-DD"
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  const f = new Date(y, m - 1, d); // fecha LOCAL, no UTC
+
   return f.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "long",
   });
 }
+
 
 export default function DisponibilidadSemanal() {
   const [baseFecha, setBaseFecha] = useState(hoyISO);

@@ -15,12 +15,16 @@ const HOY = hoyLocalISO();
 const DIAS_SEMANA = 7;
 
 function formatoFechaLarga(fechaISO) {
-  const f = new Date(fechaISO);
+  // fechaISO = "YYYY-MM-DD"
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  const f = new Date(y, m - 1, d); // fecha LOCAL, no UTC
+
   return f.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "long",
   });
 }
+
 
 function getFechasSemana(fechaBase) {
   const d = new Date(fechaBase);
