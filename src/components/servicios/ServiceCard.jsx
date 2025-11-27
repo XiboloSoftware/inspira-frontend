@@ -6,6 +6,7 @@ export default function ServiceCard({
   badge,
   bullets = [],
   onClick,
+  disabled = false,          // 👈 AÑADIDO AQUÍ
   ctaLabel = "Ver servicio",
 }) {
   return (
