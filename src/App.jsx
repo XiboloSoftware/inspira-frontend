@@ -28,9 +28,14 @@ export default function App() {
     return <BackofficeApp />;
   }
 
+  const isPanel = path.startsWith("/panel");
+
   return (
     <div className="min-h-screen w-full bg-white">
       <Header />
+
+            {/* Header solo en la web pública */}
+      {!isPanel && <Header />}
 
       {path === "/" && <Home />}
 
