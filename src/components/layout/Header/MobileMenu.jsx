@@ -1,6 +1,9 @@
 import { navItems } from "./header.data";
 import NavItem from "./NavItem";
 import { useAuth } from "../../../context/AuthContext";
+// arriba del archivo
+const API_URL = import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
+
 
 export default function MobileMenu({ open, onClose }) {
   const { user, logout } = useAuth();
@@ -45,7 +48,7 @@ export default function MobileMenu({ open, onClose }) {
           {/* Si NO hay user → botón Google */}
           {!user && (
             <a
-              href="http://localhost:4000/auth/google"
+              href={`${API_URL}/auth/google`}
               className="w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-light transition"
             >
               Iniciar con Google

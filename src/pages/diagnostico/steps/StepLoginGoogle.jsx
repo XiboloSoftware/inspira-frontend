@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
+
 export default function StepLoginGoogle({ onNext }) {
   useEffect(() => {
     if (localStorage.getItem("token")) onNext();
   }, [onNext]);
 
   const loginGoogle = () => {
-    window.location.href = "http://localhost:4000/auth/google";
+    window.location.href = `${API_URL}/auth/google`;
   };
 
   return (
@@ -17,15 +20,17 @@ export default function StepLoginGoogle({ onNext }) {
         </h2>
 
         <p className="text-[#4A4A4A] mt-2">
-          Para continuar necesitas iniciar sesión. El diagnóstico es el primer paso
-          de tu proceso y es <b>obligatorio</b>.
+          Para continuar necesitas iniciar sesión. El diagnóstico es el primer
+          paso de tu proceso y es <b>obligatorio</b>.
         </p>
 
         {/* Resumen negocio */}
         <div className="mt-5 grid md:grid-cols-2 gap-4">
           <div className="bg-white rounded-xl p-4 border border-[#E5E5E5]">
             <div className="text-sm text-[#4A4A4A]">Precio</div>
-            <div className="text-xl font-bold text-[#023A4B]">25€ / S/.100</div>
+            <div className="text-xl font-bold text-[#023A4B]">
+              25€ / S/.100
+            </div>
             <div className="text-xs text-[#9B9B9B] mt-1">
               Pago único antes de cualquier paquete.
             </div>
@@ -56,7 +61,8 @@ export default function StepLoginGoogle({ onNext }) {
           </button>
 
           <div className="text-xs text-[#9B9B9B]">
-            No es compra de paquete. Solo crea tu registro para reservar y pagar el diagnóstico.
+            No es compra de paquete. Solo crea tu registro para reservar y pagar
+            el diagnóstico.
           </div>
         </div>
       </div>
