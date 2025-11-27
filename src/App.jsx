@@ -32,9 +32,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full bg-white">
-      <Header />
-
-            {/* Header solo en la web pública */}
+      {/* Header solo en la web pública */}
       {!isPanel && <Header />}
 
       {path === "/" && <Home />}
@@ -49,12 +47,12 @@ export default function App() {
       {path === "/servicios/master" && <MasterLanding />}
       {path === "/servicios/estancia" && <EstanciaLanding />}
 
-      {/* 👇 AÑADE ESTO */}
+      {/* Panel cliente con layout propio */}
       {path === "/panel" && <PanelCliente />}
 
       {/* fallback */}
-      {![ 
-        "/", 
+      {![
+        "/",
         "/diagnostico",
         "/diagnostico/success",
         "/diagnostico/failure",
@@ -62,7 +60,7 @@ export default function App() {
         "/auth/success",
         "/servicios/master",
         "/servicios/estancia",
-        "/panel"      // 👈 también lo añadimos al fallback
+        "/panel",
       ].includes(path) && <Home />}
     </div>
   );
