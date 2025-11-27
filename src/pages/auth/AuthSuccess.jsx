@@ -5,24 +5,26 @@ import { useAuth } from "../../context/AuthContext";
 export default function AuthSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setUserFromToken } = useAuth(); // o la función que ya uses
+  const { setUserFromToken } = useAuth();
 
   useEffect(() => {
     const token = searchParams.get("token");
+
+    // Si no viene token → volver al inicio
     if (!token) {
       navigate("/", { replace: true });
       return;
     }
 
-    // 1) Guardar token como ya lo haces (ejemplo)
+    // 1) Guardar token
     localStorage.setItem("token_cliente", token);
     setUserFromToken(token);
 
-    // 2) Leer destino deseado (si existe)
+    // 2) Revisar si hay un destino guardado antes del login
     const redirect =
       localStorage.getItem("post_login_redirect") || "/diagnostico";
 
-    // 3) Limpiar la llave para no reutilizarla luego
+    // 3) Limpiar la clave para no reutilizarla
     localStorage.removeItem("post_login_redirect");
 
     // 4) Redirigir

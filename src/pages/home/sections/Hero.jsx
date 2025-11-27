@@ -17,14 +17,12 @@ export default function Hero() {
   if (loading) return;
 
   // 1) Si NO está logueado, configuramos el destino post-login
-  if (!user) {
-    // Puedes usar la ruta que quieras como “premenu” del máster
-    // por ejemplo: "/master" o "/#master"
-    localStorage.setItem("post_login_redirect", "/"); // o "/master"
+if (!user) {
+  localStorage.setItem("post_login_redirect", "/master"); // o donde quieras
+  window.location.href = `${API_URL}/auth/google`;
+  return;
+}
 
-    window.location.href = `${API_URL}/auth/google`;
-    return;
-  }
 
   // 2) Si ya está logueado, flujo normal de pago
   setLoading(true);

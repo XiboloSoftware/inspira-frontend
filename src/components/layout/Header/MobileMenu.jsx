@@ -1,9 +1,10 @@
 import { navItems } from "./header.data";
 import NavItem from "./NavItem";
 import { useAuth } from "../../../context/AuthContext";
-// arriba del archivo
-const API_URL = import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
 
+// arriba del archivo
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
 
 export default function MobileMenu({ open, onClose }) {
   const { user, logout } = useAuth();
@@ -19,6 +20,17 @@ export default function MobileMenu({ open, onClose }) {
     onClose();
   };
 
+  // NUEVO: login guardando la ruta actual
+  const handleLogin = () => {
+    const current =
+      window.location.pathname +
+      window.location.search +
+      window.location.hash;
+
+    localStorage.setItem("post_login_redirect", current || "/");
+    window.location.href = `${API_URL}/auth/google`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -26,7 +38,9 @@ export default function MobileMenu({ open, onClose }) {
       <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-xl p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <span className="text-primary font-bold text-lg">Menú</span>
-          <button onClick={onClose} className="text-2xl leading-none">×</button>
+          <button onClick={onClose} className="text-2xl leading-none">
+            ×
+          </button>
         </div>
 
         {/* CTA Diagnóstico */}
@@ -47,12 +61,13 @@ export default function MobileMenu({ open, onClose }) {
         <div className="mt-auto flex flex-col gap-4">
           {/* Si NO hay user → botón Google */}
           {!user && (
-            <a
-              href={`${API_URL}/auth/google`}
+            <button
+              type="button"
+              onClick={handleLogin}
               className="w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-light transition"
             >
               Iniciar con Google
-            </a>
+            </button>
           )}
 
           {/* Si hay user → avatar, info y logout */}
@@ -76,9 +91,7 @@ export default function MobileMenu({ open, onClose }) {
                     {nombre}
                   </div>
                   {correo && (
-                    <div className="text-xs text-neutral-500">
-                      {correo}
-                    </div>
+                    <div className="text-xs text-neutral-500">{correo}</div>
                   )}
                 </div>
               </div>
