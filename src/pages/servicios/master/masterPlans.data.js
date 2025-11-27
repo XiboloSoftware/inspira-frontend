@@ -1,6 +1,8 @@
 // src/pages/servicios/master/masterPlans.data.js
 
-// “Oferta académica” – planes por listas (económicas / intermedias / premium)
+// ------------------------------------------------------
+// LISTA 1 · UNIVERSIDADES ECONÓMICAS
+// ------------------------------------------------------
 export const masterAcademicSections = [
   {
     id: "lista1",
@@ -20,6 +22,7 @@ export const masterAcademicSections = [
           "Postulación directa a másteres",
           "Seguimiento hasta obtener vacante",
         ],
+        serviceId: 3, // ← empieza desde 003
       },
       {
         id: "lista1-plan-basico",
@@ -32,6 +35,7 @@ export const masterAcademicSections = [
           "Revisión completa de documentación",
           "Selección de instituciones económicas",
         ],
+        serviceId: 4,
       },
       {
         id: "lista1-plan-comfort",
@@ -41,6 +45,7 @@ export const masterAcademicSections = [
         subtitle:
           "Postulación sin límite de máster ni universidades en estas dos comunidades.",
         bullets: ["Más de 7 universidades públicas disponibles"],
+        serviceId: 5,
       },
       {
         id: "lista1-plan-full",
@@ -53,9 +58,14 @@ export const masterAcademicSections = [
           "Más de 20 universidades públicas",
           "Ideal para maximizar opciones con bajo costo",
         ],
+        serviceId: 6,
       },
     ],
   },
+
+  // ------------------------------------------------------
+  // LISTA 2 · UNIVERSIDADES INTERMEDIAS
+  // ------------------------------------------------------
   {
     id: "lista2",
     title: "Universidades Intermedias · Lista 2",
@@ -69,6 +79,8 @@ export const masterAcademicSections = [
         priceLabel: "219 €",
         subtitle:
           "Postulación sin límite de máster en una sola comunidad de la lista 2.",
+        bullets: [],
+        serviceId: 7,
       },
       {
         id: "lista2-plan-basico-full",
@@ -77,6 +89,8 @@ export const masterAcademicSections = [
         priceLabel: "249 €",
         subtitle:
           "Postulación sin límite de máster ni universidades en tres comunidades de la lista 2.",
+        bullets: [],
+        serviceId: 8,
       },
       {
         id: "lista2-plan-comfort",
@@ -85,6 +99,8 @@ export const masterAcademicSections = [
         priceLabel: "279 €",
         subtitle:
           "Postulación sin límite de máster en universidades de la Comunidad Valenciana.",
+        bullets: [],
+        serviceId: 9,
       },
       {
         id: "lista2-plan-full",
@@ -93,9 +109,15 @@ export const masterAcademicSections = [
         priceLabel: "349 €",
         subtitle:
           "Cobertura completa en La Rioja, País Vasco, Murcia, Extremadura, Aragón y C. Valenciana.",
+        bullets: [],
+        serviceId: 10,
       },
     ],
   },
+
+  // ------------------------------------------------------
+  // LISTA 3 · UNIVERSIDADES PREMIUM
+  // ------------------------------------------------------
   {
     id: "lista3",
     title: "Universidades Premium · Lista 3",
@@ -108,6 +130,8 @@ export const masterAcademicSections = [
         priceLabel: "219 €",
         subtitle:
           "Postulación sin límite de máster dentro de una universidad (Madrid o Cataluña).",
+        bullets: [],
+        serviceId: 11,
       },
       {
         id: "lista3-plan-basico-full",
@@ -116,6 +140,8 @@ export const masterAcademicSections = [
         priceLabel: "249 €",
         subtitle:
           "Postulación sin límite de máster en 5 universidades de Madrid y/o Cataluña.",
+        bullets: [],
+        serviceId: 12,
       },
       {
         id: "lista3-plan-comfort",
@@ -124,6 +150,8 @@ export const masterAcademicSections = [
         priceLabel: "310 €",
         subtitle:
           "Todas las universidades de Madrid o todas las de Cataluña.",
+        bullets: [],
+        serviceId: 13,
       },
       {
         id: "lista3-plan-full",
@@ -132,12 +160,16 @@ export const masterAcademicSections = [
         priceLabel: "450 €",
         subtitle:
           "Postulación sin límite de máster en +16 universidades públicas.",
+        bullets: [],
+        serviceId: 14,
       },
     ],
   },
 ];
 
-// “Planes avanzados” – Premium & Infinity
+// ------------------------------------------------------
+// PLANES AVANZADOS
+// ------------------------------------------------------
 export const masterAdvancedPlans = [
   {
     id: "premium",
@@ -150,6 +182,7 @@ export const masterAdvancedPlans = [
       "Combina comunidades económicas + premium",
       "Estrategia personalizada según visado/becas",
     ],
+    serviceId: 15,
   },
   {
     id: "infinity",
@@ -162,5 +195,6 @@ export const masterAdvancedPlans = [
       "Pensado para quien no puede arriesgarse a quedarse sin plaza",
       "Orientado a urgencias de visado y becas exigentes",
     ],
+    serviceId: 16,
   },
 ];

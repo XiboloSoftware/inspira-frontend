@@ -5,8 +5,11 @@ import {
   masterAcademicSections,
   masterAdvancedPlans,
 } from "../masterPlans.data";
+import { usePagoServicio } from "../../../../hooks/usePagoServicio";
 
 export default function PlanesMaster() {
+  const { pagarServicio, loadingId } = usePagoServicio();
+
   return (
     <section className="w-full bg-neutral-50 py-14">
       <div className="max-w-6xl mx-auto px-4">
@@ -23,17 +26,43 @@ export default function PlanesMaster() {
         </header>
       </div>
 
-      {/* Secciones por listas (económicas / intermedias / premium) */}
+      {/* Listas 1, 2, 3 */}
       {masterAcademicSections.map((section) => (
-        <ServiceSection
-          key={section.id}
-          title={section.title}
-          subtitle={section.subtitle}
-          items={section.items}
-        />
+        <section key={section.id} className="w-full py-12">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900">
+              {section.title}
+            </h2>
+            {section.subtitle && (
+              <p className="mt-2 text-sm md:text-base text-neutral-600 max-w-3xl">
+                {section.subtitle}
+              </p>
+            )}
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {section.items.map((item) => (
+                <ServiceCard
+                  key={item.id}
+                  {...item}
+                  onClick={
+                    item.serviceId
+                      ? () => pagarServicio(item.serviceId)
+                      : undefined
+                  }
+                  disabled={loadingId === item.serviceId}
+                  ctaLabel={
+                    loadingId === item.serviceId
+                      ? "Redirigiendo..."
+                      : "Contratar"
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        </section>
       ))}
 
-      {/* Planes avanzados Premium / Infinity */}
+      {/* Planes avanzados */}
       <section className="w-full py-12">
         <div className="max-w-6xl mx-auto px-4">
           <h3 className="text-2xl md:text-3xl font-semibold text-neutral-900">
@@ -46,17 +75,22 @@ export default function PlanesMaster() {
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {masterAdvancedPlans.map((plan) => (
-              <ServiceCard key={plan.id} {...plan} />
+              <ServiceCard
+                key={plan.id}
+                {...plan}
+                onClick={
+                  plan.serviceId
+                    ? () => pagarServicio(plan.serviceId)
+                    : undefined
+                }
+                disabled={loadingId === plan.serviceId}
+                ctaLabel={
+                  loadingId === plan.serviceId
+                    ? "Redirigiendo..."
+                    : "Contratar"
+                }
+              />
             ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <a
-              href="/diagnostico"
-              className="inline-block bg-accent px-7 py-3 text-white rounded-full font-semibold hover:bg-accent-dark transition"
-            >
-              Quiero mi plan de máster
-            </a>
           </div>
         </div>
       </section>

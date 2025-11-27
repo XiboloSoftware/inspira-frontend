@@ -39,14 +39,21 @@ export default function ServiceCard({
       </div>
 
       {onClick && (
-        <button
-          type="button"
-          onClick={onClick}
-          className="mt-6 inline-flex items-center justify-center px-4 py-2 rounded-full border border-neutral-900 text-sm font-medium text-neutral-900 hover:bg-neutral-900 hover:text-white transition"
-        >
-          {ctaLabel}
-        </button>
-      )}
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={
+      "mt-6 inline-flex items-center justify-center px-4 py-2 rounded-full border border-neutral-900 text-sm font-medium transition " +
+      (disabled
+        ? "bg-neutral-200 cursor-not-allowed text-neutral-500"
+        : "text-neutral-900 hover:bg-neutral-900 hover:text-white")
+    }
+  >
+    {ctaLabel}
+  </button>
+)}
+
     </div>
   );
 }
