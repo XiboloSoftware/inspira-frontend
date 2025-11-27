@@ -8,30 +8,38 @@ import MisCitas from "./components/MisCitas";
 import MisServicios from "./components/MisServicios";
 
 export default function PanelCliente() {
-  const [tab, setTab] = useState("citas"); // "perfil" | "citas" | "servicios"
+  const [tab, setTab] = useState("citas");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // 1) Si no hay token => fuera del panel
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.replace("/diagnostico");
+      return;
+    }
+
     cargarMe();
   }, []);
 
   async function cargarMe() {
     try {
-      const r = await apiGET("/auth/me");
-      if (r.ok) {
-        setUser(r.user || r.cliente || r);
+      const r = await apiGET("/cliente/me");   // 👈 lo vamos a crear en backend
+      if (!r.ok) {
+        window.location.replace("/diagnostico");
+        return;
       }
+      setUser(r.cliente || r.user || r);
     } catch (e) {
       console.error(e);
+      window.location.replace("/diagnostico");
     }
   }
 
   return (
     <div className="min-h-screen flex bg-neutral-50">
-      {/* SIDEBAR IZQUIERDO */}
       <PanelSidebar user={user} activeTab={tab} onChangeTab={setTab} />
 
-      {/* CONTENIDO DERECHA */}
       <main className="flex-1 px-8 py-8">
         <header className="mb-6">
           <p className="text-xs font-medium text-primary uppercase tracking-wide">

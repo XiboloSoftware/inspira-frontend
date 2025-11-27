@@ -6,9 +6,9 @@ import { navigate } from "../../../services/navigate";
 export default function PanelSidebar({ user, activeTab, onChangeTab }) {
   const { logout } = useAuth();
 
-  const inicial = user?.nombre?.[0] || user?.email?.[0] || "U";
-  const nombre = user?.nombre || "Mi panel Inspira";
-  const correo = user?.email || "";
+const inicial = user?.nombre?.[0] || user?.email_contacto?.[0] || "U";
+const nombre = user?.nombre || "Mi panel Inspira";
+const correo = user?.email_contacto || "";
 
   return (
     <aside className="w-72 bg-gradient-to-b from-[#023A4B] to-[#046C8C] text-white flex flex-col">
