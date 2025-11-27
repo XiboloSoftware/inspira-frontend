@@ -1,92 +1,65 @@
-const listas = [
-  {
-    title: "Lista 1 · Comunidades Económicas",
-    price: "desde 219€",
-    items: ["Andalucía, Cantabria, Asturias", "Castilla-La Mancha", "Galicia, Castilla y León"],
-  },
-  {
-    title: "Lista 2 · Comunidades Intermedias",
-    price: "desde 219€",
-    items: ["La Rioja, País Vasco, Murcia", "Extremadura, Aragón", "Com. Valenciana"],
-  },
-  {
-    title: "Lista 3 · Premium",
-    price: "desde 219€",
-    items: ["Cataluña", "Madrid"],
-  },
-];
-
-const avanzados = [
-  {
-    title: "Paquete Premium",
-    price: "700€",
-    items: [
-      "Hasta 6 comunidades a elegir",
-      "Hasta +45 universidades",
-      "Sin límite de listas",
-      "Ideal si necesitas respaldo fuerte",
-    ],
-  },
-  {
-    title: "Paquete Infinity",
-    price: "1100€",
-    items: [
-      "17 comunidades españolas",
-      "Hasta +80 universidades",
-      "Máxima cobertura (públicas + privadas)",
-      "Para urgencias de visado/becas",
-    ],
-  },
-];
+// src/pages/servicios/master/sections/PlanesMaster.jsx
+import ServiceSection from "../../../../components/servicios/ServiceSection";
+import ServiceCard from "../../../../components/servicios/ServiceCard";
+import {
+  masterAcademicSections,
+  masterAdvancedPlans,
+} from "../masterPlans.data";
 
 export default function PlanesMaster() {
   return (
-    <section className="py-16 px-6 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-primary text-center">
-          Planes de postulación
-        </h2>
-        <p className="text-neutral-700 text-center mt-2">
-          Todos incluyen lo mismo; varía la cobertura geográfica.
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-5 mt-8">
-          {listas.map((l) => (
-            <div key={l.title} className="bg-secondary-light p-6 rounded-2xl border border-neutral-200">
-              <h3 className="text-primary font-semibold">{l.title}</h3>
-              <div className="text-accent font-bold text-xl mt-2">{l.price}</div>
-              <ul className="text-neutral-700 text-sm mt-3 space-y-1">
-                {l.items.map((i) => <li key={i}>• {i}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <h3 className="text-2xl font-bold text-primary mt-12 text-center">
-          Planes avanzados
-        </h3>
-
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          {avanzados.map((p) => (
-            <div key={p.title} className="bg-primary text-white p-7 rounded-2xl">
-              <h4 className="text-xl font-semibold">{p.title}</h4>
-              <div className="text-3xl font-bold text-accent mt-2">{p.price}</div>
-              <ul className="text-sm mt-4 space-y-1 text-white/90">
-                {p.items.map((i) => <li key={i}>• {i}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center mt-8">
-          <a
-            href="/diagnostico"
-            className="inline-block bg-accent px-7 py-3 text-white rounded-xl font-semibold hover:bg-accent-dark transition"
-          >
-            Quiero mi plan de máster
-          </a>
-        </div>
+    <section className="w-full bg-neutral-50 py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <header className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-semibold text-neutral-900">
+            Planes de postulación para tu máster
+          </h2>
+          <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-3xl mx-auto">
+            Todos los paquetes incluyen búsqueda de centros oficiales, revisión
+            documentaria, postulación a másteres, seguimiento y asesoría para la
+            matrícula. Lo que cambia es el alcance geográfico y la cantidad de
+            universidades.
+          </p>
+        </header>
       </div>
+
+      {/* Secciones por listas (económicas / intermedias / premium) */}
+      {masterAcademicSections.map((section) => (
+        <ServiceSection
+          key={section.id}
+          title={section.title}
+          subtitle={section.subtitle}
+          items={section.items}
+        />
+      ))}
+
+      {/* Planes avanzados Premium / Infinity */}
+      <section className="w-full py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <h3 className="text-2xl md:text-3xl font-semibold text-neutral-900">
+            Planes avanzados
+          </h3>
+          <p className="mt-2 text-sm md:text-base text-neutral-600 max-w-3xl">
+            Para quienes necesitan la máxima cobertura de comunidades y
+            universidades o una estrategia de admisión acelerada.
+          </p>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {masterAdvancedPlans.map((plan) => (
+              <ServiceCard key={plan.id} {...plan} />
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <a
+              href="/diagnostico"
+              className="inline-block bg-accent px-7 py-3 text-white rounded-full font-semibold hover:bg-accent-dark transition"
+            >
+              Quiero mi plan de máster
+            </a>
+          </div>
+        </div>
+      </section>
     </section>
   );
 }
