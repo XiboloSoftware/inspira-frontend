@@ -1,32 +1,37 @@
 // src/pages/auth/AuthSuccess.jsx
+// F:\PROGRAMACION\paginaweb_insipira\inspira-frontend\src\pages\auth\AuthSuccess.jsx
+
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 
 export default function AuthSuccess() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { setUserFromToken } = useAuth();
-
   useEffect(() => {
-    const token = searchParams.get("token");
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
 
+    // si no viene token, igual redirigimos a donde tenga sentido
     if (!token) {
-      navigate("/", { replace: true });
+      const redirect = localStorage.getItem("post_login_redirect") || "/";
+      localStorage.removeItem("post_login_redirect");
+      window.location.replace(redirect);
       return;
     }
 
+    // guardar token (clave que realmente uses en tu AuthContext; yo asumo token_cliente)
     localStorage.setItem("token_cliente", token);
-    setUserFromToken(token);
 
-    // ⬅️ CAMBIO IMPORTANTE: fallback a "/"
-    const redirect =
-      localStorage.getItem("post_login_redirect") || "/";
+    // limpiar el query ?token=...
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, "", cleanUrl);
 
+    // leer destino deseado (si alguien lo guardó antes de ir a /auth/google)
+    const redirect = localStorage.getItem("post_login_redirect") || "/";
+
+    // limpiar para no reutilizarlo
     localStorage.removeItem("post_login_redirect");
 
-    navigate(redirect, { replace: true });
-  }, [navigate, searchParams, setUserFromToken]);
+    // redirigir
+    window.location.replace(redirect);
+  }, []);
 
-  return <p>Procesando autenticación...</p>;
+  return <div className="p-6">Iniciando sesión...</div>;
 }

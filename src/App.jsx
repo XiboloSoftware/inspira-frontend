@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Header } from "./components/layout/Header";
 import Home from "./pages/home/Home";
 import Diagnostico from "./pages/diagnostico/Diagnostico";
-import AuthSuccess from "./pages/auth/Success";
+import AuthSuccess from "./pages/auth/AuthSuccess";
 import MpSuccess from "./pages/diagnostico/Success";
 import Failure from "./pages/diagnostico/Failure";
 import Pending from "./pages/diagnostico/Pending";
