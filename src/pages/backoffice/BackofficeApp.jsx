@@ -54,8 +54,8 @@ export default function BackofficeApp() {
           {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
           {path === "/backoffice/solicitudes" && <Placeholder title="Solicitudes" />}
           {path === "/backoffice/checklists" && <Placeholder title="Checklists / Documentos" />}
-          {path === "/backoffice/clientes" && <Placeholder title="Clientes" />}
-          {path === "/backoffice/precios" && <PreciosServicios />}
+          {path === "/backoffice/clientes" && <Clientes user={user} />}
+{path === "/backoffice/precios" && <PreciosServicios />}
 
 
           {path === "/backoffice/diagnosticos" && <Diagnosticos user={user} />}
