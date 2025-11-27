@@ -55,7 +55,8 @@ export function AuthProvider({ children }) {
       setUser(null);
 
       // ✅ vuelve al flujo de diagnóstico (paso login)
-      window.location.replace("/diagnostico");
+      window.location.href = "/";
+
     }
   };
 
