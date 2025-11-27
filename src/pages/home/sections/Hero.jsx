@@ -14,42 +14,43 @@ export default function Hero() {
   const [loading, setLoading] = useState(false);
 
   async function manejarPago() {
-    if (loading) return;
+  if (loading) return;
 
-    // 1) Si no está logueado, mandarlo a login y salir
-    if (!user) {
-      // opcional: puedes mostrar un mensaje antes
-      // alert("Debes iniciar sesión con tu cuenta de Google para contratar el programa.");
-      window.location.href = `${API_URL}/auth/google`;
+  // 1) Si NO está logueado, configuramos el destino post-login
+  if (!user) {
+    // Puedes usar la ruta que quieras como “premenu” del máster
+    // por ejemplo: "/master" o "/#master"
+    localStorage.setItem("post_login_redirect", "/"); // o "/master"
+
+    window.location.href = `${API_URL}/auth/google`;
+    return;
+  }
+
+  // 2) Si ya está logueado, flujo normal de pago
+  setLoading(true);
+
+  try {
+    const r = await apiPOST("/mercadopago/servicio/preferencia", {
+      id_servicio: SERVICIO_MASTER_ID,
+    });
+
+    if (r?.ok && r.preferencia?.init_point) {
+      window.location.href = r.preferencia.init_point;
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // 2) Usuario logueado: crear preferencia de servicio
-      const r = await apiPOST("/mercadopago/servicio/preferencia", {
-        id_servicio: SERVICIO_MASTER_ID,
-      });
-
-      if (r?.ok && r.preferencia?.init_point) {
-        window.location.href = r.preferencia.init_point;
-        return;
-      }
-
-      // 3) Error con token vencido u otro 401
-      const msg =
-        r?.msg ||
-        r?.message ||
-        "No se pudo iniciar el pago. Inténtalo de nuevo.";
-      alert(msg);
-    } catch (e) {
-      console.error(e);
-      alert("Ocurrió un error al iniciar el pago.");
-    } finally {
-      setLoading(false);
-    }
+    const msg =
+      r?.msg ||
+      r?.message ||
+      "No se pudo iniciar el pago. Inténtalo de nuevo.";
+    alert(msg);
+  } catch (e) {
+    console.error(e);
+    alert("Ocurrió un error al iniciar el pago.");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <section className="w-full bg-secondary-light py-20 px-6">
