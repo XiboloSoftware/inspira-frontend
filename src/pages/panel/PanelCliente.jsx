@@ -15,7 +15,8 @@ export default function PanelCliente() {
     // 1) Si no hay token => fuera del panel
     const token = localStorage.getItem("token");
     if (!token) {
-      window.location.replace("/diagnostico");
+      window.location.href = "/";
+
       return;
     }
 
@@ -26,13 +27,15 @@ export default function PanelCliente() {
     try {
       const r = await apiGET("/cliente/me");   // 👈 lo vamos a crear en backend
       if (!r.ok) {
-        window.location.replace("/diagnostico");
+        window.location.href = "/";
+
         return;
       }
       setUser(r.cliente || r.user || r);
     } catch (e) {
       console.error(e);
-      window.location.replace("/diagnostico");
+      window.location.href = "/";
+
     }
   }
 
