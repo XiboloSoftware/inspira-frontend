@@ -5,7 +5,7 @@ export default function StepPago({ bloque, comentario, onBack }) {
   const [loading, setLoading] = useState(false);
 
   async function pagar() {
-    if (loading) return;            // ✅ evita doble ejecución
+    if (loading) return;
     setLoading(true);
 
     try {
@@ -16,13 +16,17 @@ export default function StepPago({ bloque, comentario, onBack }) {
         comentario,
       });
 
-      if (!r1.ok) {
-        alert(r1.message || "Error pre-reserva");
-        setLoading(false);
+      if (!r1?.ok) {
+        alert(r1?.message || "Error pre-reserva");
         return;
       }
 
       const pre = r1.preReserva || r1.pre;
+      if (!pre || !pre.id_pre_reserva) {
+        alert("No se pudo crear la pre-reserva.");
+        return;
+      }
+
       localStorage.setItem("last_pre_reserva_id", String(pre.id_pre_reserva));
 
       // 2) Preferencia MP
@@ -33,29 +37,24 @@ export default function StepPago({ bloque, comentario, onBack }) {
         orderId: pre.id_pre_reserva,
       });
 
-      if (!r2.ok) {
-        alert(r2.msg || "Error preferencia MP");
-        setLoading(false);
+      if (!r2?.ok || !r2?.preferencia) {
+        alert(r2?.msg || "Error preferencia MP");
         return;
       }
 
-            const pref = r2.preferencia;
+      const pref = r2.preferencia;
 
-
-      if (pref.init_point) {
-        window.location.href = pref.init_point; // siempre flujo “oficial”
-      } else {
+      if (!pref.init_point) {
         alert("No se pudo obtener la URL de pago.");
-        setLoading(false);
+        return;
       }
 
-
-
-
-      // ✅ ya no necesitas seguir en la app, MP toma el control
-      window.location.href = url;
+      // Solo una redirección
+      window.location.href = pref.init_point;
     } catch (e) {
+      console.error("Error inesperado al iniciar pago:", e);
       alert("Error inesperado al iniciar pago");
+    } finally {
       setLoading(false);
     }
   }
