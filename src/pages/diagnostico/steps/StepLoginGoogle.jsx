@@ -8,10 +8,19 @@ export default function StepLoginGoogle({ onNext }) {
     if (localStorage.getItem("token")) onNext();
   }, [onNext]);
 
-  const loginGoogle = () => {
-    window.location.href = `${API_URL}/auth/google`;
-  };
+  function handleLoginClick() {
+  // ruta actual (incluye query y hash si hubiera)
+  const current =
+    window.location.pathname +
+    window.location.search +
+    window.location.hash;
 
+  // guardar destino deseado; si por alguna razón está vacío, usa "/"
+  localStorage.setItem("post_login_redirect", current || "/");
+
+  // ir a Google
+  window.location.href = `${API_URL}/auth/google`;
+}
   return (
     <div className="max-w-3xl mx-auto px-4">
       <div className="bg-[#E8F4FF] border border-[#9ACEFF] rounded-2xl p-6 md:p-8 mt-6">
@@ -48,7 +57,7 @@ export default function StepLoginGoogle({ onNext }) {
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <button
-            onClick={loginGoogle}
+            onClick={handleLoginClick}
             className="
               w-full sm:w-auto
               bg-[#023A4B] hover:bg-[#054256]
