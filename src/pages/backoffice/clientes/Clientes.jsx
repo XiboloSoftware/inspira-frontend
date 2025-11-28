@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { boGET, boPOST, boPUT } from "../../../services/backofficeApi";
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
+import ServiciosClienteModal from "./ServiciosClienteModal"; // 👈 NUEVO
 
 const FORM_INICIAL = {
   id_cliente: null,
@@ -11,6 +12,14 @@ const FORM_INICIAL = {
   telefono: "",
   dni: "",
 };
+
+
+
+  const [clienteServicios, setClienteServicios] = useState(null); // 👈 NUEVO
+    function onVerServiciosCliente(c) {
+    setClienteServicios(c);
+  }
+
 
 export default function Clientes({ user }) {
   const [clientes, setClientes] = useState([]);
@@ -137,6 +146,8 @@ export default function Clientes({ user }) {
         clientes={clientes}
         loading={loading}
         onEditar={onEditarCliente}
+        onVerServicios={onVerServiciosCliente}   // 👈 NUEVO
+
         isAdmin={isAdmin}
       />
 
