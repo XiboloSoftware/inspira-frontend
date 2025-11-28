@@ -13,14 +13,6 @@ const FORM_INICIAL = {
   dni: "",
 };
 
-
-
-  const [clienteServicios, setClienteServicios] = useState(null); // 👈 NUEVO
-    function onVerServiciosCliente(c) {
-    setClienteServicios(c);
-  }
-
-
 export default function Clientes({ user }) {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -28,6 +20,9 @@ export default function Clientes({ user }) {
   const [q, setQ] = useState("");
   const [form, setForm] = useState(FORM_INICIAL);
   const [modo, setModo] = useState("nuevo"); // nuevo | editar
+
+  // 👇 NUEVO: estado para el modal de servicios
+  const [clienteServicios, setClienteServicios] = useState(null);
 
   const isAdmin = user?.rol === "admin";
 
@@ -75,6 +70,11 @@ export default function Clientes({ user }) {
       telefono: c.telefono || "",
       dni: c.dni || "",
     });
+  }
+
+  // 👇 NUEVO: abrir modal de servicios
+  function onVerServiciosCliente(c) {
+    setClienteServicios(c);
   }
 
   async function onSubmitForm(e) {
@@ -146,8 +146,7 @@ export default function Clientes({ user }) {
         clientes={clientes}
         loading={loading}
         onEditar={onEditarCliente}
-        onVerServicios={onVerServiciosCliente}   // 👈 NUEVO
-
+        onVerServicios={onVerServiciosCliente} // 👈 NUEVO
         isAdmin={isAdmin}
       />
 
@@ -159,6 +158,14 @@ export default function Clientes({ user }) {
           onSubmit={onSubmitForm}
           onCancel={resetForm}
           saving={saving}
+        />
+      )}
+
+      {/* 👇 NUEVO: render del modal de servicios */}
+      {clienteServicios && (
+        <ServiciosClienteModal
+          cliente={clienteServicios}
+          onClose={() => setClienteServicios(null)}
         />
       )}
     </div>
