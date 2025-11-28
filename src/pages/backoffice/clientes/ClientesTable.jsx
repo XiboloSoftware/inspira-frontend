@@ -1,6 +1,12 @@
 // src/pages/backoffice/clientes/ClientesTable.jsx
 
-export default function ClientesTable({ clientes, loading, onEditar, isAdmin }) {
+export default function ClientesTable({
+  clientes,
+  loading,
+  onEditar,
+  onVerServicios,   // 👈 NUEVO
+  isAdmin,
+}) {
   return (
     <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
@@ -29,7 +35,9 @@ export default function ClientesTable({ clientes, loading, onEditar, isAdmin }) 
                 <th className="py-2 pr-4">DNI</th>
                 <th className="py-2 pr-4">Estado</th>
                 <th className="py-2 pr-4">Fecha registro</th>
-                {isAdmin && <th className="py-2 pr-4 text-right">Acciones</th>}
+                {isAdmin && (
+                  <th className="py-2 pr-4 text-right">Acciones</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -60,13 +68,25 @@ export default function ClientesTable({ clientes, loading, onEditar, isAdmin }) 
                   </td>
                   {isAdmin && (
                     <td className="py-2 pr-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onEditar(c)}
-                        className="text-xs px-3 py-1 rounded-lg border border-primary text-primary hover:bg-primary/5"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        {/* Botón Servicios */}
+                        <button
+                          type="button"
+                          onClick={() => onVerServicios && onVerServicios(c)}
+                          className="text-xs px-3 py-1 rounded-lg border border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                        >
+                          Servicios
+                        </button>
+
+                        {/* Botón Editar (ya existente) */}
+                        <button
+                          type="button"
+                          onClick={() => onEditar(c)}
+                          className="text-xs px-3 py-1 rounded-lg border border-primary text-primary hover:bg-primary/5"
+                        >
+                          Editar
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
