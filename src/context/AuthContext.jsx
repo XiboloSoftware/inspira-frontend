@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
     fetchMe();
   }, []);
 
-  const logout = async () => {
+    const logout = async () => {
     try {
       await fetch(`${API}/auth/logout`, {
         method: "POST",
@@ -47,18 +47,30 @@ export function AuthProvider({ children }) {
     } catch (e) {
       // aunque falle backend, igual limpiamos front
     } finally {
-      // ✅ CLAVE: borrar token y datos locales
+      // ✅ borrar token y datos locales
       localStorage.removeItem("token");
       localStorage.removeItem("last_pre_reserva_id");
       localStorage.removeItem("user");
 
       setUser(null);
 
-      // ✅ vuelve al flujo de diagnóstico (paso login)
-      window.location.href = "/";
+      // ✅ volver a la misma página donde estaba el usuario
+      const currentPath =
+        window.location.pathname +
+        window.location.search +
+        window.location.hash;
 
+      let redirect = currentPath || "/";
+
+      // Opcional: si estaba en /panel, mándalo al home porque ya no tiene sesión
+      if (redirect.startsWith("/panel")) {
+        redirect = "/";
+      }
+
+      window.location.href = redirect;
     }
   };
+
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, refreshUser: fetchMe }}>
