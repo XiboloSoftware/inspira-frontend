@@ -63,6 +63,7 @@ if (!user) {
             hasta la matrícula en universidades españolas de primer nivel.
           </p>
 
+{/*
           <button
             type="button"
             onClick={manejarPago}
@@ -74,6 +75,9 @@ if (!user) {
               : "Contratar Programa Máster 360°"}
           </button>
 
+*/
+
+}
           <p className="text-neutral-500 text-sm mt-2">
             El pago se realiza en soles (PEN) vía Mercado Pago. Es necesario
             iniciar sesión para contratar el servicio.
