@@ -69,19 +69,6 @@ export default function HeroMaster() {
             </div>
           </div>
 
-        {
-        /*  <button
-            type="button"
-           onClick={manejarPago}
-            disabled={loading}
-            className="inline-block mt-7 bg-accent text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-accent-dark transition disabled:opacity-60"
-         >
-          {loading
-              ? "Redirigiendo a Mercado Pago..."
-      </div>        : "Contratar Paquete Máster 360°"}
-          </button>
-          */}
-
           <p className="text-neutral-500 text-sm mt-2">
             Pago en soles (PEN) vía Mercado Pago. Debes iniciar sesión con tu
             cuenta de Google para completar la contratación.
