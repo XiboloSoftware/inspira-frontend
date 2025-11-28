@@ -1,3 +1,4 @@
+//inspira-frontend\src\components\layout\Header\header.data.js
 export const navItems = [
   { label: "Inicio", href: "/" },
 
@@ -5,16 +6,11 @@ export const navItems = [
   { label: "Diagnóstico", href: "/diagnostico", highlight: true },
 
   // paquetes educativos
-  {
-    label: "Servicios Educativos",
-    href: "/servicios-educativos",
-    children: [
-      { label: "Paquete Máster", href: "/servicios/master" },
-      { label: "Paquete Grado", href: "/servicios/grado" },
-      { label: "Paquete FP", href: "/servicios/fp" },
-      { label: "Homologación", href: "/servicios/homologacion" },
-    ],
-  },
+{
+  label: "Programa Máster 360°",
+  href: "/servicios/master",
+},
+
 
   // paquetes migratorios
   {
