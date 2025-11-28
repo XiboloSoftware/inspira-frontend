@@ -50,6 +50,13 @@ export default function PreciosServicios() {
     });
   }
 
+
+function abrirChecklist(s) {
+  alert("Abrir checklist para servicio: " + s.nombre);
+  // Más adelante aquí haremos navigate('/backoffice/checklist/' + s.id_servicio)
+}
+
+
   async function guardar(e) {
     e.preventDefault();
     if (saving) return;
@@ -131,6 +138,8 @@ export default function PreciosServicios() {
             servicios={servicios}
             loading={loading}
             onEditar={editarServicio}
+              onChecklist={abrirChecklist}
+
           />
         </div>
 

@@ -15,23 +15,20 @@ export default function ServicioForm({
       </h2>
 
       <form className="space-y-3" onSubmit={onSubmit}>
-        {/* Código interno: editable solo en "nuevo" */}
+        {/* Código interno */}
         <div className="flex flex-col gap-1">
-  <label className="text-xs text-neutral-500">
-    Código interno
-    <span className="text-[10px] text-neutral-400 ml-1">
-      (se genera automáticamente)
-    </span>
-  </label>
-  <input
-    type="text"
-    className="border rounded-lg px-2 py-1.5 text-sm bg-neutral-50"
-    value={form.codigo || ""}
-    placeholder={modo === "nuevo" ? "Se generará al guardar" : ""}
-    disabled
-    readOnly
-  />
-</div>
+          <label className="text-xs text-neutral-500">
+            Código interno
+            <span className="text-[10px] text-neutral-400 ml-1">(generado automáticamente)</span>
+          </label>
+          <input
+            type="text"
+            className="border rounded-lg px-2 py-1.5 text-sm bg-neutral-50"
+            value={form.codigo || ""}
+            disabled
+            readOnly
+          />
+        </div>
 
         {/* Nombre */}
         <div className="flex flex-col gap-1">
@@ -39,19 +36,17 @@ export default function ServicioForm({
           <input
             type="text"
             className="border rounded-lg px-2 py-1.5 text-sm"
-            placeholder="Reserva diagnóstico"
             value={form.nombre}
             onChange={(e) =>
               setForm((f) => ({ ...f, nombre: e.target.value }))
             }
+            required
           />
         </div>
 
         {/* Descripción */}
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-neutral-500">
-            Descripción (opcional)
-          </label>
+          <label className="text-xs text-neutral-500">Descripción (opcional)</label>
           <textarea
             className="border rounded-lg px-2 py-1.5 text-sm min-h-[60px]"
             value={form.descripcion}
@@ -83,16 +78,18 @@ export default function ServicioForm({
             <input
               type="number"
               step="0.01"
+              min="0"
               className="border rounded-lg px-2 py-1.5 text-sm"
               value={form.monto}
               onChange={(e) =>
                 setForm((f) => ({ ...f, monto: e.target.value }))
               }
+              required
             />
           </div>
         </div>
 
-        {/* Activo (solo en edición) */}
+        {/* Activo */}
         {modo === "editar" && (
           <div className="flex items-center gap-2 pt-1">
             <input
@@ -128,11 +125,7 @@ export default function ServicioForm({
             disabled={saving}
             className="px-4 py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary-light disabled:opacity-60"
           >
-            {saving
-              ? "Guardando…"
-              : modo === "nuevo"
-              ? "Crear"
-              : "Guardar cambios"}
+            {saving ? "Guardando…" : modo === "nuevo" ? "Crear" : "Guardar cambios"}
           </button>
         </div>
       </form>
