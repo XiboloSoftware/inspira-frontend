@@ -2,6 +2,7 @@ import { useState } from "react";
 import { apiPOST } from "../../../../services/api";
 import { useAuth } from "../../../../context/AuthContext";
 
+
 // Mismo servicio 002 u otro, según el plan que quieras vender aquí
 const SERVICIO_MASTER_ID = 2;
 
@@ -77,7 +78,7 @@ export default function HeroMaster() {
 
         <div className="hidden md:flex justify-center">
           <img
-            src="/assets/servicios/master-hero.png"
+            src="/servicios/master-hero.png"
             alt="Máster en España"
             className="w-[420px] rounded-2xl shadow"
           />
