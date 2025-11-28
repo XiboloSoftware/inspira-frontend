@@ -14,6 +14,7 @@ const ESTADO_FORM_INICIAL = {
   activo: true,
 };
 
+
 export default function PreciosServicios() {
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,16 +22,20 @@ export default function PreciosServicios() {
   const [form, setForm] = useState(ESTADO_FORM_INICIAL);
   const [modo, setModo] = useState("nuevo"); // "nuevo" | "editar"
 
+
+  const [filtro, setFiltro] = useState("todos"); // activos | inactivos | todos
+
   async function cargar() {
-    setLoading(true);
-    const r = await boGET("/backoffice/precios/servicios");
-    if (r.ok) setServicios(r.servicios || []);
-    setLoading(false);
-  }
+  setLoading(true);
+  const r = await boGET(`/backoffice/precios/servicios?estado=${filtro}`);
+  if (r.ok) setServicios(r.servicios || []);
+  setLoading(false);
+}
+
 
   useEffect(() => {
-    cargar();
-  }, []);
+  cargar();
+}, [filtro]);
 
   function resetForm() {
     setForm(ESTADO_FORM_INICIAL);
@@ -130,6 +135,38 @@ function abrirChecklist(s) {
         Gestiona los servicios (por ejemplo, la reserva de diagnóstico) y sus
         precios actuales.
       </p>
+
+<div className="flex gap-2 mb-4">
+  <button
+    onClick={() => setFiltro("todos")}
+    className={`px-3 py-1.5 text-xs rounded-lg border ${
+      filtro === "todos" ? "bg-primary text-white" : "bg-white"
+    }`}
+  >
+    Todos
+  </button>
+
+  <button
+    onClick={() => setFiltro("activos")}
+    className={`px-3 py-1.5 text-xs rounded-lg border ${
+      filtro === "activos" ? "bg-primary text-white" : "bg-white"
+    }`}
+  >
+    Activos
+  </button>
+
+  <button
+    onClick={() => setFiltro("inactivos")}
+    className={`px-3 py-1.5 text-xs rounded-lg border ${
+      filtro === "inactivos" ? "bg-red-600 text-white" : "bg-white"
+    }`}
+  >
+    Inactivos
+  </button>
+</div>
+
+
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista de servicios */}
