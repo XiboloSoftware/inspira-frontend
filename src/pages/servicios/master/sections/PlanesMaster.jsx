@@ -1,4 +1,4 @@
-// src/pages/servicios/master/sections/PlanesMaster.jsx
+import { useState } from "react";
 import ServiceSection from "../../../../components/servicios/ServiceSection";
 import ServiceCard from "../../../../components/servicios/ServiceCard";
 import {
@@ -6,9 +6,32 @@ import {
   masterAdvancedPlans,
 } from "../masterPlans.data";
 import { usePagoServicio } from "../../../../hooks/usePagoServicio";
+import ConfirmarPagoModal from "../../../../components/servicios/ConfirmarPagoModal";
 
 export default function PlanesMaster() {
   const { pagarServicio, loadingId } = usePagoServicio();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  function abrirModal(plan) {
+    setSelectedPlan(plan);
+    setModalOpen(true);
+  }
+
+  function cerrarModal() {
+    if (loadingId) return; // mientras redirige, no cerrar
+    setModalOpen(false);
+    setSelectedPlan(null);
+  }
+
+  async function confirmarPago() {
+    if (!selectedPlan?.serviceId) return;
+    await pagarServicio(selectedPlan.serviceId);
+    // si redirige a MP, no hace falta cerrar aquí
+  }
+
+  const isLoadingSelected =
+    selectedPlan && loadingId === selectedPlan.serviceId;
 
   return (
     <section className="w-full bg-neutral-50 py-14">
@@ -45,16 +68,10 @@ export default function PlanesMaster() {
                   key={item.id}
                   {...item}
                   onClick={
-                    item.serviceId
-                      ? () => pagarServicio(item.serviceId)
-                      : undefined
+                    item.serviceId ? () => abrirModal(item) : undefined
                   }
                   disabled={loadingId === item.serviceId}
-                  ctaLabel={
-                    loadingId === item.serviceId
-                      ? "Redirigiendo..."
-                      : "Contratar"
-                  }
+                  ctaLabel="Contratar"
                 />
               ))}
             </div>
@@ -79,21 +96,24 @@ export default function PlanesMaster() {
                 key={plan.id}
                 {...plan}
                 onClick={
-                  plan.serviceId
-                    ? () => pagarServicio(plan.serviceId)
-                    : undefined
+                  plan.serviceId ? () => abrirModal(plan) : undefined
                 }
                 disabled={loadingId === plan.serviceId}
-                ctaLabel={
-                  loadingId === plan.serviceId
-                    ? "Redirigiendo..."
-                    : "Contratar"
-                }
+                ctaLabel="Contratar"
               />
             ))}
           </div>
         </div>
       </section>
+
+      {/* Modal de confirmación */}
+      <ConfirmarPagoModal
+        open={modalOpen}
+        onClose={cerrarModal}
+        plan={selectedPlan}
+        onConfirm={confirmarPago}
+        loading={isLoadingSelected}
+      />
     </section>
   );
 }
