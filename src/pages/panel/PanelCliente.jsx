@@ -7,9 +7,6 @@ import PerfilCliente from "./components/PerfilCliente";
 import MisCitas from "./components/MisCitas";
 import MisServicios from "./components/MisServicios";
 
-// src/pages/panel/PanelCliente.jsx
-import MisCitas from "./components/citas/MisCitas";
-
 
 export default function PanelCliente() {
   const [tab, setTab] = useState("citas");
