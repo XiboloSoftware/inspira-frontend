@@ -1,4 +1,7 @@
 // src/pages/panel/components/PerfilCliente.jsx
+
+
+
 export default function PerfilCliente({ user }) {
   if (!user) {
     return <p>Cargando datos...</p>;
