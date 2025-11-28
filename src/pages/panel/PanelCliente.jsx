@@ -4,7 +4,7 @@ import { apiGET } from "../../services/api";
 
 import PanelSidebar from "./components/PanelSidebar";
 import PerfilCliente from "./components/PerfilCliente";
-import MisCitas from "./components/MisCitas";
+import MisCitas from "./components/citas/MisCitas";
 import MisServicios from "./components/MisServicios";
 
 
