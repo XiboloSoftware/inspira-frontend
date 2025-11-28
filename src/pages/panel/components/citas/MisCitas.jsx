@@ -1,6 +1,6 @@
 // src/pages/panel/components/citas/MisCitas.jsx
 import { useEffect, useState } from "react";
-import { apiGET } from "../../../services/api";
+import { apiGET } from "../../../../services/api";
 import CitaCard from "./CitaCard";
 import FiltrosCitas from "./FiltrosCitas";
 import PaginacionCitas from "./PaginacionCitas";
