@@ -10,7 +10,6 @@ const items = [
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Tipo de Servicios", href: "/backoffice/tiposervicio" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
-  { label: "Items de Checklist", href: "/backoffice/itemschecklist" },
   { label: "Settings", href: "/backoffice/settings" },
 ];
 
