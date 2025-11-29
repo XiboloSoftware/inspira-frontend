@@ -10,6 +10,7 @@ import PreciosServicios from "./precios/PreciosServicios";
 import UsuariosSettings from "./settings/UsuariosSettings";
 import Clientes from "./clientes/Clientes";
 import ChecklistServicios from "./checklist/ChecklistServicios";
+import SolicitudesList from "./solicitudes/SolicitudesList";
 
 
 export default function BackofficeApp() {
@@ -60,6 +61,7 @@ export default function BackofficeApp() {
 
           {path === "/backoffice/clientes" && <Clientes user={user} />}
           {path === "/backoffice/precios" && <PreciosServicios />}
+          {path === "/backoffice/solicitudes" && <SolicitudesList />}
 
 
 
