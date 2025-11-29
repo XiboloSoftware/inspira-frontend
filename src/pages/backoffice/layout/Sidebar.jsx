@@ -9,7 +9,7 @@ const items = [
   { label: "Clientes", href: "/backoffice/clientes" },
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Tipo de Servicios", href: "/backoffice/tiposervicio" },
-  { label: "Plantillas de Checklist", href: "/backoffice/plantillaschecklist" },
+  { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
   { label: "Items de Checklist", href: "/backoffice/itemschecklist" },
   { label: "Settings", href: "/backoffice/settings" },
 ];

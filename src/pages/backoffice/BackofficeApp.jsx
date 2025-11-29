@@ -9,6 +9,7 @@ import Diagnosticos from "./diagnosticos/Diagnosticos";
 import PreciosServicios from "./precios/PreciosServicios";
 import UsuariosSettings from "./settings/UsuariosSettings";
 import Clientes from "./clientes/Clientes";
+import ChecklistServicios from "./checklist/ChecklistServicios";
 
 
 export default function BackofficeApp() {
@@ -54,9 +55,12 @@ export default function BackofficeApp() {
           {/* placeholders para módulos que haremos luego */}
           {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
           {path === "/backoffice/solicitudes" && <Placeholder title="Solicitudes" />}
-          {path === "/backoffice/checklists" && <Placeholder title="Checklists / Documentos" />}
+          {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
+
+
           {path === "/backoffice/clientes" && <Clientes user={user} />}
-{path === "/backoffice/precios" && <PreciosServicios />}
+          {path === "/backoffice/precios" && <PreciosServicios />}
+
 
 
           {path === "/backoffice/diagnosticos" && <Diagnosticos user={user} />}
