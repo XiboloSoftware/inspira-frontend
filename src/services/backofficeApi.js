@@ -7,13 +7,15 @@ function getToken() {
 
 function baseHeaders() {
   const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
 }
 
-// GET
 export async function boGET(path) {
   const r = await fetch(`${API_URL}${path}`, {
     method: "GET",
+    // SIN credentials: "include"
     headers: {
       ...baseHeaders(),
     },
@@ -21,7 +23,6 @@ export async function boGET(path) {
   return r.json();
 }
 
-// POST
 export async function boPOST(path, body) {
   const r = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -34,7 +35,6 @@ export async function boPOST(path, body) {
   return r.json();
 }
 
-// PUT
 export async function boPUT(path, body) {
   const r = await fetch(`${API_URL}${path}`, {
     method: "PUT",
@@ -47,20 +47,6 @@ export async function boPUT(path, body) {
   return r.json();
 }
 
-// PATCH ← FALTABA ESTA FUNCIÓN
-export async function boPATCH(path, body) {
-  const r = await fetch(`${API_URL}${path}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...baseHeaders(),
-    },
-    body: JSON.stringify(body),
-  });
-  return r.json();
-}
-
-// DELETE
 export async function boDELETE(path) {
   const r = await fetch(`${API_URL}${path}`, {
     method: "DELETE",
