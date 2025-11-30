@@ -36,3 +36,28 @@ export async function apiPATCH(url, body) {
   });
   return r.json();
 }
+
+
+export async function apiUpload(path, formData) {
+  const res = await fetch(API_URL + path, {
+    method: "POST",
+    headers: {
+      // IMPORTANTE: enviamos el JWT igual que en apiGET/apiPATCH
+      ...authHeaders(),
+    },
+    body: formData, // no poner Content-Type, el navegador lo arma solo
+  });
+
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    // por si el backend devuelve vacío
+  }
+
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.msg || data.message || "Error al subir archivo");
+  }
+
+  return data;
+}
