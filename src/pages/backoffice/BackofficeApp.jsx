@@ -1,4 +1,4 @@
-//inspira-frontend\src\pages\backoffice\BackofficeApp.jsx
+// src/pages/backoffice/BackofficeApp.jsx
 import { useEffect, useState } from "react";
 import Sidebar from "./layout/Sidebar";
 import Topbar from "./layout/Topbar";
@@ -11,7 +11,7 @@ import UsuariosSettings from "./settings/UsuariosSettings";
 import Clientes from "./clientes/Clientes";
 import ChecklistServicios from "./checklist/ChecklistServicios";
 import SolicitudesList from "./solicitudes/SolicitudesList";
-
+import SolicitudDetalleBackoffice from "./solicitudes/SolicitudDetalleBackoffice";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -26,19 +26,29 @@ export default function BackofficeApp() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  function navigate(to) {
+    window.history.pushState({}, "", to);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
   function logout() {
     localStorage.removeItem("bo_token");
     localStorage.removeItem("bo_user");
     setUser(null);
-    // manda a login
-    window.history.pushState({}, "", "/backoffice/login");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    navigate("/backoffice/login");
   }
 
-  // Si no hay token => login
   const token = localStorage.getItem("bo_token");
   if (!token || path === "/backoffice/login") {
     return <BackofficeLogin onLogin={setUser} />;
+  }
+
+  // ¿Estamos en /backoffice/solicitudes/:id ?
+  const isDetalleSolicitud = path.startsWith("/backoffice/solicitudes/");
+  let idSolicitudDetalle = null;
+  if (isDetalleSolicitud) {
+    const parts = path.split("/");
+    idSolicitudDetalle = parseInt(parts[parts.length - 1], 10);
   }
 
   return (
@@ -53,21 +63,36 @@ export default function BackofficeApp() {
           {path === "/backoffice" && <Dashboard />}
           {path === "/backoffice/dashboard" && <Dashboard />}
 
-          {/* placeholders para módulos que haremos luego */}
           {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
-          {path === "/backoffice/solicitudes" && <Placeholder title="Solicitudes" />}
-          {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
 
+          {/* LISTA DE SOLICITUDES */}
+          {path === "/backoffice/solicitudes" && (
+            <SolicitudesList
+              onVerSolicitud={(id) =>
+                navigate(`/backoffice/solicitudes/${id}`)
+              }
+            />
+          )}
+
+          {/* DETALLE DE SOLICITUD */}
+          {isDetalleSolicitud && idSolicitudDetalle && (
+            <SolicitudDetalleBackoffice
+              idSolicitud={idSolicitudDetalle}
+              onVolver={() => navigate("/backoffice/solicitudes")}
+            />
+          )}
+
+          {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
 
           {path === "/backoffice/clientes" && <Clientes user={user} />}
           {path === "/backoffice/precios" && <PreciosServicios />}
-          {path === "/backoffice/solicitudes" && <SolicitudesList />}
 
-
-
-          {path === "/backoffice/diagnosticos" && <Diagnosticos user={user} />}
-          {path === "/backoffice/settings" && <UsuariosSettings user={user} />}
-
+          {path === "/backoffice/diagnosticos" && (
+            <Diagnosticos user={user} />
+          )}
+          {path === "/backoffice/settings" && (
+            <UsuariosSettings user={user} />
+          )}
         </div>
       </div>
     </ProtectedRoute>

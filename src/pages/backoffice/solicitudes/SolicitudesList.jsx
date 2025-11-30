@@ -1,7 +1,8 @@
+// src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useEffect, useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
 
-export default function SolicitudesList() {
+export default function SolicitudesList({ onVerSolicitud }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -15,6 +16,10 @@ export default function SolicitudesList() {
   useEffect(() => {
     cargar();
   }, []);
+
+  function handleVerSolicitud(id) {
+    if (onVerSolicitud) onVerSolicitud(id);
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -77,9 +82,20 @@ export default function SolicitudesList() {
                   </p>
                   {s.total_pagado > 0 && (
                     <p className="text-xs text-neutral-600 mt-0.5">
-                      Total pagado: {s.total_pagado} {s.pagos?.[0]?.moneda || ""}
+                      Total pagado: {s.total_pagado}{" "}
+                      {s.pagos?.[0]?.moneda || ""}
                     </p>
                   )}
+                </div>
+
+                <div className="flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleVerSolicitud(s.id_solicitud)}
+                    className="text-xs px-3 py-1.5 rounded-md border border-neutral-300 hover:bg-neutral-50"
+                  >
+                    Ver solicitud
+                  </button>
                 </div>
               </div>
             ))}
