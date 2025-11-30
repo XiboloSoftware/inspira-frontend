@@ -19,9 +19,10 @@ export default function BotonSubirDocumento({ solicitudId, item, onUploaded }) {
 
       // item.id_solicitud_item viene del backend (modelo SolicitudItemChecklist)
       await apiUpload(
-        `/panel/solicitudes/${solicitudId}/items/${item.id_solicitud_item}/documento`,
-        formData
-      );
+  `/api/panel/solicitudes/${solicitudId}/items/${item.id_solicitud_item}/documento`,
+  formData
+);
+
 
       if (onUploaded) onUploaded(); // vuelve a pedir la solicitud al backend
     } catch (err) {
