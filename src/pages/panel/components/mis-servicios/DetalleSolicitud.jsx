@@ -1,5 +1,6 @@
 // src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
+import BotonSubirDocumento from "../checklist/BotonSubirDocumento";
 import { apiGET, apiPATCH, apiPOST } from "../../../../services/api";
 import { INSTRUCTIVOS_POR_TIPO } from "./constants";
 import {
@@ -77,42 +78,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     return Math.round((completados * 100) / checklist.length);
   }, [checklist]);
 
-  async function handleSubirDocumento(item) {
-    const url = window.prompt(
-      "Pega el enlace al documento (PDF, Word, Excel, etc.).\n" +
-        "Más adelante esto se puede conectar a S3/Google Cloud Storage.",
-      item.url_archivo || ""
-    );
-    if (!url) return;
-
-    try {
-      const r = await apiPATCH(
-        `/checklist/item/${item.id_solicitud_item}/documento`,
-        { url_archivo: url }
-      );
-
-      if (!r.ok) {
-        window.alert(
-          r.message ||
-            r.msg ||
-            "No se pudo guardar el documento. Inténtalo nuevamente."
-        );
-        return;
-      }
-
-      const actualizado = r.item;
-      setChecklist((prev) =>
-        prev.map((it) =>
-          it.id_solicitud_item === actualizado.id_solicitud_item
-            ? actualizado
-            : it
-        )
-      );
-    } catch (e) {
-      console.error(e);
-      window.alert("Error al guardar el documento.");
-    }
-  }
+  
 
   async function handleSubmitFormulario(e) {
     e.preventDefault();
@@ -283,33 +249,33 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                               </p>
                             )}
 
-                            {it.item?.permite_archivo && (
+                                                        {it.item?.permite_archivo && (
                               <div className="flex justify-between items-center gap-2 mt-1">
                                 <div className="flex flex-col">
-                                  {it.url_archivo ? (
-                                    <a
-                                      href={it.url_archivo}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-[11px] text-[#023A4B] underline"
-                                    >
-                                      Ver archivo cargado
-                                    </a>
+                                  {["enviado", "aprobado", "observado", "no_aplica"].includes(
+                                    (it.estado_item || "").toLowerCase()
+                                  ) ? (
+                                    <span className="text-[11px] text-neutral-600">
+                                      Documento enviado ({(it.estado_item || "")
+                                        .replace("_", " ")
+                                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                                      )
+                                    </span>
                                   ) : (
                                     <span className="text-[11px] text-neutral-400">
                                       Sin archivo cargado
                                     </span>
                                   )}
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSubirDocumento(it)}
-                                  className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
-                                >
-                                  Subir / cambiar documento
-                                </button>
+
+                                <BotonSubirDocumento
+                                  solicitudId={idSolicitud}
+                                  item={it}
+                                  onUploaded={cargarTodo} // recarga checklist tras subir
+                                />
                               </div>
                             )}
+
                           </div>
                         ))}
                       </div>

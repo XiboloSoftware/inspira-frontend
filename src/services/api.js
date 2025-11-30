@@ -1,6 +1,27 @@
 // src/services/api.js
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+export async function apiUpload(path, formData) {
+  const res = await fetch(API_URL + path, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {}
+
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.msg || "Error al subir archivo");
+  }
+
+  return data;
+}
+
+
+
 function authHeaders() {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
