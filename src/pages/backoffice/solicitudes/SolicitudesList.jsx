@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
+import { navigate } from "../../../services/navigate";
 
 export default function SolicitudesList() {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -43,16 +44,19 @@ export default function SolicitudesList() {
         )}
 
         {solicitudes && solicitudes.length > 0 && (
-          <div className="divide-y">
+          <div className="divide-y divide-neutral-200">
             {solicitudes.map((s) => (
               <div
                 key={s.id_solicitud}
-                className="px-4 py-3 flex justify-between items-start gap-4"
+                className="px-4 py-3 flex justify-between items-center hover:bg-neutral-50 cursor-pointer"
+                onClick={() =>
+                  navigate(`/backoffice/solicitudes/${s.id_solicitud}`)
+                }
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-neutral-900">
-                      {s.titulo || "(Sin título)"}
+                    <span className="text-sm font-medium text-neutral-900">
+                      {s.titulo || s.tipo || "Solicitud sin título"}
                     </span>
                     {s.tipo && (
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
@@ -77,7 +81,8 @@ export default function SolicitudesList() {
                   </p>
                   {s.total_pagado > 0 && (
                     <p className="text-xs text-neutral-600 mt-0.5">
-                      Total pagado: {s.total_pagado} {s.pagos?.[0]?.moneda || ""}
+                      Total pagado: {s.total_pagado}{" "}
+                      {s.pagos?.[0]?.moneda || ""}
                     </p>
                   )}
                 </div>

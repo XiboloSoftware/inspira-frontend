@@ -11,7 +11,7 @@ import UsuariosSettings from "./settings/UsuariosSettings";
 import Clientes from "./clientes/Clientes";
 import ChecklistServicios from "./checklist/ChecklistServicios";
 import SolicitudesList from "./solicitudes/SolicitudesList";
-
+import SolicitudDetalleAdmin from "./solicitudes/SolicitudDetalleAdmin"; // ← NUEVO
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -29,45 +29,56 @@ export default function BackofficeApp() {
   function logout() {
     localStorage.removeItem("bo_token");
     localStorage.removeItem("bo_user");
-    setUser(null);
-    // manda a login
     window.history.pushState({}, "", "/backoffice/login");
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
-  // Si no hay token => login
   const token = localStorage.getItem("bo_token");
   if (!token || path === "/backoffice/login") {
     return <BackofficeLogin onLogin={setUser} />;
   }
+
+  const isSolicitudDetalle = path.startsWith("/backoffice/solicitudes/");
+  const idSolicitudDetalle = isSolicitudDetalle
+    ? Number(path.split("/").pop())
+    : null;
 
   return (
     <ProtectedRoute onLogout={logout}>
       <div className="flex w-full">
         <Sidebar path={path} />
 
-        <div className="flex-1 bg-white min-h-screen">
-          <Topbar user={user} onLogout={logout} />
+        <div className="flex-1 min-h-screen bg-neutral-50">
+          <Topbar user={user} />
 
-          {/* Rutas internas */}
-          {path === "/backoffice" && <Dashboard />}
-          {path === "/backoffice/dashboard" && <Dashboard />}
+          <div className="p-4">
+            {path === "/backoffice/dashboard" && <Dashboard user={user} />}
 
-          {/* placeholders para módulos que haremos luego */}
-          {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
-          {path === "/backoffice/solicitudes" && <Placeholder title="Solicitudes" />}
-          {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
+            {/* placeholders para módulos que haremos luego */}
+            {path === "/backoffice/agenda" && (
+              <Placeholder title="Agenda" />
+            )}
 
+            {path === "/backoffice/checklist-servicios" && (
+              <ChecklistServicios />
+            )}
 
-          {path === "/backoffice/clientes" && <Clientes user={user} />}
-          {path === "/backoffice/precios" && <PreciosServicios />}
-          {path === "/backoffice/solicitudes" && <SolicitudesList />}
+            {path === "/backoffice/clientes" && <Clientes user={user} />}
+            {path === "/backoffice/precios" && <PreciosServicios />}
 
+            {path === "/backoffice/solicitudes" && <SolicitudesList />}
 
+            {isSolicitudDetalle && idSolicitudDetalle && (
+              <SolicitudDetalleAdmin idSolicitud={idSolicitudDetalle} />
+            )}
 
-          {path === "/backoffice/diagnosticos" && <Diagnosticos user={user} />}
-          {path === "/backoffice/settings" && <UsuariosSettings user={user} />}
-
+            {path === "/backoffice/diagnosticos" && (
+              <Diagnosticos user={user} />
+            )}
+            {path === "/backoffice/settings" && (
+              <UsuariosSettings user={user} />
+            )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>
