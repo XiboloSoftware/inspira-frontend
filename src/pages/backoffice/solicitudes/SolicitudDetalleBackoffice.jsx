@@ -9,6 +9,7 @@ function formatearFecha(fecha) {
   return new Date(fecha).toLocaleString();
 }
 
+
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
@@ -97,6 +98,39 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       window.alert("Error al actualizar el documento.");
     }
   }
+
+  async function descargarDocumento(doc) {
+  try {
+    const token = localStorage.getItem("bo_token");
+    if (!token) return alert("No existe sesión de backoffice");
+
+    const resp = await fetch(
+      `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    if (!resp.ok) return alert("No se pudo descargar el archivo");
+
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = doc.nombre_original || "archivo";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+    alert("Error al descargar");
+  }
+}
+
+
+
 
   if (loading) {
     return (
@@ -233,14 +267,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
                             <div className="flex items-center gap-1">
                               {/* URL de descarga construida aquí */}
-                              <a
-                                href={`${API_URL}/api/documentos/${doc.id_documento}/descargar`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
-                              >
-                                Descargar
-                              </a>
+                              <button
+  type="button"
+  onClick={() => descargarDocumento(doc)}
+  className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
+>
+  Descargar
+</button>
 
                               <button
                                 type="button"
