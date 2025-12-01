@@ -7,17 +7,37 @@ import PerfilCliente from "./components/PerfilCliente";
 import MisCitas from "./components/citas/MisCitas";
 import MisServicios from "./components/MisServicios";
 
-
 export default function PanelCliente() {
-  const [tab, setTab] = useState("citas");
+  // 1) Leer la pestaña guardada (si existe)
+  const [tab, setTab] = useState(() => {
+    if (typeof window === "undefined") return "citas";
+
+    const saved = window.localStorage.getItem("panel_tab");
+    // solo aceptamos valores válidos
+    if (saved === "perfil" || saved === "citas" || saved === "servicios") {
+      return saved;
+    }
+    return "citas";
+  });
+
   const [user, setUser] = useState(null);
 
+  // 2) CADA VEZ que cambie `tab`, guardar en localStorage
   useEffect(() => {
-    // 1) Si no hay token => fuera del panel
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.setItem("panel_tab", tab);
+    } catch (e) {
+      console.error("No se pudo guardar panel_tab", e);
+    }
+  }, [tab]); // 👈 se ejecuta cuando `tab` cambia
+
+  // 3) Mantienes tu useEffect de auth tal cual
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/";
-
       return;
     }
 
@@ -26,17 +46,15 @@ export default function PanelCliente() {
 
   async function cargarMe() {
     try {
-      const r = await apiGET("/cliente/me");   // 👈 lo vamos a crear en backend
+      const r = await apiGET("/cliente/me");
       if (!r.ok) {
         window.location.href = "/";
-
         return;
       }
       setUser(r.cliente || r.user || r);
     } catch (e) {
       console.error(e);
       window.location.href = "/";
-
     }
   }
 
