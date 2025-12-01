@@ -33,12 +33,17 @@ export default function MisServicios() {
     setError("");
 
     try {
-      const resp = await apiGET("/panel/mis-servicios"); // tu endpoint
+      // ⬇⬇⬇ ÚNICO CAMBIO IMPORTANTE: volvemos al endpoint que ya existía
+      const resp = await apiGET("/solicitudes/mias");
+
       if (!resp.ok) {
-        throw new Error(resp.msg || "No se pudieron cargar los servicios");
+        throw new Error(
+          resp.msg || resp.message || "No se pudieron cargar los servicios"
+        );
       }
 
-      const lista = resp.servicios || resp.data || [];
+      // el backend viejo devuelve { ok: true, solicitudes: [...] }
+      const lista = resp.solicitudes || [];
       setServicios(lista);
 
       // si había un id guardado, busca esa solicitud y selecciónala
@@ -58,7 +63,7 @@ export default function MisServicios() {
     }
   }
 
-  // c) Al hacer click en “ver detalle”, guardar el id en estado + localStorage
+  // Al hacer click en “ver detalle”, guardar el id en estado + localStorage
   function manejarVerDetalle(servicio) {
     setSeleccionada(servicio);
     setSeleccionadaId(servicio.id_solicitud);
