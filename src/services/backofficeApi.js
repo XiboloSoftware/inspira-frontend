@@ -58,3 +58,19 @@ export async function boDELETE(path) {
   });
   return r.json();
 }
+
+// NUEVO: helper para subir archivos (sin Content-Type manual)
+export async function boUpload(path, file) {
+  const formData = new FormData();
+  formData.append("archivo", file);
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      ...baseHeaders(), // solo Authorization; NUNCA pongas Content-Type aquí
+    },
+    body: formData,
+  });
+
+  return res.json();
+}
