@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
 
-import { INSTRUCTIVOS_POR_TIPO } from "./constants";
+// Ya no lo necesitamos si todo viene desde el backend
+// import { INSTRUCTIVOS_POR_TIPO } from "./constants";
 import {
   formatearFecha,
   badgeEstadoSolicitud,
@@ -18,6 +19,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [formData, setFormData] = useState({});
+  const [instructivos, setInstructivos] = useState([]); // NUEVO
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +45,21 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
       }
+
+      // NUEVO: obtener instructivos reales desde backend
+      const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
+      if (rInst.ok) {
+        // Adaptamos a lo que espera <InstructivosPlantillas />: [{ label, url }]
+        const lista = (rInst.instructivos || []).map((i) => ({
+          label: i.label,
+          // Si tu backend devuelve 'archivo_url' como URL completa, esto basta.
+          // Si es una ruta relativa, aquí armas la URL final.
+          url: i.url || i.archivo_url,
+        }));
+        setInstructivos(lista);
+      } else {
+        setInstructivos([]);
+      }
     } catch (e) {
       setError("Error al cargar información.");
     } finally {
@@ -62,7 +79,10 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     e.preventDefault();
     setSavingForm(true);
     try {
-      const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
+      const r = await apiPOST(
+        `/solicitudes/${idSolicitud}/formulario`,
+        formData
+      );
       if (!r.ok) return window.alert("No se pudo guardar.");
       window.alert("Datos guardados.");
     } catch {
@@ -71,9 +91,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       setSavingForm(false);
     }
   }
-
-  const instructivos =
-    (detalle?.tipo?.nombre && INSTRUCTIVOS_POR_TIPO[detalle.tipo.nombre]) || [];
 
   return (
     <div className="space-y-4">
@@ -103,6 +120,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 idSolicitud={idSolicitud}
               />
 
+              {/* Ahora viene de la API */}
               <InstructivosPlantillas instructivos={instructivos} />
 
               <FormularioDatosAcademicos

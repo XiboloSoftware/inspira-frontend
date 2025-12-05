@@ -8,10 +8,12 @@ const items = [
   { label: "Checklists/Docs", href: "/backoffice/checklists" },
   { label: "Clientes", href: "/backoffice/clientes" },
   { label: "Precios/Servicios", href: "/backoffice/precios" },
-  //{ label: "Tipo de Servicios", href: "/backoffice/tiposervicio" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
+  // NUEVO
+  { label: "Instructivos", href: "/backoffice/instructivos" },
   { label: "Settings", href: "/backoffice/settings" },
 ];
+
 
 export default function Sidebar({ path }) {
   return (

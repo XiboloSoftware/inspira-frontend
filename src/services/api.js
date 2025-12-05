@@ -61,3 +61,17 @@ export async function apiUpload(path, formData) {
 
   return data;
 }
+
+
+export async function boUpload(path, file) {
+  const formData = new FormData();
+  formData.append("archivo", file);
+
+  const r = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { ...baseHeaders() }, // solo Authorization; NO Content-Type
+    body: formData,
+  });
+
+  return r.json();
+}
