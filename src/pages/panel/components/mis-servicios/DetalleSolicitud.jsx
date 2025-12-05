@@ -19,7 +19,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [formData, setFormData] = useState({});
-  const [instructivos, setInstructivos] = useState([]); // NUEVO
+  const [instructivos, setInstructivos] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
