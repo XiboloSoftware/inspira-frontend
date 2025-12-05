@@ -86,7 +86,6 @@ export default function BackofficeApp() {
 
           {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
 
-          // NUEVO
           {path === "/backoffice/instructivos" && <InstructivosServicios />}
 
 
