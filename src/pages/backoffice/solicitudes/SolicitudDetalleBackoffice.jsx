@@ -1,6 +1,7 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
 import { useEffect, useMemo, useState } from "react";
 import { boGET, boPATCH } from "../../../services/backofficeApi";
+import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -8,50 +9,6 @@ function formatearFecha(fecha) {
   if (!fecha) return "";
   return new Date(fecha).toLocaleString();
 }
-
-function FormularioDatosAcademicosAdmin({ datos }) {
-  if (!datos || Object.keys(datos).length === 0) {
-    return (
-      <p className="text-sm text-neutral-500">
-        El cliente aún no ha completado el formulario de datos académicos.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      {Object.entries(datos).map(([key, value]) => {
-        let texto;
-
-        if (typeof value === "boolean") {
-          texto = value ? "Sí" : "No";
-        } else if (value === null || value === undefined || value === "") {
-          texto = "—";
-        } else if (typeof value === "object") {
-          // por si hay arrays/objetos (lo puedes refinar luego campo por campo)
-          texto = JSON.stringify(value);
-        } else {
-          texto = String(value);
-        }
-
-        return (
-          <div
-            key={key}
-            className="flex justify-between gap-4 border-b border-neutral-100 pb-1"
-          >
-            <span className="text-[11px] font-medium text-neutral-600">
-              {key.replace(/_/g, " ")}
-            </span>
-            <span className="text-[11px] text-neutral-900 text-right">
-              {texto}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 
 
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
