@@ -1,117 +1,222 @@
 // src/pages/backoffice/solicitudes/FormularioDatosAcademicosAdmin.jsx
 
+// Mapeos de valores codificados -> textos legibles
+const UBICACION_GRUPO_LABELS = {
+  tercio: "Tercio superior",
+  quinto: "Quinto superior",
+  decimo: "Décimo superior",
+  ninguno: "No estuvo en ninguno",
+};
+
+const DURACION_LABELS = {
+  "1": "Máximo 1 año",
+  "2": "Máximo 2 años",
+  "3": "Máximo 3 años",
+  "4": "Programas más largos",
+  indiferente: "Indiferente",
+};
+
+const INGLES_SITUACION_LABELS = {
+  uni: "Certificación de inglés emitida por mi universidad",
+  intl: "Certificación internacional (IELTS, TOEFL, Cambridge, etc.)",
+  inst: "Inglés de instituto (sin certificación oficial)",
+  sabe_sin_cert: "Sé inglés pero aún no lo he certificado",
+  no: "No tengo inglés",
+};
+
+const PRACTICAS_LABELS = {
+  imprescindible: "Es imprescindible que el máster tenga prácticas",
+  deseable: "Me gustaría que tenga prácticas, pero no es imprescindible",
+  no_importante: "No es un criterio importante para mí",
+};
+
+// Config de campos conocidos
 const FIELD_CONFIG = {
-  // Perfil cuantitativo
+  // 3.1 Perfil cuantitativo
   promedio_peru: {
-    label: "Promedio (Perú)",
+    label: "Promedio ponderado (escala 0–20, Perú)",
     section: "Perfil cuantitativo",
   },
   ubicacion_grupo: {
-    label: "Grupo / ranking universidad",
+    label: "¿Estuvo en tercio/quinto/décimo superior?",
     section: "Perfil cuantitativo",
+    format: (v) => UBICACION_GRUPO_LABELS[v] || v,
   },
 
-  // Idiomas
-  idioma_master_es: {
-    label: "Idioma preferido del máster (ES)",
-    section: "Idiomas",
+  // 3.2 Experiencia y vinculación
+  experiencia_anios: {
+    label: "Años de experiencia profesional",
+    section: "Experiencia profesional y vinculación",
   },
-  idioma_master_ingles: {
-    label: "Idioma preferido del máster (EN)",
-    section: "Idiomas",
+  experiencia_vinculada: {
+    label: "¿La experiencia está vinculada a los másteres de interés?",
+    section: "Experiencia profesional y vinculación",
   },
-  idioma_master_bilingue: {
-    label: "¿Máster bilingüe?",
-    section: "Idiomas",
+  experiencia_vinculada_detalle: {
+    label: "Detalle de la experiencia vinculada",
+    section: "Experiencia profesional y vinculación",
+    fullWidth: true,
   },
+  otra_maestria_tiene: {
+    label: "¿Cuenta con otra maestría?",
+    section: "Experiencia profesional y vinculación",
+  },
+  otra_maestria_detalle: {
+    label: "Nombre de la maestría y universidad",
+    section: "Experiencia profesional y vinculación",
+    fullWidth: true,
+  },
+
+  // 3.3 Investigación y formación complementaria
+  investigacion_experiencia: {
+    label: "¿Tiene experiencia en investigación?",
+    section: "Investigación y formación complementaria",
+  },
+  investigacion_detalle: {
+    label: "Detalle de publicaciones o grupos de investigación",
+    section: "Investigación y formación complementaria",
+    fullWidth: true,
+  },
+  formacion_encuentros: {
+    label: "Formación complementaria (encuentros, escuelas de verano, etc.)",
+    section: "Investigación y formación complementaria",
+  },
+  formacion_otra_maestria: {
+    label: "Otra formación complementaria relacionada con el máster",
+    section: "Investigación y formación complementaria",
+  },
+
+  // 3.4 Idiomas y certificaciones
   ingles_situacion: {
     label: "Situación actual de inglés",
-    section: "Idiomas",
+    section: "Idiomas y certificaciones",
+    format: (v) => INGLES_SITUACION_LABELS[v] || v,
   },
   ingles_uni_nivel: {
     label: "Nivel de inglés en la universidad",
-    section: "Idiomas",
+    section: "Idiomas y certificaciones",
+  },
+  ingles_intl_tipo: {
+    label: "Tipo de certificación internacional",
+    section: "Idiomas y certificaciones",
+  },
+  ingles_intl_puntaje: {
+    label: "Puntaje / nivel en certificación internacional",
+    section: "Idiomas y certificaciones",
   },
 
-  // Experiencia y formación
-  experiencia_anios: {
-    label: "Años de experiencia laboral",
-    section: "Experiencia y formación",
+  // 3.5 Idioma del máster
+  idioma_master_es: {
+    label: "Acepta máster solo en español",
+    section: "Idioma del máster que prefiere",
   },
-  experiencia_vinculada: {
-    label: "Experiencia vinculada al área",
-    section: "Experiencia y formación",
+  idioma_master_bilingue: {
+    label: "Acepta máster bilingüe (español + inglés)",
+    section: "Idioma del máster que prefiere",
   },
-  otra_maestria_tiene: {
-    label: "¿Tiene otra maestría?",
-    section: "Experiencia y formación",
-  },
-  formacion_otra_maestria: {
-    label: "Detalle otra maestría / formación",
-    section: "Experiencia y formación",
-  },
-  formacion_encuentros: {
-    label: "Tipo de encuentros / modalidad",
-    section: "Experiencia y formación",
-  },
-  investigacion_experiencia: {
-    label: "Experiencia en investigación",
-    section: "Experiencia y formación",
+  idioma_master_ingles: {
+    label: "Acepta máster totalmente en inglés",
+    section: "Idioma del máster que prefiere",
   },
 
-  // Becas
+  // 3.5 Becas y ayudas económicas
   beca_desea: {
-    label: "¿Desea postular a beca?",
-    section: "Becas",
+    label: "¿Desea postular a una beca o ayuda económica?",
+    section: "Becas y ayudas económicas",
+  },
+  beca_completa: {
+    label: "Interés en becas completas",
+    section: "Becas y ayudas económicas",
+  },
+  beca_parcial: {
+    label: "Interés en becas parciales / descuentos",
+    section: "Becas y ayudas económicas",
+  },
+  beca_ayuda_uni: {
+    label: "Interés en ayudas de la propia universidad",
+    section: "Becas y ayudas económicas",
   },
 
-  // Presupuesto y preferencias
-  presupuesto_desde: {
-    label: "Presupuesto mínimo (€)",
-    section: "Presupuesto y preferencias",
-  },
-  presupuesto_hasta: {
-    label: "Presupuesto máximo (€)",
-    section: "Presupuesto y preferencias",
-  },
+  // 3.6 Preferencias del máster
   duracion_preferida: {
-    label: "Duración preferida del máster",
-    section: "Presupuesto y preferencias",
+    label: "Duración máxima que prefiere para el máster",
+    section: "Preferencias del máster",
+    format: (v) => DURACION_LABELS[v] || v,
   },
   practicas_preferencia: {
-    label: "Preferencia sobre prácticas",
-    section: "Presupuesto y preferencias",
+    label: "Prácticas curriculares",
+    section: "Preferencias del máster",
+    format: (v) => PRACTICAS_LABELS[v] || v,
+  },
+  presupuesto_desde: {
+    label: "Presupuesto mínimo para la matrícula (solo estudios, €)",
+    section: "Preferencias del máster",
+  },
+  presupuesto_hasta: {
+    label: "Presupuesto máximo para la matrícula (solo estudios, €)",
+    section: "Preferencias del máster",
   },
 
-  // Comentario final
+  // 3.7 Comentario especial
   comentario_especial: {
-    label: "Comentario especial",
-    section: "Comentario adicional",
+    label: "Comentario especial para IA / asesores",
+    section: "Comentario especial",
+    fullWidth: true,
   },
 };
 
 const SECTIONS_ORDER = [
   "Perfil cuantitativo",
-  "Idiomas",
-  "Experiencia y formación",
-  "Becas",
-  "Presupuesto y preferencias",
-  "Comentario adicional",
+  "Experiencia profesional y vinculación",
+  "Investigación y formación complementaria",
+  "Idiomas y certificaciones",
+  "Idioma del máster que prefiere",
+  "Becas y ayudas económicas",
+  "Preferencias del máster",
+  "Comentario especial",
   "Otros datos",
 ];
 
-function renderValor(value) {
+// Detecta strings tipo "si"/"no" como booleanos
+function asBooleanLike(value) {
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  if (["si", "sí", "yes", "y", "true", "1"].includes(v)) return true;
+  if (["no", "false", "0"].includes(v)) return false;
+  return null;
+}
+
+function renderValor(value, field) {
+  // boolean real
   if (typeof value === "boolean") {
+    const val = value;
     return (
       <span
         className={
           "inline-flex px-2 py-0.5 rounded-full text-[10px] " +
-          (value
+          (val
             ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
             : "bg-neutral-50 text-neutral-500 border border-neutral-100")
         }
       >
-        {value ? "Sí" : "No"}
+        {val ? "Sí" : "No"}
+      </span>
+    );
+  }
+
+  // boolean "si"/"no"
+  const boolLike = asBooleanLike(value);
+  if (boolLike !== null) {
+    return (
+      <span
+        className={
+          "inline-flex px-2 py-0.5 rounded-full text-[10px] " +
+          (boolLike
+            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+            : "bg-neutral-50 text-neutral-500 border border-neutral-100")
+        }
+      >
+        {boolLike ? "Sí" : "No"}
       </span>
     );
   }
@@ -120,15 +225,22 @@ function renderValor(value) {
     return <span className="text-[11px] text-neutral-400">—</span>;
   }
 
-  if (typeof value === "object") {
+  let val = value;
+
+  // Formateo específico según campo
+  if (field?.format) {
+    val = field.format(value);
+  }
+
+  if (typeof val === "object") {
     return (
       <span className="text-[11px] text-neutral-800">
-        {JSON.stringify(value)}
+        {JSON.stringify(val)}
       </span>
     );
   }
 
-  return <span className="text-[11px] text-neutral-800">{String(value)}</span>;
+  return <span className="text-[11px] text-neutral-800">{String(val)}</span>;
 }
 
 export default function FormularioDatosAcademicosAdmin({ datos }) {
@@ -141,7 +253,6 @@ export default function FormularioDatosAcademicosAdmin({ datos }) {
   }
 
   const knownKeys = new Set(Object.keys(FIELD_CONFIG));
-
   const grouped = {};
 
   // Campos configurados
@@ -173,16 +284,22 @@ export default function FormularioDatosAcademicosAdmin({ datos }) {
           <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wide">
             {section}
           </h4>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
             {grouped[section].map((field) => (
               <div
                 key={field.key}
-                className="flex justify-between gap-3 border-b border-neutral-100 pb-1"
+                className={
+                  "flex justify-between gap-3 border-b border-neutral-100 pb-1 " +
+                  (field.fullWidth ? "sm:col-span-2" : "")
+                }
               >
                 <span className="text-[11px] text-neutral-600">
                   {field.label}
                 </span>
-                <div className="text-right">{renderValor(field.value)}</div>
+                <div className="text-right max-w-md">
+                  {renderValor(field.value, field)}
+                </div>
               </div>
             ))}
           </div>
