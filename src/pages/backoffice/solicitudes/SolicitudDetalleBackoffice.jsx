@@ -9,6 +9,50 @@ function formatearFecha(fecha) {
   return new Date(fecha).toLocaleString();
 }
 
+function FormularioDatosAcademicosAdmin({ datos }) {
+  if (!datos || Object.keys(datos).length === 0) {
+    return (
+      <p className="text-sm text-neutral-500">
+        El cliente aún no ha completado el formulario de datos académicos.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {Object.entries(datos).map(([key, value]) => {
+        let texto;
+
+        if (typeof value === "boolean") {
+          texto = value ? "Sí" : "No";
+        } else if (value === null || value === undefined || value === "") {
+          texto = "—";
+        } else if (typeof value === "object") {
+          // por si hay arrays/objetos (lo puedes refinar luego campo por campo)
+          texto = JSON.stringify(value);
+        } else {
+          texto = String(value);
+        }
+
+        return (
+          <div
+            key={key}
+            className="flex justify-between gap-4 border-b border-neutral-100 pb-1"
+          >
+            <span className="text-[11px] font-medium text-neutral-600">
+              {key.replace(/_/g, " ")}
+            </span>
+            <span className="text-[11px] text-neutral-900 text-right">
+              {texto}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
 
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [detalle, setDetalle] = useState(null);
@@ -77,8 +121,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!r.ok) {
         window.alert(
           r.message ||
-            r.msg ||
-            "No se pudo actualizar el estado del documento."
+          r.msg ||
+          "No se pudo actualizar el estado del documento."
         );
         return;
       }
@@ -100,34 +144,34 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   }
 
   async function descargarDocumento(doc) {
-  try {
-    const token = localStorage.getItem("bo_token");
-    if (!token) return alert("No existe sesión de backoffice");
+    try {
+      const token = localStorage.getItem("bo_token");
+      if (!token) return alert("No existe sesión de backoffice");
 
-    const resp = await fetch(
-      `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+      const resp = await fetch(
+        `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
-    if (!resp.ok) return alert("No se pudo descargar el archivo");
+      if (!resp.ok) return alert("No se pudo descargar el archivo");
 
-    const blob = await resp.blob();
-    const url = window.URL.createObjectURL(blob);
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = doc.nombre_original || "archivo";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (e) {
-    console.error(e);
-    alert("Error al descargar");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.nombre_original || "archivo";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Error al descargar");
+    }
   }
-}
 
 
 
@@ -191,6 +235,30 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             )}
           </p>
         </div>
+
+
+
+
+        {/* NUEVO: Formulario de datos académicos */}
+        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            Formulario de datos académicos
+          </h3>
+          <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+        </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         {/* Checklist y documentos */}
         <div className="space-y-4">
@@ -268,12 +336,12 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                             <div className="flex items-center gap-1">
                               {/* URL de descarga construida aquí */}
                               <button
-  type="button"
-  onClick={() => descargarDocumento(doc)}
-  className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
->
-  Descargar
-</button>
+                                type="button"
+                                onClick={() => descargarDocumento(doc)}
+                                className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
+                              >
+                                Descargar
+                              </button>
 
                               <button
                                 type="button"
