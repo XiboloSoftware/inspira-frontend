@@ -1,5 +1,3 @@
-// src/pages/panel/components/mis-servicios/sections/FormularioDatosAcademicos.jsx
-
 import SeccionPerfilCuantitativo from "./campos/SeccionPerfilCuantitativo";
 import SeccionExperiencia from "./campos/SeccionExperiencia";
 import SeccionInvestigacion from "./campos/SeccionInvestigacion";
@@ -13,44 +11,91 @@ export default function FormularioDatosAcademicos({
   setFormData,
   handleSubmitFormulario,
   savingForm,
+  collapsed,
+  onToggle,
+  hasData,
 }) {
+  const labelBotonToggle = collapsed
+    ? hasData
+      ? "Modificar datos"
+      : "Ingresar datos"
+    : "Ocultar formulario";
+
+  const estadoLabel = hasData ? "Datos guardados" : "Pendiente de completar";
+  const estadoColor = hasData
+    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+    : "bg-amber-50 text-amber-700 border-amber-100";
+
   return (
     <section className="md:col-span-2 border border-neutral-200 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-        3. Formulario de datos académicos
-      </h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+        <h3 className="text-sm font-semibold text-neutral-900">
+          3. Formulario de datos académicos
+        </h3>
 
-      <form className="space-y-6" onSubmit={handleSubmitFormulario}>
-        {/* 0. Campos iniciales */}
-        {/* (mantén aquí la parte de universidad_origen, grado_académico, etc.) */}
-
-        <hr className="border-neutral-200" />
-
-        <SeccionPerfilCuantitativo formData={formData} setFormData={setFormData} />
-
-        <SeccionExperiencia formData={formData} setFormData={setFormData} />
-
-        <SeccionInvestigacion formData={formData} setFormData={setFormData} />
-
-        <SeccionIdiomas formData={formData} setFormData={setFormData} />
-
-        <SeccionBecas formData={formData} setFormData={setFormData} />
-
-        <SeccionPreferenciasMaster formData={formData} setFormData={setFormData} />
-
-        <SeccionComentarioEspecial formData={formData} setFormData={setFormData} />
-
-        {/* BOTÓN GUARDAR */}
-        <div className="flex justify-end pt-1">
-          <button
-            type="submit"
-            disabled={savingForm}
-            className="text-xs px-3 py-1.5 rounded-md bg-[#023A4B] text-white hover:bg-[#054256] disabled:opacity-60"
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[11px] px-2 py-0.5 rounded-full border ${estadoColor}`}
           >
-            {savingForm ? "Guardando..." : "Guardar formulario"}
+            {estadoLabel}
+          </span>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="text-[11px] px-3 py-1.5 rounded-md border border-[#023A4B] text-[#023A4B] hover:bg-[#023A4B] hover:text-white transition"
+          >
+            {labelBotonToggle}
           </button>
         </div>
-      </form>
+      </div>
+
+      {collapsed ? (
+        <p className="text-xs text-neutral-500 mt-1">
+          {hasData
+            ? "Haz clic en “Modificar datos” para revisar o actualizar la información que ya enviaste."
+            : "Haz clic en “Ingresar datos” para completar este formulario. Esto ayudará a personalizar tu informe."}
+        </p>
+      ) : (
+        <form className="space-y-6 mt-3" onSubmit={handleSubmitFormulario}>
+          {/* Secciones del formulario */}
+          <SeccionPerfilCuantitativo
+            formData={formData}
+            setFormData={setFormData}
+          />
+
+          <SeccionExperiencia formData={formData} setFormData={setFormData} />
+
+          <SeccionInvestigacion
+            formData={formData}
+            setFormData={setFormData}
+          />
+
+          <SeccionIdiomas formData={formData} setFormData={setFormData} />
+
+          <SeccionBecas formData={formData} setFormData={setFormData} />
+
+          <SeccionPreferenciasMaster
+            formData={formData}
+            setFormData={setFormData}
+          />
+
+          <SeccionComentarioEspecial
+            formData={formData}
+            setFormData={setFormData}
+          />
+
+          {/* Botón guardar */}
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={savingForm}
+              className="text-xs px-3 py-1.5 rounded-md bg-[#023A4B] text-white hover:bg-[#054256] disabled:opacity-60"
+            >
+              {savingForm ? "Guardando..." : "Guardar formulario"}
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

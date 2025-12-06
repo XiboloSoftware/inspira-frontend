@@ -1,9 +1,6 @@
-// src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
 
-// Ya no lo necesitamos si todo viene desde el backend
-// import { INSTRUCTIVOS_POR_TIPO } from "./constants";
 import {
   formatearFecha,
   badgeEstadoSolicitud,
@@ -19,15 +16,18 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [formData, setFormData] = useState({});
-  const [instructivos, setInstructivos] = useState([]); 
+  const [instructivos, setInstructivos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
+
+  const [formCollapsed, setFormCollapsed] = useState(false);
 
   const idSolicitud = solicitudBase.id_solicitud;
 
   useEffect(() => {
     cargarTodo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idSolicitud]);
 
   async function cargarTodo() {
@@ -44,16 +44,18 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const rForm = await apiGET(`/solicitudes/${idSolicitud}/formulario`);
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
+        const tiene = Object.keys(rForm.datos || {}).length > 0;
+        // Si ya tiene datos, lo mostramos colapsado por defecto
+        setFormCollapsed(tiene);
+      } else {
+        setFormData({});
+        setFormCollapsed(false); // animar a completarlo
       }
 
-      // NUEVO: obtener instructivos reales desde backend
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
       if (rInst.ok) {
-        // Adaptamos a lo que espera <InstructivosPlantillas />: [{ label, url }]
         const lista = (rInst.instructivos || []).map((i) => ({
           label: i.label,
-          // Si tu backend devuelve 'archivo_url' como URL completa, esto basta.
-          // Si es una ruta relativa, aquí armas la URL final.
           url: i.url || i.archivo_url,
         }));
         setInstructivos(lista);
@@ -83,14 +85,21 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         `/solicitudes/${idSolicitud}/formulario`,
         formData
       );
-      if (!r.ok) return window.alert("No se pudo guardar.");
+      if (!r.ok) {
+        window.alert("No se pudo guardar.");
+        return;
+      }
       window.alert("Datos guardados.");
+      // Después de guardar, lo colapsamos
+      setFormCollapsed(true);
     } catch {
       window.alert("Error al guardar.");
     } finally {
       setSavingForm(false);
     }
   }
+
+  const hasFormData = Object.keys(formData || {}).length > 0;
 
   return (
     <div className="space-y-4">
@@ -113,14 +122,13 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <ChecklistDocumentos
                 checklist={checklist}
                 cargarTodo={cargarTodo}
                 idSolicitud={idSolicitud}
               />
 
-              {/* Ahora viene de la API */}
               <InstructivosPlantillas instructivos={instructivos} />
 
               <FormularioDatosAcademicos
@@ -128,6 +136,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 setFormData={setFormData}
                 handleSubmitFormulario={handleSubmitFormulario}
                 savingForm={savingForm}
+                collapsed={formCollapsed}
+                onToggle={() => setFormCollapsed((v) => !v)}
+                hasData={hasFormData}
               />
             </div>
           </>

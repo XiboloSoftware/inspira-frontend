@@ -1,4 +1,3 @@
-// src/pages/panel/components/PanelSidebar.jsx
 import SidebarItem from "./SidebarItem";
 import { useAuth } from "../../../context/AuthContext";
 import { navigate } from "../../../services/navigate";
@@ -6,12 +5,21 @@ import { navigate } from "../../../services/navigate";
 export default function PanelSidebar({ user, activeTab, onChangeTab }) {
   const { logout } = useAuth();
 
-const inicial = user?.nombre?.[0] || user?.email_contacto?.[0] || "U";
-const nombre = user?.nombre || "Mi panel Inspira";
-const correo = user?.email_contacto || "";
+  const inicial = user?.nombre?.[0] || user?.email_contacto?.[0] || "U";
+  const nombre = user?.nombre || "Mi panel Inspira";
+  const correo = user?.email_contacto || "";
 
   return (
-    <aside className="w-72 bg-gradient-to-b from-[#023A4B] to-[#046C8C] text-white flex flex-col">
+    <aside
+      className="
+        bg-gradient-to-b from-[#023A4B] to-[#046C8C]
+        text-white
+        flex flex-col
+        min-h-screen
+        w-full
+        md:w-72
+      "
+    >
       {/* Header usuario */}
       <div className="px-6 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center gap-3">
@@ -25,8 +33,8 @@ const correo = user?.email_contacto || "";
         </div>
       </div>
 
-      {/* Menú principal */}
-      <div className="flex-1 px-4 py-4">
+      {/* Menú principal (scroll propio) */}
+      <div className="flex-1 px-4 py-4 overflow-y-auto min-h-0">
         <SidebarItem
           label="Mis citas"
           active={activeTab === "citas"}
@@ -44,7 +52,7 @@ const correo = user?.email_contacto || "";
         />
       </div>
 
-      {/* Acciones inferiores */}
+      {/* Acciones inferiores fijas */}
       <div className="px-6 py-4 border-t border-white/10 space-y-2">
         <button
           type="button"
