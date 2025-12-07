@@ -3,21 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import { boGET, boPATCH, boUpload } from "../../../services/backofficeApi";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const [subiendoInforme, setSubiendoInforme] = useState(false);
 
 function formatearFecha(fecha) {
   if (!fecha) return "";
   return new Date(fecha).toLocaleString();
 }
 
-
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [subiendoInforme, setSubiendoInforme] = useState(false);
+
 
   useEffect(() => {
     cargar();
