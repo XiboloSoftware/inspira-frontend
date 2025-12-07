@@ -1,8 +1,8 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
 import { useEffect, useMemo, useState } from "react";
-import { boGET, boPATCH } from "../../../services/backofficeApi";
-import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import { boGET, boPATCH, boUpload } from "../../../services/backofficeApi";
+import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const [subiendoInforme, setSubiendoInforme] = useState(false);
