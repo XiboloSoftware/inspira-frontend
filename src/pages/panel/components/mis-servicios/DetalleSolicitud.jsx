@@ -11,6 +11,8 @@ import ChecklistDocumentos from "./sections/ChecklistDocumentos";
 import InstructivosPlantillas from "./sections/InstructivosPlantillas";
 import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
 import FormularioDatosAcademicos from "./sections/FormularioDatosAcademicos";
+import InformeBusqueda from "./sections/InformeBusqueda";
+
 
 export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
@@ -140,6 +142,20 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 onToggle={() => setFormCollapsed((v) => !v)}
                 hasData={hasFormData}
               />
+
+ {/* Bloque 4: Informe */}
+              <InformeBusqueda
+                idSolicitud={idSolicitud}
+                informe={{
+                  informe_nombre_original: detalle.informe_nombre_original,
+                  informe_fecha_subida: detalle.informe_fecha_subida,
+                }}
+              />
+
+
+
+
+
             </div>
           </>
         )}
