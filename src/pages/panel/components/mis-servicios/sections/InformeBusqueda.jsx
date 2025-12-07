@@ -5,12 +5,13 @@ export default function InformeBusqueda({ idSolicitud, informe }) {
   const disponible = !!informe?.informe_fecha_subida;
 
   function verInforme() {
-    const url = `${API_URL}/api/documentos/panel/solicitudes/${idSolicitud}/informe?view=1`;
+    // RUTA CORRECTA: sin "/documentos" en el path
+    const url = `${API_URL}/api/panel/solicitudes/${idSolicitud}/informe?view=1`;
     window.open(url, "_blank");
   }
 
   function descargarInforme() {
-    const url = `${API_URL}/api/documentos/panel/solicitudes/${idSolicitud}/informe`;
+    const url = `${API_URL}/api/panel/solicitudes/${idSolicitud}/informe`;
     window.open(url, "_blank");
   }
 
