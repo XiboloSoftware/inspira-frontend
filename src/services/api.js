@@ -6,26 +6,26 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+
+async function parseJsonSafe(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+
+// GET genérico para panel cliente
 export async function apiGET(url) {
   const r = await fetch(API_URL + url, {
     headers: { ...authHeaders() },
+    cache: "no-store", // <- desactiva caché, evita 304
   });
 
-  // Si el servidor responde 304 (Not Modified) o 204 (No Content),
-  // no hay body que parsear; devolvemos un objeto neutro.
-  if (r.status === 304 || r.status === 204) {
-    return { ok: true, status: r.status };
-  }
+  const data = await parseJsonSafe(r);
 
-  let data = {};
-  try {
-    data = await r.json();
-  } catch (e) {
-    // Por si alguna respuesta viene sin body aunque no sea 304/204
-    data = {};
-  }
-
-  // Si la API no incluye "ok", lo añadimos a partir de r.ok
+  // si la API no envía `ok`, lo inferimos de response.ok
   if (typeof data.ok === "undefined") {
     data.ok = r.ok;
   }
@@ -41,9 +41,13 @@ export async function apiPOST(url, body) {
       ...authHeaders(),
     },
     body: JSON.stringify(body),
+    cache: "no-store",
   });
-  return r.json();
+
+  return parseJsonSafe(r);
 }
+
+
 export async function apiPATCH(url, body) {
   const r = await fetch(API_URL + url, {
     method: "PATCH",
@@ -52,18 +56,21 @@ export async function apiPATCH(url, body) {
       ...authHeaders(),
     },
     body: JSON.stringify(body),
+    cache: "no-store",
   });
-  return r.json();
+
+  return parseJsonSafe(r);
 }
+
 
 export async function apiUpload(path, formData) {
   const res = await fetch(API_URL + path, {
     method: "POST",
     headers: {
-      // IMPORTANTE: enviamos el JWT igual que en apiGET/apiPATCH
-      ...authHeaders(),
+      ...authHeaders(), // JWT del cliente
     },
-    body: formData, // no poner Content-Type, el navegador lo arma solo
+    body: formData,
+    cache: "no-store",
   });
 
   let data = {};
@@ -79,7 +86,6 @@ export async function apiUpload(path, formData) {
 
   return data;
 }
-
 
 export async function boUpload(path, file) {
   const formData = new FormData();
