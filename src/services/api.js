@@ -10,7 +10,27 @@ export async function apiGET(url) {
   const r = await fetch(API_URL + url, {
     headers: { ...authHeaders() },
   });
-  return r.json();
+
+  // Si el servidor responde 304 (Not Modified) o 204 (No Content),
+  // no hay body que parsear; devolvemos un objeto neutro.
+  if (r.status === 304 || r.status === 204) {
+    return { ok: true, status: r.status };
+  }
+
+  let data = {};
+  try {
+    data = await r.json();
+  } catch (e) {
+    // Por si alguna respuesta viene sin body aunque no sea 304/204
+    data = {};
+  }
+
+  // Si la API no incluye "ok", lo añadimos a partir de r.ok
+  if (typeof data.ok === "undefined") {
+    data.ok = r.ok;
+  }
+
+  return data;
 }
 
 export async function apiPOST(url, body) {
@@ -24,7 +44,6 @@ export async function apiPOST(url, body) {
   });
   return r.json();
 }
-
 export async function apiPATCH(url, body) {
   const r = await fetch(API_URL + url, {
     method: "PATCH",
@@ -36,7 +55,6 @@ export async function apiPATCH(url, body) {
   });
   return r.json();
 }
-
 
 export async function apiUpload(path, formData) {
   const res = await fetch(API_URL + path, {
