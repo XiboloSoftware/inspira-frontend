@@ -1,3 +1,4 @@
+//inspira-frontend\src\pages\panel\components\mis-servicios\DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
 
@@ -25,6 +26,10 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [error, setError] = useState("");
 
   const [formCollapsed, setFormCollapsed] = useState(false);
+
+    // NUEVO: estado para Bloque 5
+  const [elecciones, setElecciones] = useState([]);
+  const [savingElecciones, setSavingElecciones] = useState(false);
 
   const idSolicitud = solicitudBase.id_solicitud;
 
