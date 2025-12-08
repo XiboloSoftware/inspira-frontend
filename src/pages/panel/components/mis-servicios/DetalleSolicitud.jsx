@@ -96,14 +96,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         setElecciones(base);
       }
 
-
-
-
-
-
-
-
-
     } catch (e) {
       setError("Error al cargar información.");
     } finally {
@@ -141,9 +133,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     }
   }
 
-
-
-
   async function handleGuardarElecciones() {
   setSavingElecciones(true);
   try {
@@ -165,8 +154,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   }
 }
 
-
-  const hasFormData = Object.keys(formData || {}).length > 0;
+ const hasFormData = Object.keys(formData || {}).length > 0;
 
   return (
     <div className="space-y-4">
@@ -224,8 +212,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 onGuardar={handleGuardarElecciones}
                 saving={savingElecciones}
               />
-
-
 
             </div>
           </>
