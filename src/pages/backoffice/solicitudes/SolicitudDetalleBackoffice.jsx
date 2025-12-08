@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { boGET, boPATCH, boUpload } from "../../../services/backofficeApi";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
+import EleccionMastersAdmin from "./EleccionMastersAdmin";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -275,12 +277,12 @@ async function manejarInformeAdmin(modo) {
 
 
         {/* NUEVO: Formulario de datos académicos */}
-        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
+         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">
             Formulario de datos académicos
           </h3>
           <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-        </section>
+         </section>
 
 
 
@@ -346,7 +348,17 @@ async function manejarInformeAdmin(modo) {
           )}
         </section>
 
-
+        {/* BLOQUE 5: Elección de másteres */}
+        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            5. Elección de másteres (cliente)
+          </h3>
+          <p className="text-xs text-neutral-500 mb-2">
+            Másteres que el cliente ha seleccionado y ordenado por prioridad
+            después de revisar el informe.
+          </p>
+          <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
+        </section>
 
 
 

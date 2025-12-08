@@ -12,6 +12,7 @@ import InstructivosPlantillas from "./sections/InstructivosPlantillas";
 import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
 import FormularioDatosAcademicos from "./sections/FormularioDatosAcademicos";
 import InformeBusqueda from "./sections/InformeBusqueda";
+import EleccionMastersCliente from "./sections/EleccionMastersCliente";
 
 
 export default function DetalleSolicitud({ solicitudBase, onVolver }) {
@@ -64,6 +65,40 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       } else {
         setInstructivos([]);
       }
+
+// NUEVO: elecciones de másteres (bloque 5)
+      const rElec = await apiGET(
+        `/solicitudes/${idSolicitud}/eleccion-masters`
+      );
+      if (rElec.ok && Array.isArray(rElec.elecciones)) {
+        if (rElec.elecciones.length > 0) {
+          setElecciones(rElec.elecciones);
+        } else {
+          // si está vacío, creamos 5 filas base
+          const base = Array.from({ length: 5 }, (_, idx) => ({
+            prioridad: idx + 1,
+            programa: "",
+            comentario: "",
+          }));
+          setElecciones(base);
+        }
+      } else {
+        const base = Array.from({ length: 5 }, (_, idx) => ({
+          prioridad: idx + 1,
+          programa: "",
+          comentario: "",
+        }));
+        setElecciones(base);
+      }
+
+
+
+
+
+
+
+
+
     } catch (e) {
       setError("Error al cargar información.");
     } finally {
@@ -100,6 +135,31 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       setSavingForm(false);
     }
   }
+
+
+
+
+  async function handleGuardarElecciones() {
+  setSavingElecciones(true);
+  try {
+    const r = await apiPOST(
+      `/solicitudes/${idSolicitud}/eleccion-masters`,
+      {
+        elecciones,
+      }
+    );
+    if (!r.ok) {
+      window.alert("No se pudo guardar la elección de másteres.");
+      return;
+    }
+    window.alert("Elección de másteres guardada.");
+  } catch (e) {
+    window.alert("Error al guardar elección de másteres.");
+  } finally {
+    setSavingElecciones(false);
+  }
+}
+
 
   const hasFormData = Object.keys(formData || {}).length > 0;
 
@@ -152,7 +212,13 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 }}
               />
 
-
+{/* BLOQUE 5: Elección de másteres */}
+              <EleccionMastersCliente
+                elecciones={elecciones}
+                setElecciones={setElecciones}
+                onGuardar={handleGuardarElecciones}
+                saving={savingElecciones}
+              />
 
 
 
