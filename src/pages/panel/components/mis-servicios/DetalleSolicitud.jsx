@@ -16,6 +16,7 @@ import InformeBusqueda from "./sections/InformeBusqueda";
 import EleccionMastersCliente from "./sections/EleccionMastersCliente";
 import ProgramacionPostulacionesCliente from "./sections/ProgramacionPostulacionesCliente";
 import PortalesYJustificantesCliente from "./sections/PortalesYJustificantesCliente";
+import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente";
 
 
 export default function DetalleSolicitud({ solicitudBase, onVolver }) {
@@ -222,6 +223,12 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
               {/* BLOQUE 7: Portales, claves y justificantes */}
               <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+
+
+
+              {/* BLOQUE 8: Cierre */}
+
+              <CierreServicioMasterCliente idSolicitud={idSolicitud} />
 
             </div>
           </>
