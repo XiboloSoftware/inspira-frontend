@@ -99,3 +99,9 @@ export async function boUpload(path, file) {
 
   return r.json();
 }
+
+
+
+export async function getProgramacionPostulaciones(idSolicitud) {
+  return apiGET(`/solicitudes/${idSolicitud}/programacion-postulaciones`);
+}
