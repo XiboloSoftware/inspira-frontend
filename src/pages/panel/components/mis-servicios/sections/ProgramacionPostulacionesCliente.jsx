@@ -1,6 +1,20 @@
+// src/pages/panel/components/mis-servicios/sections/ProgramacionPostulacionesCliente.jsx
 // Bloque 6 – Programación de postulaciones (vista cliente)
 
-import { formatearFechaCorta } from "../utils"; // o reutiliza formateo existente
+// Elimina esta línea porque da error:
+// import { formatearFechaCorta } from "../utils";
+
+// Helper local para formatear fechas en formato corto
+function formatearFechaCorta(fecha) {
+  if (!fecha) return "";
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
 
 export default function ProgramacionPostulacionesCliente({ programacion }) {
   const lista = Array.isArray(programacion) ? programacion : [];
@@ -47,7 +61,9 @@ export default function ProgramacionPostulacionesCliente({ programacion }) {
                       {t.tarea || "(Sin nombre)"}
                     </td>
                     <td className="text-[11px] py-1 pr-2">
-                      {t.fecha_limite ? formatearFechaCorta(t.fecha_limite) : "-"}
+                      {t.fecha_limite
+                        ? formatearFechaCorta(t.fecha_limite)
+                        : "-"}
                     </td>
                     <td className="text-[11px] py-1">
                       {t.estado_tarea || "PENDIENTE"}
