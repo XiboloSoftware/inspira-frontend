@@ -4,6 +4,7 @@ import { boGET, boPATCH, boUpload } from "../../../services/backofficeApi";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
+import PortalesYJustificantesAdmin from "./PortalesYJustificantesAdmin";
 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -353,7 +354,8 @@ async function manejarInformeAdmin(modo) {
 <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
 
 
-
+{/* BLOQUE 7: Portales, claves y justificantes */}
+<PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
 
 
 
