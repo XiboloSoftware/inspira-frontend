@@ -28,13 +28,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   const [formCollapsed, setFormCollapsed] = useState(false);
 
-  // NUEVO: estado para Bloque 5
+    // NUEVO: estado para Bloque 5
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
-
-
-  const [programacion, setProgramacion] = useState([]);
-
 
   const idSolicitud = solicitudBase.id_solicitud;
 
@@ -76,7 +72,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         setInstructivos([]);
       }
 
-      // NUEVO: elecciones de másteres (bloque 5)
+// NUEVO: elecciones de másteres (bloque 5)
       const rElec = await apiGET(
         `/solicitudes/${idSolicitud}/eleccion-masters`
       );
@@ -106,34 +102,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     } finally {
       setLoading(false);
     }
-
-
-    // Bloque 6: Programación de postulaciones
-    try {
-      const rProg = await apiGET(
-        `/solicitudes/${idSolicitud}/programacion-postulaciones`
-      );
-      if (rProg.ok && Array.isArray(rProg.tareas)) {
-        setProgramacion(rProg.tareas);
-      } else {
-        setProgramacion([]);
-      }
-    } catch {
-      setProgramacion([]);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
   }
 
   const progresoChecklist = useMemo(() => {
@@ -167,27 +135,27 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   }
 
   async function handleGuardarElecciones() {
-    setSavingElecciones(true);
-    try {
-      const r = await apiPOST(
-        `/solicitudes/${idSolicitud}/eleccion-masters`,
-        {
-          elecciones,
-        }
-      );
-      if (!r.ok) {
-        window.alert("No se pudo guardar la elección de másteres.");
-        return;
+  setSavingElecciones(true);
+  try {
+    const r = await apiPOST(
+      `/solicitudes/${idSolicitud}/eleccion-masters`,
+      {
+        elecciones,
       }
-      window.alert("Elección de másteres guardada.");
-    } catch (e) {
-      window.alert("Error al guardar elección de másteres.");
-    } finally {
-      setSavingElecciones(false);
+    );
+    if (!r.ok) {
+      window.alert("No se pudo guardar la elección de másteres.");
+      return;
     }
+    window.alert("Elección de másteres guardada.");
+  } catch (e) {
+    window.alert("Error al guardar elección de másteres.");
+  } finally {
+    setSavingElecciones(false);
   }
+}
 
-  const hasFormData = Object.keys(formData || {}).length > 0;
+ const hasFormData = Object.keys(formData || {}).length > 0;
 
   return (
     <div className="space-y-4">
@@ -229,7 +197,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 hasData={hasFormData}
               />
 
-              {/* Bloque 4: Informe */}
+ {/* Bloque 4: Informe */}
               <InformeBusqueda
                 idSolicitud={idSolicitud}
                 informe={{
@@ -238,7 +206,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 }}
               />
 
-              {/* BLOQUE 5: Elección de másteres */}
+{/* BLOQUE 5: Elección de másteres */}
               <EleccionMastersCliente
                 elecciones={elecciones}
                 setElecciones={setElecciones}
@@ -246,10 +214,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 saving={savingElecciones}
               />
 
-
-
               {/* BLOQUE 6: Programación de postulaciones */}
-                <ProgramacionPostulacionesCliente programacion={programacion} />
+<ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
 
             </div>
           </>

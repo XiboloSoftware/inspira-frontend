@@ -74,16 +74,3 @@ export async function boUpload(path, file) {
 
   return res.json();
 }
-
-// obtener programación
-export function boGetProgramacionPostulaciones(idSolicitud) {
-  return boGET(`/backoffice/solicitudes/${idSolicitud}/programacion-postulaciones`);
-}
-
-// guardar programación de un máster concreto
-export function boSaveProgramacionPostulaciones(idSolicitud, idMaster, tareas) {
-  return boPUT(
-    `/backoffice/solicitudes/${idSolicitud}/programacion-postulaciones/${idMaster}`,
-    { tareas }
-  );
-}

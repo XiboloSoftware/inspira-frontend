@@ -20,9 +20,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [error, setError] = useState("");
   const [subiendoInforme, setSubiendoInforme] = useState(false);
 
-  // ⬇⬇⬇ estado nuevo para Bloque 6
-  const [programacion, setProgramacion] = useState([]);
-
 
   useEffect(() => {
     cargar();
@@ -32,32 +29,17 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   async function cargar() {
     setLoading(true);
     setError("");
-
     try {
-      // Traemos todo lo de siempre + la programación de postulaciones en paralelo
-      const [rChecklist, rProgramacion] = await Promise.all([
-        boGET(`/api/admin/solicitudes/${idSolicitud}/checklist`),
-        boGET(
-          `/api/admin/solicitudes/${idSolicitud}/programacion-postulaciones`
-        ),
-      ]);
-
-      // Checklist / detalle
-      if (!rChecklist.ok) {
+      // GET /api/admin/solicitudes/:idSolicitud/checklist
+      const r = await boGET(`/api/admin/solicitudes/${idSolicitud}/checklist`);
+      if (!r.ok) {
         setError(
-          rChecklist.message || rChecklist.msg || "No se pudo cargar la solicitud."
+          r.message || r.msg || "No se pudo cargar la solicitud."
         );
         return;
       }
-      setDetalle(rChecklist.solicitud);
-      setChecklist(rChecklist.checklist || []);
-
-      // Programación de postulaciones (Bloque 6)
-      if (rProgramacion.ok && Array.isArray(rProgramacion.tareas)) {
-        setProgramacion(rProgramacion.tareas);
-      } else {
-        setProgramacion([]);
-      }
+      setDetalle(r.solicitud);
+      setChecklist(r.checklist || []);
     } catch (e) {
       console.error(e);
       setError("Error al cargar la información de la solicitud.");
@@ -65,6 +47,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       setLoading(false);
     }
   }
+
   const checklistPorEtapa = useMemo(() => {
     const grupos = {};
     (checklist || []).forEach((it) => {
@@ -177,79 +160,67 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     );
   }
 
-  async function handleUploadInforme(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSubiendoInforme(true);
+async function handleUploadInforme(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setSubiendoInforme(true);
 
-    try {
-      const r = await boUpload(
-        `/api/admin/solicitudes/${detalle.id_solicitud}/informe`,
-        file
-      );
-      if (!r.ok) {
-        alert(r.msg || "No se pudo subir el informe");
-        return;
-      }
-      // recargar datos para ver metadatos actualizados
-      await cargar();
-    } finally {
-      setSubiendoInforme(false);
-      // limpiamos el input si queremos (si usas ref)
+  try {
+    const r = await boUpload(
+      `/api/admin/solicitudes/${detalle.id_solicitud}/informe`,
+      file
+    );
+    if (!r.ok) {
+      alert(r.msg || "No se pudo subir el informe");
+      return;
     }
+    // recargar datos para ver metadatos actualizados
+    await cargar();
+  } finally {
+    setSubiendoInforme(false);
+    // limpiamos el input si queremos (si usas ref)
   }
+}
 
 
 
-  async function manejarInformeAdmin(modo) {
-    if (!detalle) return;
-    try {
-      const token = localStorage.getItem("bo_token");
-      if (!token) return alert("No existe sesión de backoffice");
+async function manejarInformeAdmin(modo) {
+  if (!detalle) return;
+  try {
+    const token = localStorage.getItem("bo_token");
+    if (!token) return alert("No existe sesión de backoffice");
 
-      const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""
-        }`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!resp.ok) return alert("No se pudo obtener el informe");
-
-      const blob = await resp.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      if (modo === "ver") {
-        window.open(url, "_blank");
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = detalle.informe_nombre_original || "informe";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+    const resp = await fetch(
+      `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${
+        modo === "ver" ? "?view=1" : ""
+      }`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
       }
+    );
 
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Error al abrir/descargar el informe");
+    if (!resp.ok) return alert("No se pudo obtener el informe");
+
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    if (modo === "ver") {
+      window.open(url, "_blank");
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = detalle.informe_nombre_original || "informe";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
+
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+    alert("Error al abrir/descargar el informe");
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 
 
@@ -294,17 +265,17 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
 
         {/* NUEVO: Formulario de datos académicos */}
-        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
+         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">
             Formulario de datos académicos
           </h3>
           <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-        </section>
+         </section>
 
 
 
 
-        {/* Informe de búsqueda de másteres */}
+                  {/* Informe de búsqueda de másteres */}
         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
             <h3 className="text-sm font-semibold text-neutral-900">
@@ -378,48 +349,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         </section>
 
 
-        {/* BLOQUE 6: Programación de postulaciones */}
-        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            6. Programación de postulaciones
-          </h3>
-          <p className="text-xs text-neutral-500 mb-2">
-            Tareas y fechas clave por máster confirmado.
-          </p>
-
-          {programacion.length === 0 ? (
-            <p className="text-xs text-neutral-400">
-              Aún no hay tareas creadas para esta solicitud.
-            </p>
-          ) : (
-            <table className="w-full border-collapse text-[11px]">
-              <thead>
-                <tr className="text-neutral-600 border-b">
-                  <th className="text-left py-1 pr-2">Máster (id_master)</th>
-                  <th className="text-left py-1 pr-2">Tarea</th>
-                  <th className="text-left py-1 pr-2">Fecha límite</th>
-                  <th className="text-left py-1 pr-2">Estado</th>
-                  <th className="text-left py-1 pr-2">Responsable</th>
-                </tr>
-              </thead>
-              <tbody>
-                {programacion.map((t) => (
-                  <tr key={t.id_programacion}>
-                    <td className="py-1 pr-2">{t.id_master}</td>
-                    <td className="py-1 pr-2">{t.tarea}</td>
-                    <td className="py-1 pr-2">
-                      {t.fecha_limite
-                        ? new Date(t.fecha_limite).toLocaleDateString()
-                        : "-"}
-                    </td>
-                    <td className="py-1 pr-2">{t.estado_tarea}</td>
-                    <td className="py-1 pr-2">{t.responsable}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+{/* BLOQUE 6: Programación de postulaciones */}
+<ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
 
 
 
