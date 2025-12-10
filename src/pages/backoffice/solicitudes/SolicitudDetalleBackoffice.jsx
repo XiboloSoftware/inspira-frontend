@@ -7,7 +7,6 @@ import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
 import PortalesYJustificantesAdmin from "./PortalesYJustificantesAdmin";
 import CierreServicioMasterAdmin from "./CierreServicioMasterAdmin";
 
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function formatearFecha(fecha) {
@@ -22,16 +21,21 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [error, setError] = useState("");
   const [subiendoInforme, setSubiendoInforme] = useState(false);
 
+  // NUEVO: estado para gestión de asesores
+  const [asesoresDisponibles, setAsesoresDisponibles] = useState([]); // listado de asesores activos
+  const [asesoresSeleccionados, setAsesoresSeleccionados] = useState([]); // ids seleccionados
+  const [guardandoAsesores, setGuardandoAsesores] = useState(false);
 
-  useEffect(() => {
-    cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idSolicitud]);
+  // =========================================
+  // CARGA DE DATOS
+  // =========================================
 
+  // carga solicitud + checklist
   async function cargar() {
     setLoading(true);
     setError("");
     try {
+      // OJO: esta URL ya la usas y la mantengo igual
       // GET /api/admin/solicitudes/:idSolicitud/checklist
       const r = await boGET(`/api/admin/solicitudes/${idSolicitud}/checklist`);
       if (!r.ok) {
@@ -42,6 +46,17 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       }
       setDetalle(r.solicitud);
       setChecklist(r.checklist || []);
+
+      // inicializar asesores seleccionados con lo que venga del backend
+      if (r.solicitud.asesores) {
+        setAsesoresSeleccionados(
+          r.solicitud.asesores.map((a) =>
+            String(a.usuario?.id_usuario ?? a.id_usuario)
+          )
+        );
+      } else {
+        setAsesoresSeleccionados([]);
+      }
     } catch (e) {
       console.error(e);
       setError("Error al cargar la información de la solicitud.");
@@ -49,6 +64,27 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       setLoading(false);
     }
   }
+
+  // NUEVO: carga de asesores disponibles
+  async function cargarAsesoresDisponibles() {
+    try {
+      // Si tu backend expone /backoffice/usuarios-internos, cambia esta línea a:
+      // const r = await boGET("/backoffice/usuarios-internos?rol=asesor");
+      const r = await boGET("/api/admin/usuarios-internos?rol=asesor");
+      if (r.ok) {
+        setAsesoresDisponibles(r.usuarios || []);
+      }
+    } catch (e) {
+      console.error("Error al cargar asesores disponibles", e);
+    }
+  }
+
+  useEffect(() => {
+    // carga solicitud + asesores en paralelo
+    cargar();
+    cargarAsesoresDisponibles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idSolicitud]);
 
   const checklistPorEtapa = useMemo(() => {
     const grupos = {};
@@ -59,6 +95,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     });
     return grupos;
   }, [checklist]);
+
+  // =========================================
+  // GESTIÓN DE REVISIONES DE DOCUMENTOS
+  // =========================================
 
   async function cambiarRevision(doc, nuevoEstado) {
     if (!doc) return;
@@ -92,7 +132,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
       const actualizado = r.documento;
 
-      // Actualizar en memoria: recuerda que ahora es `documento` (singular)
       setChecklist((prev) =>
         prev.map((it) =>
           it.documento && it.documento.id_documento === actualizado.id_documento
@@ -136,31 +175,9 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     }
   }
 
-
-
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <p className="text-sm text-neutral-600">Cargando solicitud…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <button
-          type="button"
-          onClick={onVolver}
-          className="text-xs text-primary hover:underline mb-3"
-        >
-          ← Volver a solicitudes
-        </button>
-        <p className="text-sm text-red-600">{error}</p>
-      </div>
-    );
-  }
+  // =========================================
+  // GESTIÓN DE INFORME
+  // =========================================
 
   async function handleUploadInforme(e) {
     const file = e.target.files?.[0];
@@ -176,15 +193,11 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         alert(r.msg || "No se pudo subir el informe");
         return;
       }
-      // recargar datos para ver metadatos actualizados
       await cargar();
     } finally {
       setSubiendoInforme(false);
-      // limpiamos el input si queremos (si usas ref)
     }
   }
-
-
 
   async function manejarInformeAdmin(modo) {
     if (!detalle) return;
@@ -193,7 +206,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!token) return alert("No existe sesión de backoffice");
 
       const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""
+        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${
+          modo === "ver" ? "?view=1" : ""
         }`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -223,7 +237,79 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     }
   }
 
+  // =========================================
+  // GESTIÓN DE ASESORES (UI + PATCH)
+  // =========================================
 
+  function handleChangeAsesores(e) {
+    const options = Array.from(e.target.selectedOptions);
+    const values = options.map((o) => o.value);
+    setAsesoresSeleccionados(values);
+  }
+
+  async function handleGuardarAsesores() {
+    if (!detalle) return;
+    setGuardandoAsesores(true);
+    try {
+      const body = {
+        ids_asesores: asesoresSeleccionados.map((id) => Number(id)),
+      };
+
+      // IMPORTANTE:
+      // si en el backend montaste el router en "/backoffice/solicitudes",
+      // cambia esta línea a:
+      // const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/asesores`, body);
+      const r = await boPATCH(
+        `/api/admin/solicitudes/${detalle.id_solicitud}/asesores`,
+        body
+      );
+
+      if (!r.ok) {
+        alert(r.msg || "No se pudieron guardar los asesores");
+        return;
+      }
+
+      // actualizamos detalle con lo que devuelve el backend
+      setDetalle((prev) => ({
+        ...prev,
+        asesores: r.solicitud.asesores || [],
+      }));
+
+      alert("Asesores actualizados correctamente");
+    } catch (e) {
+      console.error(e);
+      alert("Error al guardar asesores");
+    } finally {
+      setGuardandoAsesores(false);
+    }
+  }
+
+  // =========================================
+  // RENDER
+  // =========================================
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-neutral-600">Cargando solicitud…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <button
+          type="button"
+          onClick={onVolver}
+          className="text-xs text-primary hover:underline mb-3"
+        >
+          ← Volver a solicitudes
+        </button>
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   if (!detalle) return null;
 
@@ -249,7 +335,9 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           <p className="text-xs text-neutral-500 mt-1">
             Cliente:{" "}
             {detalle.cliente?.nombre
-              ? `${detalle.cliente.nombre} <${detalle.cliente.email_contacto || ""}>`
+              ? `${detalle.cliente.nombre} <${
+                  detalle.cliente.email_contacto || ""
+                }>`
               : "N/D"}
           </p>
           <p className="text-xs text-neutral-500 mt-1">
@@ -260,9 +348,43 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </>
             )}
           </p>
+
+          {/* NUEVO: bloque de asesores asignados */}
+          <div className="mt-3 border border-neutral-200 rounded-md p-2">
+            <p className="text-xs font-semibold text-neutral-700 mb-1">
+              Asesores asignados
+            </p>
+            <p className="text-[11px] text-neutral-500 mb-1">
+              Como admin puedes asignar uno o varios asesores a esta solicitud.
+            </p>
+
+            <select
+              multiple
+              className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 h-24"
+              value={asesoresSeleccionados}
+              onChange={handleChangeAsesores}
+            >
+              {asesoresDisponibles.map((u) => (
+                <option key={u.id_usuario} value={String(u.id_usuario)}>
+                  {u.nombre} ({u.email})
+                </option>
+              ))}
+            </select>
+
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={handleGuardarAsesores}
+                disabled={guardandoAsesores}
+                className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60"
+              >
+                {guardandoAsesores ? "Guardando…" : "Guardar asesores"}
+              </button>
+            </div>
+          </div>
         </div>
 
-{/* Checklist y documentos */}
+        {/* Checklist y documentos */}
         <div className="space-y-4">
           {Object.keys(checklistPorEtapa).length === 0 && (
             <p className="text-sm text-neutral-500">
@@ -336,7 +458,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {/* URL de descarga construida aquí */}
                               <button
                                 type="button"
                                 onClick={() => descargarDocumento(doc)}
@@ -347,14 +468,18 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
                               <button
                                 type="button"
-                                onClick={() => cambiarRevision(doc, "APROBADO")}
+                                onClick={() =>
+                                  cambiarRevision(doc, "APROBADO")
+                                }
                                 className="text-[11px] px-2 py-1 rounded-md border border-emerald-500 text-emerald-700 hover:bg-emerald-50"
                               >
                                 Aprobar
                               </button>
                               <button
                                 type="button"
-                                onClick={() => cambiarRevision(doc, "OBSERVADO")}
+                                onClick={() =>
+                                  cambiarRevision(doc, "OBSERVADO")
+                                }
                                 className="text-[11px] px-2 py-1 rounded-md border border-amber-500 text-amber-700 hover:bg-amber-50"
                               >
                                 Observar
@@ -371,7 +496,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           ))}
         </div>
 
-
         {/* NUEVO: Formulario de datos académicos */}
         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">
@@ -379,9 +503,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           </h3>
           <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
         </section>
-
-
-
 
         {/* Informe de búsqueda de másteres */}
         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
@@ -393,7 +514,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             <div className="flex items-center gap-2">
               {detalle.informe_fecha_subida && (
                 <span className="text-[11px] px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
-                  Informe subido el {formatearFecha(detalle.informe_fecha_subida)}
+                  Informe subido el{" "}
+                  {formatearFecha(detalle.informe_fecha_subida)}
                 </span>
               )}
 
@@ -411,8 +533,9 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
           {!detalle.informe_fecha_subida ? (
             <p className="text-xs text-neutral-500">
-              Aún no se ha subido el informe de búsqueda de másteres para esta solicitud.
-              Cuando lo generes, súbelo aquí para que el cliente pueda verlo.
+              Aún no se ha subido el informe de búsqueda de másteres para esta
+              solicitud. Cuando lo generes, súbelo aquí para que el cliente
+              pueda verlo.
             </p>
           ) : (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -421,7 +544,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                   {detalle.informe_nombre_original || "Informe de búsqueda"}
                 </p>
                 <p className="text-neutral-500">
-                  Última actualización: {formatearFecha(detalle.informe_fecha_subida)}
+                  Última actualización:{" "}
+                  {formatearFecha(detalle.informe_fecha_subida)}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -456,21 +580,14 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
         </section>
 
-
         {/* BLOQUE 6: Programación de postulaciones */}
         <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
-
 
         {/* BLOQUE 7: Portales, claves y justificantes */}
         <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
 
-
         {/* BLOQUE 8: Cierre */}
-
         <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
-
-
-        
       </div>
     </div>
   );
