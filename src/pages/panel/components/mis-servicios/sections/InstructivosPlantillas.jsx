@@ -24,7 +24,7 @@ export default function InstructivosPlantillas({ instructivos }) {
               href={doc.url}
               target="_blank"
               rel="noreferrer"
-              download // 👈 esto intenta forzar descarga
+              download
               className="text-[#023A4B] underline"
             >
               Descargar

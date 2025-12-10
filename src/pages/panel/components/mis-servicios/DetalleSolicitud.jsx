@@ -1,7 +1,7 @@
 //inspira-frontend\src\pages\panel\components\mis-servicios\DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000"; // 👈 AÑADIR ESTO
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 import {
   formatearFecha,
@@ -65,21 +65,30 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
-if (rInst.ok) {
-  const lista = (rInst.instructivos || []).map((i) => {
-    // i.archivo_url suele venir como "/instructivos/xxxx.pdf"
-    const rawUrl = i.url || i.archivo_url || "";
-    const isAbsolute = /^https?:\/\//i.test(rawUrl);
+    if (rInst.ok) {
+      const base = (API_URL || "").replace(/\/+$/, ""); // quita barras finales
 
-    return {
-      label: i.label,
-      url: isAbsolute ? rawUrl : `${API_URL}${rawUrl}`, // 👈 AHORA VA AL API
-    };
-  });
-  setInstructivos(lista);
-} else {
-  setInstructivos([]);
-}
+      const lista = (rInst.instructivos || []).map((i) => {
+        const rawUrl = i.url || i.archivo_url || "";
+        const isAbsolute = /^https?:\/\//i.test(rawUrl);
+
+        if (isAbsolute) {
+          // ya viene completa (GDrive, GCS, etc.)
+          return { label: i.label, url: rawUrl };
+        }
+
+        // normalizar ruta relativa:
+        const path = rawUrl.replace(/^\/+/, ""); // quita barras iniciales
+        return {
+          label: i.label,
+          url: `${base}/${path}`, // SIEMPRE una sola barra entre dominio y ruta
+        };
+      });
+
+      setInstructivos(lista);
+    } else {
+      setInstructivos([]);
+    }
 
 
       // NUEVO: elecciones de másteres (bloque 5)
