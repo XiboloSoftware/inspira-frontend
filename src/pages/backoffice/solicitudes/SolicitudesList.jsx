@@ -1,14 +1,35 @@
 // src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
-import { getUserFromToken } from "../../../utils/auth";
+
+// Decodifica el JWT del backoffice (almacenado en localStorage["bo_token"])
+function getBackofficeUser() {
+  try {
+    const token = localStorage.getItem("bo_token");
+    if (!token) return null;
+
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload); // { id_usuario, rol, email }
+  } catch {
+    return null;
+  }
+}
 
 export default function SolicitudesList({ onVerSolicitud }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // usuario interno (leído del JWT)
-  const [usuario] = useState(() => getUserFromToken());
+  // usuario interno (leído del JWT de backoffice)
+  const [usuario] = useState(() => getBackofficeUser());
 
   // estado para crear solicitud manual
   const [mostrarCrear, setMostrarCrear] = useState(false);
