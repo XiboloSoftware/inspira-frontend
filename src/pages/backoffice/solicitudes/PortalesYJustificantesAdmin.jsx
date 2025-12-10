@@ -1,6 +1,8 @@
 // src/pages/backoffice/solicitudes/PortalesYJustificantesAdmin.jsx
 import { useEffect, useState } from "react";
-import { boGET, boPATCH, boPOST, boUpload } from "../../../services/backofficeApi";
+import { boGET, boPATCH, boPOST } from "../../../services/backofficeApi";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const ESTADOS_TRAMITE = [
   "SIN_INICIAR",
@@ -50,7 +52,8 @@ function SeccionPortales({
         id_acceso: null,
         tipo_portal: tipoPortal,
         organismo: "",
-        tipo_tramite: tipoPortal === "MINISTERIO" ? "NOTA_MEDIA" : "POSTULACION_MASTER",
+        tipo_tramite:
+          tipoPortal === "MINISTERIO" ? "NOTA_MEDIA" : "POSTULACION_MASTER",
         url_acceso: "",
         usuario_login: "",
         password: "",
@@ -64,13 +67,12 @@ function SeccionPortales({
         justificantes: [],
       },
     ]);
+    window.alert("Se ha añadido un nuevo portal. Recuerda pulsar Guardar en esa fila.");
   };
 
   const handleSaveRow = async (idx) => {
     const row = items[idx];
-    const method = row.id_acceso
-      ? boPATCH
-      : boPOST;
+    const method = row.id_acceso ? boPATCH : boPOST;
 
     const path = row.id_acceso
       ? `/api/portales/admin/solicitudes/${idSolicitud}/accesos/${row.id_acceso}`
@@ -86,59 +88,91 @@ function SeccionPortales({
       return;
     }
 
-    setItems((prev) =>
-      prev.map((p, i) => (i === idx ? r.acceso : p))
-    );
+    setItems((prev) => prev.map((p, i) => (i === idx ? r.acceso : p)));
+    window.alert("Portal guardado correctamente.");
   };
 
   const handleDeleteRow = async (idx) => {
     const row = items[idx];
     if (!row.id_acceso) {
       setItems((prev) => prev.filter((_, i) => i !== idx));
+      window.alert("Portal eliminado (aún no estaba guardado en base de datos).");
       return;
     }
     if (!window.confirm("¿Eliminar este portal y sus justificantes?")) return;
+
     const r = await boPATCH(`/api/portales/admin/accesos/${row.id_acceso}`, {
       _method: "DELETE",
     });
-    // si prefieres, usa DELETE real en backofficeApi
+
     if (!r.ok) {
       window.alert(r.msg || "No se pudo eliminar");
       return;
     }
     setItems((prev) => prev.filter((_, i) => i !== idx));
+    window.alert("Portal eliminado correctamente.");
   };
 
-  const handleUploadJustificante = async (idx, file, tipo_justificante, visible) => {
+  const handleUploadJustificante = async (
+    idx,
+    file,
+    tipo_justificante,
+    visible
+  ) => {
     const row = items[idx];
     if (!row.id_acceso) {
       window.alert("Guarda primero el portal antes de subir justificantes.");
       return;
     }
 
-    const form = new FormData();
-    form.append("archivo", file);
-    form.append("tipo_justificante", tipo_justificante);
-    form.append("visible_para_cliente", visible ? "true" : "false");
+    const token = localStorage.getItem("bo_token");
+    if (!token) {
+      window.alert("No existe sesión de backoffice.");
+      return;
+    }
 
-    const r = await boUpload(
-      `/api/portales/admin/accesos/${row.id_acceso}/justificantes`,
-      file,
-      form
+    const formData = new FormData();
+    formData.append("archivo", file);
+    formData.append("tipo_justificante", tipo_justificante);
+    formData.append("visible_para_cliente", visible ? "true" : "false");
+
+    const resp = await fetch(
+      `${API_URL}/api/portales/admin/accesos/${row.id_acceso}/justificantes`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
     );
-    // si boUpload solo recibe (path, file), adapta para usar fetch manual con form
-    if (!r.ok) {
-      window.alert(r.msg || "Error subiendo justificante");
+
+    let r;
+    try {
+      r = await resp.json();
+    } catch (e) {
+      console.error(e);
+      window.alert("Error al procesar la respuesta del servidor.");
+      return;
+    }
+
+    if (!resp.ok || !r.ok) {
+      window.alert(r?.msg || "Error subiendo justificante");
       return;
     }
 
     setItems((prev) =>
       prev.map((p, i) =>
         i === idx
-          ? { ...p, justificantes: [...(p.justificantes || []), r.justificante] }
+          ? {
+              ...p,
+              justificantes: [...(p.justificantes || []), r.justificante],
+            }
           : p
       )
     );
+
+    window.alert("Justificante subido correctamente.");
   };
 
   return (
@@ -166,29 +200,41 @@ function SeccionPortales({
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
               <div>
-                <label className="block font-medium mb-1">Organismo / Universidad</label>
+                <label className="block font-medium mb-1">
+                  Organismo / Universidad
+                </label>
                 <input
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.organismo || ""}
-                  onChange={(e) => handleChange(idx, "organismo", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "organismo", e.target.value)
+                  }
                 />
               </div>
               {tipoPortal === "UNIVERSIDAD" && (
                 <div>
-                  <label className="block font-medium mb-1">Máster (label)</label>
+                  <label className="block font-medium mb-1">
+                    Máster (label)
+                  </label>
                   <input
                     className="w-full border rounded px-2 py-1 text-xs"
                     value={row.master_label || ""}
-                    onChange={(e) => handleChange(idx, "master_label", e.target.value)}
+                    onChange={(e) =>
+                      handleChange(idx, "master_label", e.target.value)
+                    }
                   />
                 </div>
               )}
               <div>
-                <label className="block font-medium mb-1">Tipo de trámite</label>
+                <label className="block font-medium mb-1">
+                  Tipo de trámite
+                </label>
                 <select
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.tipo_tramite}
-                  onChange={(e) => handleChange(idx, "tipo_tramite", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "tipo_tramite", e.target.value)
+                  }
                 >
                   {TIPOS_TRAMITE.map((t) => (
                     <option key={t} value={t}>
@@ -205,7 +251,9 @@ function SeccionPortales({
                 <input
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.url_acceso || ""}
-                  onChange={(e) => handleChange(idx, "url_acceso", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "url_acceso", e.target.value)
+                  }
                 />
               </div>
               <div>
@@ -213,7 +261,9 @@ function SeccionPortales({
                 <input
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.usuario_login || ""}
-                  onChange={(e) => handleChange(idx, "usuario_login", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "usuario_login", e.target.value)
+                  }
                 />
               </div>
               <div>
@@ -222,7 +272,9 @@ function SeccionPortales({
                   type="password"
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.password || ""}
-                  onChange={(e) => handleChange(idx, "password", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "password", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -233,7 +285,9 @@ function SeccionPortales({
                 <select
                   className="w-full border rounded px-2 py-1 text-xs"
                   value={row.estado_tramite}
-                  onChange={(e) => handleChange(idx, "estado_tramite", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(idx, "estado_tramite", e.target.value)
+                  }
                 >
                   {ESTADOS_TRAMITE.map((e2) => (
                     <option key={e2} value={e2}>
@@ -329,7 +383,10 @@ function SeccionPortales({
                       `Tipo justificante (${TIPOS_JUSTIFICANTE.join(", ")})`,
                       "RESGUARDO_POSTULACION"
                     );
-                    if (!tipo) return;
+                    if (!tipo) {
+                      e.target.value = "";
+                      return;
+                    }
                     const visible = window.confirm(
                       "¿Marcar justificante como visible para el cliente?"
                     );
