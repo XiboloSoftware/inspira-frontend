@@ -6,6 +6,7 @@ import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
 import PortalesYJustificantesAdmin from "./PortalesYJustificantesAdmin";
 import CierreServicioMasterAdmin from "./CierreServicioMasterAdmin";
+import AsesoresAsignadosAdmin from "./AsesoresAsignadosAdmin";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -21,24 +22,19 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [error, setError] = useState("");
   const [subiendoInforme, setSubiendoInforme] = useState(false);
 
-  // (si ya añadiste esto antes)
+  // asesores
   const [asesoresDisponibles, setAsesoresDisponibles] = useState([]);
   const [asesoresSeleccionados, setAsesoresSeleccionados] = useState([]);
   const [guardandoAsesores, setGuardandoAsesores] = useState(false);
-
-  const [filtroAsesor, setFiltroAsesor] = useState("");
-
 
   // =========================================
   // CARGA DE DATOS
   // =========================================
 
-  // carga solicitud + checklist
   async function cargar() {
     setLoading(true);
     setError("");
     try {
-      // OJO: esta URL ya la usas y la mantengo igual
       // GET /api/admin/solicitudes/:idSolicitud/checklist
       const r = await boGET(`/api/admin/solicitudes/${idSolicitud}/checklist`);
       if (!r.ok) {
@@ -68,9 +64,9 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     }
   }
 
-  // NUEVO: carga de asesores disponibles
   async function cargarAsesoresDisponibles() {
     try {
+      // GET /backoffice/usuarios-internos?rol=asesor
       const r = await boGET("/backoffice/usuarios-internos?rol=asesor");
       if (r.ok) {
         setAsesoresDisponibles(r.usuarios || []);
@@ -80,9 +76,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     }
   }
 
-
   useEffect(() => {
-    // carga solicitud + asesores en paralelo
     cargar();
     cargarAsesoresDisponibles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,18 +92,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     return grupos;
   }, [checklist]);
 
-  const asesoresFiltrados = useMemo(() => {       // 👈 NUEVO
-    if (!filtroAsesor.trim()) return asesoresDisponibles;
-    const q = filtroAsesor.toLowerCase();
-    return asesoresDisponibles.filter((u) => {
-      return (
-        u.nombre.toLowerCase().includes(q) ||
-        (u.email && u.email.toLowerCase().includes(q))
-      );
-    });
-  }, [asesoresDisponibles, filtroAsesor]);
-
-
   // =========================================
   // GESTIÓN DE REVISIONES DE DOCUMENTOS
   // =========================================
@@ -123,7 +105,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         "Comentario para el cliente (por qué se observa el documento):",
         doc.comentario_revision || ""
       );
-      if (comentario === null) return; // canceló
+      if (comentario === null) return;
     }
 
     try {
@@ -138,8 +120,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!r.ok) {
         window.alert(
           r.message ||
-          r.msg ||
-          "No se pudo actualizar el estado del documento."
+            r.msg ||
+            "No se pudo actualizar el estado del documento."
         );
         return;
       }
@@ -167,7 +149,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       const resp = await fetch(
         `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -220,7 +202,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!token) return alert("No existe sesión de backoffice");
 
       const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""
+        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${
+          modo === "ver" ? "?view=1" : ""
         }`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -251,14 +234,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   }
 
   // =========================================
-  // GESTIÓN DE ASESORES (UI + PATCH)
+  // GESTIÓN DE ASESORES (PATCH)
   // =========================================
-
-  function handleChangeAsesores(e) {
-    const options = Array.from(e.target.selectedOptions);
-    const values = options.map((o) => o.value);
-    setAsesoresSeleccionados(values);
-  }
 
   async function handleGuardarAsesores() {
     if (!detalle) return;
@@ -268,6 +245,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         ids_asesores: asesoresSeleccionados.map((id) => Number(id)),
       };
 
+      // PATCH /backoffice/solicitudes/:id/asesores
       const r = await boPATCH(
         `/backoffice/solicitudes/${detalle.id_solicitud}/asesores`,
         body
@@ -291,7 +269,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       setGuardandoAsesores(false);
     }
   }
-
 
   // =========================================
   // RENDER
@@ -344,8 +321,9 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           <p className="text-xs text-neutral-500 mt-1">
             Cliente:{" "}
             {detalle.cliente?.nombre
-              ? `${detalle.cliente.nombre} <${detalle.cliente.email_contacto || ""
-              }>`
+              ? `${detalle.cliente.nombre} <${
+                  detalle.cliente.email_contacto || ""
+                }>`
               : "N/D"}
           </p>
           <p className="text-xs text-neutral-500 mt-1">
@@ -357,72 +335,14 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             )}
           </p>
 
-          {/* NUEVO: bloque de asesores asignados */}
-          
-            <div className="mt-3 border border-neutral-200 rounded-md p-2">
-  <p className="text-xs font-semibold text-neutral-700 mb-1">
-    Asesores asignados
-  </p>
-  <p className="text-[11px] text-neutral-500 mb-1">
-    Como admin puedes asignar uno o varios asesores a esta solicitud.
-  </p>
-
-  {/* Buscador simple */}
-  <input
-    type="text"
-    className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 mb-2"
-    placeholder="Escribe para buscar asesor por nombre o email..."
-    value={filtroAsesor}
-    onChange={(e) => setFiltroAsesor(e.target.value)}
-  />
-
-  <select
-    multiple
-    className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 h-24"
-    value={asesoresSeleccionados}
-    onChange={handleChangeAsesores}
-  >
-    {asesoresFiltrados.map((u) => (
-      <option key={u.id_usuario} value={String(u.id_usuario)}>
-        {u.nombre} ({u.email})
-      </option>
-    ))}
-  </select>
-
-  <div className="flex justify-end mt-2">
-    <button
-      type="button"
-      onClick={handleGuardarAsesores}
-      disabled={guardandoAsesores}
-      className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60"
-    >
-      {guardandoAsesores ? "Guardando…" : "Guardar asesores"}
-    </button>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          {/* Bloque de asesores, modular */}
+          <AsesoresAsignadosAdmin
+            asesoresDisponibles={asesoresDisponibles}
+            asesoresSeleccionados={asesoresSeleccionados}
+            onChangeSeleccionados={setAsesoresSeleccionados}
+            onGuardar={handleGuardarAsesores}
+            guardando={guardandoAsesores}
+          />
         </div>
 
         {/* Checklist y documentos */}
@@ -537,7 +457,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           ))}
         </div>
 
-        {/* NUEVO: Formulario de datos académicos */}
+        {/* Formulario de datos académicos */}
         <section className="border border-neutral-200 rounded-lg p-3 mb-4">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">
             Formulario de datos académicos
