@@ -14,28 +14,47 @@ const ESTADO_FORM_INICIAL = {
   activo: true,
 };
 
-
 export default function PreciosServicios() {
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(ESTADO_FORM_INICIAL);
   const [modo, setModo] = useState("nuevo"); // "nuevo" | "editar"
-
-
   const [filtro, setFiltro] = useState("todos"); // activos | inactivos | todos
 
-  async function cargar() {
-  setLoading(true);
-  const r = await boGET(`/backoffice/precios/servicios?estado=${filtro}`);
-  if (r.ok) setServicios(r.servicios || []);
-  setLoading(false);
-}
+  const [usuario, setUsuario] = useState(null);
+  const isAdmin = usuario?.rol === "admin";
 
+  // ============================
+  // Carga de usuario logueado
+  // ============================
+  useEffect(() => {
+    async function cargarUsuario() {
+      try {
+        const r = await boGET("/backoffice/me");
+        if (r.ok) {
+          setUsuario(r.usuario);
+        }
+      } catch (e) {
+        console.error("Error al cargar usuario backoffice", e);
+      }
+    }
+    cargarUsuario();
+  }, []);
+
+  // ============================
+  // Carga de servicios
+  // ============================
+  async function cargar() {
+    setLoading(true);
+    const r = await boGET(`/backoffice/precios/servicios?estado=${filtro}`);
+    if (r.ok) setServicios(r.servicios || []);
+    setLoading(false);
+  }
 
   useEffect(() => {
-  cargar();
-}, [filtro]);
+    cargar();
+  }, [filtro]);
 
   function resetForm() {
     setForm(ESTADO_FORM_INICIAL);
@@ -55,16 +74,22 @@ export default function PreciosServicios() {
     });
   }
 
+  function abrirChecklist(s) {
+    alert("Abrir checklist para servicio: " + s.nombre);
+    // Más adelante aquí haremos navigate('/backoffice/checklist/' + s.id_servicio)
+  }
 
-function abrirChecklist(s) {
-  alert("Abrir checklist para servicio: " + s.nombre);
-  // Más adelante aquí haremos navigate('/backoffice/checklist/' + s.id_servicio)
-}
-
-
+  // ============================
+  // Guardar (solo admin)
+  // ============================
   async function guardar(e) {
     e.preventDefault();
     if (saving) return;
+
+    if (!isAdmin) {
+      alert("Solo un administrador puede crear o modificar servicios y precios.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -136,37 +161,34 @@ function abrirChecklist(s) {
         precios actuales.
       </p>
 
-<div className="flex gap-2 mb-4">
-  <button
-    onClick={() => setFiltro("todos")}
-    className={`px-3 py-1.5 text-xs rounded-lg border ${
-      filtro === "todos" ? "bg-primary text-white" : "bg-white"
-    }`}
-  >
-    Todos
-  </button>
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setFiltro("todos")}
+          className={`px-3 py-1.5 text-xs rounded-lg border ${
+            filtro === "todos" ? "bg-primary text-white" : "bg-white"
+          }`}
+        >
+          Todos
+        </button>
 
-  <button
-    onClick={() => setFiltro("activos")}
-    className={`px-3 py-1.5 text-xs rounded-lg border ${
-      filtro === "activos" ? "bg-primary text-white" : "bg-white"
-    }`}
-  >
-    Activos
-  </button>
+        <button
+          onClick={() => setFiltro("activos")}
+          className={`px-3 py-1.5 text-xs rounded-lg border ${
+            filtro === "activos" ? "bg-primary text-white" : "bg-white"
+          }`}
+        >
+          Activos
+        </button>
 
-  <button
-    onClick={() => setFiltro("inactivos")}
-    className={`px-3 py-1.5 text-xs rounded-lg border ${
-      filtro === "inactivos" ? "bg-red-600 text-white" : "bg-white"
-    }`}
-  >
-    Inactivos
-  </button>
-</div>
-
-
-
+        <button
+          onClick={() => setFiltro("inactivos")}
+          className={`px-3 py-1.5 text-xs rounded-lg border ${
+            filtro === "inactivos" ? "bg-red-600 text-white" : "bg-white"
+          }`}
+        >
+          Inactivos
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista de servicios */}
@@ -174,22 +196,29 @@ function abrirChecklist(s) {
           <ServiciosList
             servicios={servicios}
             loading={loading}
-            onEditar={editarServicio}
-              onChecklist={abrirChecklist}
-
+            onEditar={isAdmin ? editarServicio : undefined}
+            onChecklist={abrirChecklist}
           />
         </div>
 
         {/* Formulario lateral */}
         <div>
-          <ServicioForm
-            modo={modo}
-            form={form}
-            setForm={setForm}
-            saving={saving}
-            onSubmit={guardar}
-            onReset={resetForm}
-          />
+          {isAdmin ? (
+            <ServicioForm
+              modo={modo}
+              form={form}
+              setForm={setForm}
+              saving={saving}
+              onSubmit={guardar}
+              onReset={resetForm}
+            />
+          ) : (
+            <div className="border border-neutral-200 rounded-lg p-4 text-xs text-neutral-600 bg-neutral-50">
+              Solo los administradores pueden crear o modificar servicios y
+              precios. Como asesor, puedes consultar la lista de servicios en la
+              columna izquierda, pero no realizar cambios.
+            </div>
+          )}
         </div>
       </div>
     </div>
