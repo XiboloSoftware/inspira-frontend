@@ -1,6 +1,6 @@
 // src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useEffect, useState } from "react";
-import { boGET } from "../../../services/backofficeApi";
+import { boGET, boDELETE } from "../../../services/backofficeApi";
 import CreateSolicitudAdmin from "./CreateSolicitudAdmin";
 
 // Decodifica el JWT del backoffice (localStorage["bo_token"])
@@ -50,6 +50,25 @@ export default function SolicitudesList({ onVerSolicitud }) {
   function handleSolicitudCreada(nueva) {
     setSolicitudes((prev) => [nueva, ...prev]);
     setMostrarCrear(false);
+  }
+
+  async function handleEliminarSolicitud(id_solicitud) {
+    if (!usuario || usuario.rol !== "admin") return;
+
+    const ok = window.confirm(
+      "¿Seguro que quieres eliminar esta solicitud? Esta acción no se puede deshacer."
+    );
+    if (!ok) return;
+
+    const r = await boDELETE(`/backoffice/solicitudes/${id_solicitud}`);
+    if (!r.ok) {
+      alert(r.msg || "No se pudo eliminar la solicitud");
+      return;
+    }
+
+    setSolicitudes((prev) =>
+      prev.filter((s) => s.id_solicitud !== id_solicitud)
+    );
   }
 
   return (
@@ -142,7 +161,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
                   )}
                 </div>
 
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex flex-col gap-1">
                   <button
                     type="button"
                     onClick={() => handleVerSolicitud(s.id_solicitud)}
@@ -150,6 +169,18 @@ export default function SolicitudesList({ onVerSolicitud }) {
                   >
                     Ver solicitud
                   </button>
+
+                  {usuario?.rol === "admin" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEliminarSolicitud(s.id_solicitud)
+                      }
+                      className="text-[11px] px-3 py-1.5 rounded-md border border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

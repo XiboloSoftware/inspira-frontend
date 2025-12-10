@@ -74,3 +74,5 @@ export async function boUpload(path, file) {
 
   return res.json();
 }
+
+
