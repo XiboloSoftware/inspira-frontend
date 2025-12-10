@@ -1,15 +1,14 @@
 // src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
-import { getUserFromToken } from "../../../utils/auth"; // ajusta la ruta si tu archivo está en otro sitio
+import { getUserFromToken } from "../../../utils/auth";
 
 export default function SolicitudesList({ onVerSolicitud }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // leemos el usuario directamente del token (incluye rol)
-  const usuario = getUserFromToken();
-  const esAdmin = usuario?.rol === "admin";
+  // usuario interno (leído del JWT)
+  const [usuario] = useState(() => getUserFromToken());
 
   // estado para crear solicitud manual
   const [mostrarCrear, setMostrarCrear] = useState(false);
@@ -94,7 +93,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-semibold text-primary">Solicitudes</h1>
 
-        {esAdmin && (
+        {usuario?.rol === "admin" && (
           <button
             type="button"
             onClick={() => setMostrarCrear((v) => !v)}
@@ -111,7 +110,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
       </p>
 
       {/* Formulario de creación (solo admin) */}
-      {esAdmin && mostrarCrear && (
+      {usuario?.rol === "admin" && mostrarCrear && (
         <form
           onSubmit={handleSubmitCrear}
           className="mb-4 bg-white border border-neutral-200 rounded-xl shadow-sm p-4 text-xs space-y-3"
