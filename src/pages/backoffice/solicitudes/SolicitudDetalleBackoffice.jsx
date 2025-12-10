@@ -21,10 +21,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [error, setError] = useState("");
   const [subiendoInforme, setSubiendoInforme] = useState(false);
 
-  // NUEVO: estado para gestión de asesores
-  const [asesoresDisponibles, setAsesoresDisponibles] = useState([]); // listado de asesores activos
-  const [asesoresSeleccionados, setAsesoresSeleccionados] = useState([]); // ids seleccionados
+  // (si ya añadiste esto antes)
+  const [asesoresDisponibles, setAsesoresDisponibles] = useState([]);
+  const [asesoresSeleccionados, setAsesoresSeleccionados] = useState([]);
   const [guardandoAsesores, setGuardandoAsesores] = useState(false);
+
+  const [filtroAsesor, setFiltroAsesor] = useState("");
+
 
   // =========================================
   // CARGA DE DATOS
@@ -68,9 +71,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   // NUEVO: carga de asesores disponibles
   async function cargarAsesoresDisponibles() {
     try {
-      // Si tu backend expone /backoffice/usuarios-internos, cambia esta línea a:
-      // const r = await boGET("/backoffice/usuarios-internos?rol=asesor");
-      const r = await boGET("/api/admin/usuarios-internos?rol=asesor");
+      const r = await boGET("/backoffice/usuarios-internos?rol=asesor");
       if (r.ok) {
         setAsesoresDisponibles(r.usuarios || []);
       }
@@ -78,6 +79,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       console.error("Error al cargar asesores disponibles", e);
     }
   }
+
 
   useEffect(() => {
     // carga solicitud + asesores en paralelo
@@ -95,6 +97,18 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     });
     return grupos;
   }, [checklist]);
+
+  const asesoresFiltrados = useMemo(() => {       // 👈 NUEVO
+    if (!filtroAsesor.trim()) return asesoresDisponibles;
+    const q = filtroAsesor.toLowerCase();
+    return asesoresDisponibles.filter((u) => {
+      return (
+        u.nombre.toLowerCase().includes(q) ||
+        (u.email && u.email.toLowerCase().includes(q))
+      );
+    });
+  }, [asesoresDisponibles, filtroAsesor]);
+
 
   // =========================================
   // GESTIÓN DE REVISIONES DE DOCUMENTOS
@@ -206,8 +220,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!token) return alert("No existe sesión de backoffice");
 
       const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${
-          modo === "ver" ? "?view=1" : ""
+        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""
         }`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -255,12 +268,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         ids_asesores: asesoresSeleccionados.map((id) => Number(id)),
       };
 
-      // IMPORTANTE:
-      // si en el backend montaste el router en "/backoffice/solicitudes",
-      // cambia esta línea a:
-      // const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/asesores`, body);
       const r = await boPATCH(
-        `/api/admin/solicitudes/${detalle.id_solicitud}/asesores`,
+        `/backoffice/solicitudes/${detalle.id_solicitud}/asesores`,
         body
       );
 
@@ -269,7 +278,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         return;
       }
 
-      // actualizamos detalle con lo que devuelve el backend
       setDetalle((prev) => ({
         ...prev,
         asesores: r.solicitud.asesores || [],
@@ -283,6 +291,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       setGuardandoAsesores(false);
     }
   }
+
 
   // =========================================
   // RENDER
@@ -335,9 +344,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           <p className="text-xs text-neutral-500 mt-1">
             Cliente:{" "}
             {detalle.cliente?.nombre
-              ? `${detalle.cliente.nombre} <${
-                  detalle.cliente.email_contacto || ""
-                }>`
+              ? `${detalle.cliente.nombre} <${detalle.cliente.email_contacto || ""
+              }>`
               : "N/D"}
           </p>
           <p className="text-xs text-neutral-500 mt-1">
@@ -350,38 +358,71 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           </p>
 
           {/* NUEVO: bloque de asesores asignados */}
-          <div className="mt-3 border border-neutral-200 rounded-md p-2">
-            <p className="text-xs font-semibold text-neutral-700 mb-1">
-              Asesores asignados
-            </p>
-            <p className="text-[11px] text-neutral-500 mb-1">
-              Como admin puedes asignar uno o varios asesores a esta solicitud.
-            </p>
+          
+            <div className="mt-3 border border-neutral-200 rounded-md p-2">
+  <p className="text-xs font-semibold text-neutral-700 mb-1">
+    Asesores asignados
+  </p>
+  <p className="text-[11px] text-neutral-500 mb-1">
+    Como admin puedes asignar uno o varios asesores a esta solicitud.
+  </p>
 
-            <select
-              multiple
-              className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 h-24"
-              value={asesoresSeleccionados}
-              onChange={handleChangeAsesores}
-            >
-              {asesoresDisponibles.map((u) => (
-                <option key={u.id_usuario} value={String(u.id_usuario)}>
-                  {u.nombre} ({u.email})
-                </option>
-              ))}
-            </select>
+  {/* Buscador simple */}
+  <input
+    type="text"
+    className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 mb-2"
+    placeholder="Escribe para buscar asesor por nombre o email..."
+    value={filtroAsesor}
+    onChange={(e) => setFiltroAsesor(e.target.value)}
+  />
 
-            <div className="flex justify-end mt-2">
-              <button
-                type="button"
-                onClick={handleGuardarAsesores}
-                disabled={guardandoAsesores}
-                className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60"
-              >
-                {guardandoAsesores ? "Guardando…" : "Guardar asesores"}
-              </button>
-            </div>
-          </div>
+  <select
+    multiple
+    className="w-full text-xs border border-neutral-300 rounded-md px-2 py-1 h-24"
+    value={asesoresSeleccionados}
+    onChange={handleChangeAsesores}
+  >
+    {asesoresFiltrados.map((u) => (
+      <option key={u.id_usuario} value={String(u.id_usuario)}>
+        {u.nombre} ({u.email})
+      </option>
+    ))}
+  </select>
+
+  <div className="flex justify-end mt-2">
+    <button
+      type="button"
+      onClick={handleGuardarAsesores}
+      disabled={guardandoAsesores}
+      className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60"
+    >
+      {guardandoAsesores ? "Guardando…" : "Guardar asesores"}
+    </button>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
 
         {/* Checklist y documentos */}
