@@ -1,13 +1,15 @@
 // src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
+import { getUserFromToken } from "../../../utils/auth"; // ajusta la ruta si tu archivo está en otro sitio
 
 export default function SolicitudesList({ onVerSolicitud }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // usuario interno (para saber si es admin)
-  const [usuario, setUsuario] = useState(null);
+  // leemos el usuario directamente del token (incluye rol)
+  const usuario = getUserFromToken();
+  const esAdmin = usuario?.rol === "admin";
 
   // estado para crear solicitud manual
   const [mostrarCrear, setMostrarCrear] = useState(false);
@@ -26,13 +28,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
     setLoading(false);
   }
 
-  async function cargarUsuario() {
-    const r = await boGET("/backoffice/me");
-    if (r.ok) setUsuario(r.usuario || null);
-  }
-
   useEffect(() => {
-    cargarUsuario();
     cargarSolicitudes();
   }, []);
 
@@ -75,12 +71,10 @@ export default function SolicitudesList({ onVerSolicitud }) {
         return;
       }
 
-      // añadimos la nueva solicitud al inicio del listado
       if (r.solicitud) {
         setSolicitudes((prev) => [r.solicitud, ...prev]);
       }
 
-      // reseteamos formulario
       setFormCrear({
         id_cliente: "",
         id_tipo_solicitud: "",
@@ -100,7 +94,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-semibold text-primary">Solicitudes</h1>
 
-        {usuario?.rol === "admin" && (
+        {esAdmin && (
           <button
             type="button"
             onClick={() => setMostrarCrear((v) => !v)}
@@ -117,7 +111,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
       </p>
 
       {/* Formulario de creación (solo admin) */}
-      {usuario?.rol === "admin" && mostrarCrear && (
+      {esAdmin && mostrarCrear && (
         <form
           onSubmit={handleSubmitCrear}
           className="mb-4 bg-white border border-neutral-200 rounded-xl shadow-sm p-4 text-xs space-y-3"
@@ -134,9 +128,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 font-medium">
-                ID cliente
-              </label>
+              <label className="block mb-1 font-medium">ID cliente</label>
               <input
                 type="number"
                 name="id_cliente"
@@ -163,9 +155,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 font-medium">
-                Título
-              </label>
+              <label className="block mb-1 font-medium">Título</label>
               <input
                 type="text"
                 name="titulo"
@@ -176,9 +166,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium">
-                Descripción
-              </label>
+              <label className="block mb-1 font-medium">Descripción</label>
               <input
                 type="text"
                 name="descripcion"
@@ -250,7 +238,6 @@ export default function SolicitudesList({ onVerSolicitud }) {
                     )}
                   </div>
 
-                  {/* Cliente más destacado */}
                   <p className="text-sm text-neutral-900 font-semibold mt-0.5">
                     {s.cliente_nombre || "Cliente sin nombre"}
                   </p>
