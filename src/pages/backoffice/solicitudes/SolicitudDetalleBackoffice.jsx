@@ -42,8 +42,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!rChecklist.ok) {
         setError(
           rChecklist.message ||
-            rChecklist.msg ||
-            "No se pudo cargar la solicitud."
+          rChecklist.msg ||
+          "No se pudo cargar la solicitud."
         );
         return;
       }
@@ -142,8 +142,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!r.ok) {
         window.alert(
           r.message ||
-            r.msg ||
-            "No se pudo actualizar el estado del documento."
+          r.msg ||
+          "No se pudo actualizar el estado del documento."
         );
         return;
       }
@@ -193,6 +193,45 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     }
   }
 
+
+
+  async function subirDocumentoInterno(it) {
+    if (!detalle) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/pdf,image/*";
+
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const r = await boUpload(
+          `/api/admin/solicitudes/${detalle.id_solicitud}/items/${it.id_solicitud_item}/documento`,
+          file
+        );
+
+        if (!r.ok) {
+          alert(r.msg || "No se pudo subir el documento");
+          return;
+        }
+
+        // Recargamos checklist / detalle para ver el nuevo doc
+        await cargar();
+      } catch (err) {
+        console.error(err);
+        alert("Error al subir el documento");
+      } finally {
+        // limpiar input
+        e.target.value = "";
+      }
+    };
+
+    input.click();
+  }
+
+
   // =========================================
   // GESTIÓN DE INFORME
   // =========================================
@@ -224,8 +263,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       if (!token) return alert("No existe sesión de backoffice");
 
       const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${
-          modo === "ver" ? "?view=1" : ""
+        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""
         }`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -342,9 +380,8 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           <p className="text-xs text-neutral-500 mt-1">
             Cliente:{" "}
             {detalle.cliente?.nombre
-              ? `${detalle.cliente.nombre} <${
-                  detalle.cliente.email_contacto || ""
-                }>`
+              ? `${detalle.cliente.nombre} <${detalle.cliente.email_contacto || ""
+              }>`
               : "N/D"}
           </p>
           <p className="text-xs text-neutral-500 mt-1">
@@ -422,6 +459,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                           </p>
                         )}
 
+
                         {doc && (
                           <div className="flex items-center justify-between gap-2 border-t border-neutral-100 pt-1 mt-1">
                             <div className="flex flex-col">
@@ -429,8 +467,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                                 {doc.nombre_original}
                               </span>
                               <span className="text-[10px] text-neutral-500">
-                                Subido: {formatearFecha(doc.fecha_subida)} ·{" "}
-                                Estado: {doc.estado_revision}
+                                Subido: {formatearFecha(doc.fecha_subida)} · Estado: {doc.estado_revision}
                               </span>
                               {doc.comentario_revision && (
                                 <span className="text-[10px] text-neutral-600">
@@ -450,18 +487,14 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
                               <button
                                 type="button"
-                                onClick={() =>
-                                  cambiarRevision(doc, "APROBADO")
-                                }
+                                onClick={() => cambiarRevision(doc, "APROBADO")}
                                 className="text-[11px] px-2 py-1 rounded-md border border-emerald-500 text-emerald-700 hover:bg-emerald-50"
                               >
                                 Aprobar
                               </button>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  cambiarRevision(doc, "OBSERVADO")
-                                }
+                                onClick={() => cambiarRevision(doc, "OBSERVADO")}
                                 className="text-[11px] px-2 py-1 rounded-md border border-amber-500 text-amber-700 hover:bg-amber-50"
                               >
                                 Observar
@@ -469,6 +502,20 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                             </div>
                           </div>
                         )}
+
+                        {/* 👇 NUEVO: botón para subir/cambiar documento como admin/asesor */}
+                        {it.item?.permite_archivo && (
+                          <div className="flex justify-end mt-1">
+                            <button
+                              type="button"
+                              onClick={() => subirDocumentoInterno(it)}
+                              className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 hover:bg-neutral-50"
+                            >
+                              Subir / cambiar documento (interno)
+                            </button>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   );
