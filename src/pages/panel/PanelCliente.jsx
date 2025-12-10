@@ -71,10 +71,18 @@ export default function PanelCliente() {
         </header>
 
         <div className="max-w-4xl">
-          {tab === "perfil" && <PerfilCliente user={user} />}
-          {tab === "citas" && <MisCitas />}
-          {tab === "servicios" && <MisServicios />}
-        </div>
+  {tab === "perfil" && (
+    <PerfilCliente
+      user={user}
+      onUserUpdated={(nuevo) => setUser(nuevo)}
+    />
+  )}
+  {tab === "citas" && <MisCitas />}
+  {tab === "servicios" && <MisServicios />}
+</div>
+
+
+        
       </main>
     </div>
   );
