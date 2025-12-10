@@ -20,7 +20,13 @@ export default function InstructivosPlantillas({ instructivos }) {
             className="flex justify-between text-xs border rounded-md px-2 py-1.5"
           >
             <span>{doc.label}</span>
-            <a href={doc.url} target="_blank" className="text-[#023A4B] underline">
+            <a
+              href={doc.url}
+              target="_blank"
+              rel="noreferrer"
+              download // 👈 esto intenta forzar descarga
+              className="text-[#023A4B] underline"
+            >
               Descargar
             </a>
           </li>

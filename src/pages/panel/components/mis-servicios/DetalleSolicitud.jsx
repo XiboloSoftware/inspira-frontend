@@ -1,6 +1,7 @@
 //inspira-frontend\src\pages\panel\components\mis-servicios\DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000"; // 👈 AÑADIR ESTO
 
 import {
   formatearFecha,
@@ -64,15 +65,22 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
-      if (rInst.ok) {
-        const lista = (rInst.instructivos || []).map((i) => ({
-          label: i.label,
-          url: i.url || i.archivo_url,
-        }));
-        setInstructivos(lista);
-      } else {
-        setInstructivos([]);
-      }
+if (rInst.ok) {
+  const lista = (rInst.instructivos || []).map((i) => {
+    // i.archivo_url suele venir como "/instructivos/xxxx.pdf"
+    const rawUrl = i.url || i.archivo_url || "";
+    const isAbsolute = /^https?:\/\//i.test(rawUrl);
+
+    return {
+      label: i.label,
+      url: isAbsolute ? rawUrl : `${API_URL}${rawUrl}`, // 👈 AHORA VA AL API
+    };
+  });
+  setInstructivos(lista);
+} else {
+  setInstructivos([]);
+}
+
 
       // NUEVO: elecciones de másteres (bloque 5)
       const rElec = await apiGET(
