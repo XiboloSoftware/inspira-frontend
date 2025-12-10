@@ -35,27 +35,49 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     setLoading(true);
     setError("");
     try {
-      // GET /api/admin/solicitudes/:idSolicitud/checklist
-      const r = await boGET(`/api/admin/solicitudes/${idSolicitud}/checklist`);
-      if (!r.ok) {
+      // 1) Checklist + solicitud (API admin)
+      const rChecklist = await boGET(
+        `/api/admin/solicitudes/${idSolicitud}/checklist`
+      );
+      if (!rChecklist.ok) {
         setError(
-          r.message || r.msg || "No se pudo cargar la solicitud."
+          rChecklist.message ||
+            rChecklist.msg ||
+            "No se pudo cargar la solicitud."
         );
         return;
       }
-      setDetalle(r.solicitud);
-      setChecklist(r.checklist || []);
 
-      // inicializar asesores seleccionados con lo que venga del backend
-      if (r.solicitud.asesores) {
-        setAsesoresSeleccionados(
-          r.solicitud.asesores.map((a) =>
-            String(a.usuario?.id_usuario ?? a.id_usuario)
-          )
-        );
-      } else {
-        setAsesoresSeleccionados([]);
+      // 2) Detalle de backoffice con asesores
+      const rBackoffice = await boGET(`/backoffice/solicitudes/${idSolicitud}`);
+
+      let solicitud = rChecklist.solicitud || {};
+      // si el endpoint de backoffice respondió bien, usamos sus asesores
+      if (rBackoffice.ok && rBackoffice.solicitud) {
+        solicitud = {
+          ...solicitud,
+          asesores: rBackoffice.solicitud.asesores || solicitud.asesores,
+        };
       }
+
+      setDetalle(solicitud);
+      setChecklist(rChecklist.checklist || []);
+
+      // Inicializar asesoresSeleccionados a partir de la solicitud combinada
+      const s = solicitud;
+      let seleccion = [];
+
+      if (s.asesores && Array.isArray(s.asesores) && s.asesores.length > 0) {
+        seleccion = s.asesores.map((a) =>
+          String(a.usuario?.id_usuario ?? a.id_usuario)
+        );
+      } else if (s.asesor && s.asesor.id_usuario) {
+        seleccion = [String(s.asesor.id_usuario)];
+      } else if (s.id_asesor_asignado) {
+        seleccion = [String(s.id_asesor_asignado)];
+      }
+
+      setAsesoresSeleccionados(seleccion);
     } catch (e) {
       console.error(e);
       setError("Error al cargar la información de la solicitud.");
@@ -245,7 +267,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         ids_asesores: asesoresSeleccionados.map((id) => Number(id)),
       };
 
-      // PATCH /backoffice/solicitudes/:id/asesores
       const r = await boPATCH(
         `/backoffice/solicitudes/${detalle.id_solicitud}/asesores`,
         body
@@ -335,7 +356,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             )}
           </p>
 
-          {/* Bloque de asesores, modular */}
+          {/* Bloque de asesores */}
           <AsesoresAsignadosAdmin
             asesoresDisponibles={asesoresDisponibles}
             asesoresSeleccionados={asesoresSeleccionados}
