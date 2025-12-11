@@ -1,9 +1,9 @@
 // src/pages/backoffice/clientes/Clientes.jsx
 import { useEffect, useState } from "react";
-import { boGET, boPOST, boPUT } from "../../../services/backofficeApi";
+import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi"; // 👈 añade boDELETE
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
-import ServiciosClienteModal from "./ServiciosClienteModal"; // 👈 NUEVO
+import ServiciosClienteModal from "./ServiciosClienteModal";
 
 const FORM_INICIAL = {
   id_cliente: null,
@@ -11,7 +11,12 @@ const FORM_INICIAL = {
   email_contacto: "",
   telefono: "",
   dni: "",
+  pasaporte: "",
+  pais_origen: "",
+  canal_origen: "",
+  activo: true,
 };
+
 
 export default function Clientes({ user }) {
   const [clientes, setClientes] = useState([]);
@@ -61,16 +66,20 @@ export default function Clientes({ user }) {
   }
 
   function onEditarCliente(c) {
-    if (!isAdmin) return; // asesores solo ven
-    setModo("editar");
-    setForm({
-      id_cliente: c.id_cliente,
-      nombre: c.nombre || "",
-      email_contacto: c.email_contacto || "",
-      telefono: c.telefono || "",
-      dni: c.dni || "",
-    });
-  }
+  if (!isAdmin) return;
+  setModo("editar");
+  setForm({
+    id_cliente: c.id_cliente,
+    nombre: c.nombre || "",
+    email_contacto: c.email_contacto || "",
+    telefono: c.telefono || "",
+    dni: c.dni || "",
+    pasaporte: c.pasaporte || "",
+    pais_origen: c.pais_origen || "",
+    canal_origen: c.canal_origen || "",
+    activo: typeof c.activo === "boolean" ? c.activo : true,
+  });
+}
 
   // 👇 NUEVO: abrir modal de servicios
   function onVerServiciosCliente(c) {
@@ -78,39 +87,69 @@ export default function Clientes({ user }) {
   }
 
   async function onSubmitForm(e) {
-    e.preventDefault();
-    if (!isAdmin) return;
-    setSaving(true);
+  e.preventDefault();
+  if (!isAdmin) return;
+  setSaving(true);
 
-    let r;
-    if (form.id_cliente) {
-      // actualizar
-      r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, {
-        nombre: form.nombre,
-        email_contacto: form.email_contacto,
-        telefono: form.telefono,
-        dni: form.dni,
-      });
-    } else {
-      // crear
-      r = await boPOST("/backoffice/clientes", {
-        nombre: form.nombre,
-        email_contacto: form.email_contacto,
-        telefono: form.telefono,
-        dni: form.dni,
-      });
-    }
+  const payload = {
+    nombre: form.nombre.trim(),
+    email_contacto: form.email_contacto.trim(),
+    telefono: form.telefono || null,
+    dni: form.dni || null,
+    pasaporte: form.pasaporte || null,
+    pais_origen: form.pais_origen || null,
+    canal_origen: form.canal_origen || null,
+    activo: !!form.activo,
+  };
 
-    setSaving(false);
+  let r;
+  if (form.id_cliente) {
+    r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, payload);
+  } else {
+    r = await boPOST("/backoffice/clientes", payload);
+  }
 
+  setSaving(false);
+
+  if (!r.ok) {
+    alert(r.msg || "Error guardando cliente");
+    return;
+  }
+
+  resetForm();
+  cargar();
+}
+
+
+
+async function handleEliminarCliente(c) {
+  if (!isAdmin) return;
+  if (
+    !window.confirm(
+      `¿Seguro que quieres eliminar al cliente "${c.nombre}" (${c.email_contacto})?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const r = await boDELETE(`/backoffice/clientes/${c.id_cliente}`);
     if (!r.ok) {
-      alert(r.msg || "Error guardando cliente");
+      alert(r.msg || "No se pudo eliminar el cliente");
       return;
     }
-
-    resetForm();
-    cargar();
+    // quitar de la lista sin recargar todo, opcional:
+    setClientes((prev) => prev.filter((x) => x.id_cliente !== c.id_cliente));
+    alert("Cliente eliminado correctamente");
+  } catch (err) {
+    console.error(err);
+    alert("Error eliminando cliente");
   }
+}
+
+
+
+
 
   return (
     <div className="p-6 space-y-4">
@@ -146,7 +185,8 @@ export default function Clientes({ user }) {
         clientes={clientes}
         loading={loading}
         onEditar={onEditarCliente}
-        onVerServicios={onVerServiciosCliente} // 👈 NUEVO
+        onVerServicios={onVerServiciosCliente} 
+        onEliminar={handleEliminarCliente}   
         isAdmin={isAdmin}
       />
 

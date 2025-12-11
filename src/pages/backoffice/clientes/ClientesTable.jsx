@@ -4,7 +4,9 @@ export default function ClientesTable({
   clientes,
   loading,
   onEditar,
-  onVerServicios,   // 👈 NUEVO
+  onVerServicios,
+  onEliminar,        // NUEVO
+
   isAdmin,
 }) {
   return (
@@ -52,11 +54,10 @@ export default function ClientesTable({
                   <td className="py-2 pr-4">{c.dni || "—"}</td>
                   <td className="py-2 pr-4">
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
-                        c.tiene_servicio
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${c.tiene_servicio
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-neutral-100 text-neutral-600"
-                      }`}
+                        }`}
                     >
                       {c.tiene_servicio ? "Con servicio" : "Sin servicio"}
                     </span>
@@ -69,7 +70,6 @@ export default function ClientesTable({
                   {isAdmin && (
                     <td className="py-2 pr-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {/* Botón Servicios */}
                         <button
                           type="button"
                           onClick={() => onVerServicios && onVerServicios(c)}
@@ -78,13 +78,20 @@ export default function ClientesTable({
                           Servicios
                         </button>
 
-                        {/* Botón Editar (ya existente) */}
                         <button
                           type="button"
                           onClick={() => onEditar(c)}
                           className="text-xs px-3 py-1 rounded-lg border border-primary text-primary hover:bg-primary/5"
                         >
                           Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onEliminar && onEliminar(c)}
+                          className="text-xs px-3 py-1 rounded-lg border border-red-500 text-red-600 hover:bg-red-50"
+                        >
+                          Eliminar
                         </button>
                       </div>
                     </td>
