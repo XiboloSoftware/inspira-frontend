@@ -1,6 +1,6 @@
 // src/pages/backoffice/clientes/Clientes.jsx
 import { useEffect, useState } from "react";
-import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi"; // 👈 añade boDELETE
+import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi";
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
 import ServiciosClienteModal from "./ServiciosClienteModal";
@@ -11,12 +11,7 @@ const FORM_INICIAL = {
   email_contacto: "",
   telefono: "",
   dni: "",
-  pasaporte: "",
-  pais_origen: "",
-  canal_origen: "",
-  activo: true,
 };
-
 
 export default function Clientes({ user }) {
   const [clientes, setClientes] = useState([]);
@@ -25,8 +20,6 @@ export default function Clientes({ user }) {
   const [q, setQ] = useState("");
   const [form, setForm] = useState(FORM_INICIAL);
   const [modo, setModo] = useState("nuevo"); // nuevo | editar
-
-  // 👇 NUEVO: estado para el modal de servicios
   const [clienteServicios, setClienteServicios] = useState(null);
 
   const isAdmin = user?.rol === "admin";
@@ -66,90 +59,73 @@ export default function Clientes({ user }) {
   }
 
   function onEditarCliente(c) {
-  if (!isAdmin) return;
-  setModo("editar");
-  setForm({
-    id_cliente: c.id_cliente,
-    nombre: c.nombre || "",
-    email_contacto: c.email_contacto || "",
-    telefono: c.telefono || "",
-    dni: c.dni || "",
-    pasaporte: c.pasaporte || "",
-    pais_origen: c.pais_origen || "",
-    canal_origen: c.canal_origen || "",
-    activo: typeof c.activo === "boolean" ? c.activo : true,
-  });
-}
+    if (!isAdmin) return;
+    setModo("editar");
+    setForm({
+      id_cliente: c.id_cliente,
+      nombre: c.nombre || "",
+      email_contacto: c.email_contacto || "",
+      telefono: c.telefono || "",
+      dni: c.dni || "",
+    });
+  }
 
-  // 👇 NUEVO: abrir modal de servicios
   function onVerServiciosCliente(c) {
     setClienteServicios(c);
   }
 
   async function onSubmitForm(e) {
-  e.preventDefault();
-  if (!isAdmin) return;
-  setSaving(true);
+    e.preventDefault();
+    if (!isAdmin) return;
+    setSaving(true);
 
-  const payload = {
-    nombre: form.nombre.trim(),
-    email_contacto: form.email_contacto.trim(),
-    telefono: form.telefono || null,
-    dni: form.dni || null,
-    pasaporte: form.pasaporte || null,
-    pais_origen: form.pais_origen || null,
-    canal_origen: form.canal_origen || null,
-    activo: !!form.activo,
-  };
+    let r;
+    if (form.id_cliente) {
+      r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, {
+        nombre: form.nombre,
+        email_contacto: form.email_contacto,
+        telefono: form.telefono,
+        dni: form.dni,
+      });
+    } else {
+      r = await boPOST("/backoffice/clientes", {
+        nombre: form.nombre,
+        email_contacto: form.email_contacto,
+        telefono: form.telefono,
+        dni: form.dni,
+      });
+    }
 
-  let r;
-  if (form.id_cliente) {
-    r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, payload);
-  } else {
-    r = await boPOST("/backoffice/clientes", payload);
-  }
+    setSaving(false);
 
-  setSaving(false);
-
-  if (!r.ok) {
-    alert(r.msg || "Error guardando cliente");
-    return;
-  }
-
-  resetForm();
-  cargar();
-}
-
-
-
-async function handleEliminarCliente(c) {
-  if (!isAdmin) return;
-  if (
-    !window.confirm(
-      `¿Seguro que quieres eliminar al cliente "${c.nombre}" (${c.email_contacto})?`
-    )
-  ) {
-    return;
-  }
-
-  try {
-    const r = await boDELETE(`/backoffice/clientes/${c.id_cliente}`);
     if (!r.ok) {
-      alert(r.msg || "No se pudo eliminar el cliente");
+      alert(r.msg || "Error guardando cliente");
       return;
     }
-    // quitar de la lista sin recargar todo, opcional:
-    setClientes((prev) => prev.filter((x) => x.id_cliente !== c.id_cliente));
-    alert("Cliente eliminado correctamente");
-  } catch (err) {
-    console.error(err);
-    alert("Error eliminando cliente");
+
+    resetForm();
+    cargar();
   }
-}
 
+  // desactivar cliente (DELETE = desactivar)
+  async function onEliminarCliente(c) {
+    if (!isAdmin) return;
 
+    const confirmar = window.confirm(
+      `¿Desactivar al cliente "${c.nombre}"? Podrás reactivarlo editando sus datos.`
+    );
+    if (!confirmar) return;
 
+    const r = await boDELETE(`/backoffice/clientes/${c.id_cliente}`);
 
+    if (!r.ok) {
+      alert(r.msg || "Error desactivando cliente");
+      return;
+    }
+
+    // recargar listado
+    cargar();
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -185,8 +161,8 @@ async function handleEliminarCliente(c) {
         clientes={clientes}
         loading={loading}
         onEditar={onEditarCliente}
-        onVerServicios={onVerServiciosCliente} 
-        onEliminar={handleEliminarCliente}   
+        onVerServicios={onVerServiciosCliente}
+        onEliminar={onEliminarCliente}
         isAdmin={isAdmin}
       />
 
@@ -201,7 +177,6 @@ async function handleEliminarCliente(c) {
         />
       )}
 
-      {/* 👇 NUEVO: render del modal de servicios */}
       {clienteServicios && (
         <ServiciosClienteModal
           cliente={clienteServicios}

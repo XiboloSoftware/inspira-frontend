@@ -10,10 +10,18 @@ export default function ClientesTable({
   isAdmin,
 }) {
   const [filtroServicio, setFiltroServicio] = useState("todos"); // todos | con | sin
+  const [filtroActivo, setFiltroActivo] = useState("activos");   // activos | inactivos | todos
   const [filtroNombre, setFiltroNombre] = useState("");
 
   const clientesFiltrados = useMemo(() => {
     let data = [...clientes];
+
+    // filtro por activo / inactivo
+    if (filtroActivo === "activos") {
+      data = data.filter((c) => c.activo);
+    } else if (filtroActivo === "inactivos") {
+      data = data.filter((c) => !c.activo);
+    }
 
     // filtro por servicio
     if (filtroServicio === "con") {
@@ -25,23 +33,22 @@ export default function ClientesTable({
     // filtro por nombre/apellidos
     if (filtroNombre.trim()) {
       const q = filtroNombre.toLowerCase();
-      data = data.filter(
-        (c) => (c.nombre || "").toLowerCase().includes(q)
-      );
+      data = data.filter((c) => (c.nombre || "").toLowerCase().includes(q));
     }
 
     return data;
-  }, [clientes, filtroServicio, filtroNombre]);
+  }, [clientes, filtroServicio, filtroActivo, filtroNombre]);
 
   return (
     <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+      {/* encabezado + filtros */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
         <div>
           <h2 className="text-sm font-semibold text-neutral-800">
             Listado de clientes
           </h2>
           <p className="text-[11px] text-neutral-500">
-            Filtra por servicio o busca por nombre y apellidos.
+            Filtra por estado, servicio y busca por nombre y apellidos.
           </p>
         </div>
 
@@ -55,7 +62,7 @@ export default function ClientesTable({
             onChange={(e) => setFiltroNombre(e.target.value)}
           />
 
-          {/* Filtros por estado de servicio */}
+          {/* Filtros por servicio */}
           <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
             <button
               type="button"
@@ -66,7 +73,7 @@ export default function ClientesTable({
                   : "bg-white text-neutral-700 hover:bg-neutral-50"
               }`}
             >
-              Todos
+              Todos serv.
             </button>
             <button
               type="button"
@@ -92,6 +99,43 @@ export default function ClientesTable({
             </button>
           </div>
 
+          {/* Filtros por activo/inactivo */}
+          <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setFiltroActivo("activos")}
+              className={`px-3 py-1.5 ${
+                filtroActivo === "activos"
+                  ? "bg-sky-700 text-white"
+                  : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              Activos
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroActivo("inactivos")}
+              className={`px-3 py-1.5 border-l border-neutral-200 ${
+                filtroActivo === "inactivos"
+                  ? "bg-neutral-700 text-white"
+                  : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              Inactivos
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroActivo("todos")}
+              className={`px-3 py-1.5 border-l border-neutral-200 ${
+                filtroActivo === "todos"
+                  ? "bg-neutral-900 text-white"
+                  : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              Todos
+            </button>
+          </div>
+
           {loading && (
             <span className="text-xs text-neutral-500 whitespace-nowrap">
               Cargando…
@@ -114,7 +158,6 @@ export default function ClientesTable({
 
       {clientesFiltrados.length > 0 && (
         <div className="border border-neutral-100 rounded-lg overflow-hidden">
-          {/* Scroll vertical y horizontal */}
           <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="sticky top-0 bg-white z-10">
@@ -123,7 +166,7 @@ export default function ClientesTable({
                   <th className="py-2 px-3">Correo</th>
                   <th className="py-2 px-3">Celular</th>
                   <th className="py-2 px-3">DNI</th>
-                  <th className="py-2 px-3">Estado</th>
+                  <th className="py-2 px-3">Estado servicio</th>
                   <th className="py-2 px-3">Fecha registro</th>
                   {isAdmin && (
                     <th className="py-2 px-3 text-right">Acciones</th>
@@ -136,7 +179,16 @@ export default function ClientesTable({
                     key={c.id_cliente}
                     className="border-b last:border-0 hover:bg-neutral-50"
                   >
-                    <td className="py-2 px-3">{c.nombre || "—"}</td>
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <span>{c.nombre || "—"}</span>
+                        {!c.activo && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-700">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2 px-3">{c.email_contacto}</td>
                     <td className="py-2 px-3">{c.telefono || "—"}</td>
                     <td className="py-2 px-3">{c.dni || "—"}</td>
@@ -182,7 +234,7 @@ export default function ClientesTable({
                             onClick={() => onEliminar && onEliminar(c)}
                             className="text-xs px-3 py-1 rounded-lg border border-red-500 text-red-600 hover:bg-red-50"
                           >
-                            Eliminar
+                            Desactivar
                           </button>
                         </div>
                       </td>
