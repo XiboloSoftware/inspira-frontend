@@ -5,7 +5,6 @@ const items = [
   { label: "Agenda", href: "/backoffice/agenda" },
   { label: "Reservas Diagnóstico", href: "/backoffice/diagnosticos" },
   { label: "Solicitudes", href: "/backoffice/solicitudes" },
- // { label: "Checklists/Docs", href: "/backoffice/checklists" },
   { label: "Clientes", href: "/backoffice/clientes" },
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
@@ -13,11 +12,13 @@ const items = [
   { label: "Settings", href: "/backoffice/settings" },
 ];
 
-
 export default function Sidebar({ path }) {
   return (
-    <aside className="w-64 bg-primary text-white min-h-screen px-4 py-6">
-      <div className="text-2xl font-bold mb-8 cursor-pointer" onClick={() => navigate("/backoffice/dashboard")}>
+    <aside className="w-64 bg-primary text-white h-screen px-4 py-6 flex-shrink-0">
+      <div
+        className="text-2xl font-bold mb-8 cursor-pointer"
+        onClick={() => navigate("/backoffice/dashboard")}
+      >
         Inspira Backoffice
       </div>
 

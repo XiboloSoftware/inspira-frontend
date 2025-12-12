@@ -14,7 +14,6 @@ import SolicitudesList from "./solicitudes/SolicitudesList";
 import SolicitudDetalleBackoffice from "./solicitudes/SolicitudDetalleBackoffice";
 import InstructivosServicios from "./instructivos/InstructivosServicios";
 
-
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
   const [user, setUser] = useState(() => {
@@ -55,49 +54,57 @@ export default function BackofficeApp() {
 
   return (
     <ProtectedRoute onLogout={logout}>
-      <div className="flex w-full">
+      {/* Layout de altura fija, con sidebar izquierdo + panel derecho con scroll */}
+      <div className="flex w-full h-screen overflow-hidden">
         <Sidebar path={path} />
 
-        <div className="flex-1 bg-white min-h-screen">
+        {/* Panel derecho: header fijo y contenido scrollable */}
+        <div className="flex-1 flex flex-col h-screen bg-white">
           <Topbar user={user} onLogout={logout} />
 
-          {/* Rutas internas */}
-          {path === "/backoffice" && <Dashboard />}
-          {path === "/backoffice/dashboard" && <Dashboard />}
+          <main className="flex-1 overflow-y-auto">
+            {/* Rutas internas */}
+            {path === "/backoffice" && <Dashboard />}
+            {path === "/backoffice/dashboard" && <Dashboard />}
 
-          {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
+            {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
 
-          {/* LISTA DE SOLICITUDES */}
-          {path === "/backoffice/solicitudes" && (
-            <SolicitudesList
-              onVerSolicitud={(id) =>
-                navigate(`/backoffice/solicitudes/${id}`)
-              }
-            />
-          )}
+            {/* LISTA DE SOLICITUDES */}
+            {path === "/backoffice/solicitudes" && (
+              <SolicitudesList
+                onVerSolicitud={(id) =>
+                  navigate(`/backoffice/solicitudes/${id}`)
+                }
+              />
+            )}
 
-          {/* DETALLE DE SOLICITUD */}
-          {isDetalleSolicitud && idSolicitudDetalle && (
-            <SolicitudDetalleBackoffice
-              idSolicitud={idSolicitudDetalle}
-              onVolver={() => navigate("/backoffice/solicitudes")}
-            />
-          )}
+            {/* DETALLE DE SOLICITUD */}
+            {isDetalleSolicitud && idSolicitudDetalle && (
+              <SolicitudDetalleBackoffice
+                idSolicitud={idSolicitudDetalle}
+                onVolver={() => navigate("/backoffice/solicitudes")}
+              />
+            )}
 
-          {path === "/backoffice/checklist-servicios" && <ChecklistServicios />}
+            {path === "/backoffice/checklist-servicios" && (
+              <ChecklistServicios />
+            )}
 
-          {path === "/backoffice/instructivos" && <InstructivosServicios />}
+            {path === "/backoffice/instructivos" && (
+              <InstructivosServicios />
+            )}
 
+            {path === "/backoffice/clientes" && <Clientes user={user} />}
+            {path === "/backoffice/precios" && <PreciosServicios />}
 
-          {path === "/backoffice/clientes" && <Clientes user={user} />}
-          {path === "/backoffice/precios" && <PreciosServicios />}
+            {path === "/backoffice/diagnosticos" && (
+              <Diagnosticos user={user} />
+            )}
 
-          {path === "/backoffice/diagnosticos" && (
-            <Diagnosticos user={user} />
-          )}
-          {path === "/backoffice/settings" && (
-            <UsuariosSettings user={user} />
-          )}
+            {path === "/backoffice/settings" && (
+              <UsuariosSettings user={user} />
+            )}
+          </main>
         </div>
       </div>
     </ProtectedRoute>
