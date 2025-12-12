@@ -1,5 +1,5 @@
 // src/pages/backoffice/solicitudes/CreateSolicitudAdmin.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
 
 export default function CreateSolicitudAdmin({ onCreated }) {
@@ -11,9 +11,11 @@ export default function CreateSolicitudAdmin({ onCreated }) {
   const [form, setForm] = useState({
     id_cliente: "",
     id_tipo_solicitud: "",
-    titulo: "",
     descripcion: "",
   });
+
+  const [clienteSearch, setClienteSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   async function cargarOpciones() {
     setLoadingOpciones(true);
@@ -34,20 +36,55 @@ export default function CreateSolicitudAdmin({ onCreated }) {
     cargarOpciones();
   }, []);
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((f) => {
-      // si cambia el tipo y no hay título, rellenamos automáticamente
-      if (name === "id_tipo_solicitud") {
-        const tipo = tipos.find(
-          (t) => String(t.id_tipo_solicitud) === value
-        );
-        const tituloAuto =
-          f.titulo?.trim() || tipo?.nombre || "Solicitud sin título";
-        return { ...f, [name]: value, titulo: tituloAuto };
-      }
-      return { ...f, [name]: value };
-    });
+  // lista de sugerencias de clientes según lo que se escribe
+  const clienteSugerencias = useMemo(() => {
+    const q = clienteSearch.trim().toLowerCase();
+    if (!q) return [];
+    return clientes
+      .filter((c) => {
+        const nombre = (c.nombre || "").toLowerCase();
+        const email = (c.email_contacto || "").toLowerCase();
+        return nombre.includes(q) || email.includes(q);
+      })
+      .slice(0, 10); // limitar a 10 sugerencias
+  }, [clienteSearch, clientes]);
+
+  const tipoSeleccionado = useMemo(
+    () =>
+      tipos.find(
+        (t) => String(t.id_tipo_solicitud) === String(form.id_tipo_solicitud)
+      ),
+    [tipos, form.id_tipo_solicitud]
+  );
+
+  const tituloPreview =
+    tipoSeleccionado?.nombre || "Se usará el nombre del tipo de solicitud";
+
+  function handleChangeTipo(e) {
+    const { value } = e.target;
+    setForm((f) => ({ ...f, id_tipo_solicitud: value }));
+  }
+
+  function handleChangeDescripcion(e) {
+    const { value } = e.target;
+    setForm((f) => ({ ...f, descripcion: value }));
+  }
+
+  function handleClienteInput(e) {
+    const value = e.target.value;
+    setClienteSearch(value);
+    setShowSuggestions(true);
+    // al escribir, limpiamos la selección previa de id_cliente
+    setForm((f) => ({ ...f, id_cliente: "" }));
+  }
+
+  function seleccionarCliente(c) {
+    setForm((f) => ({ ...f, id_cliente: String(c.id_cliente) }));
+    setClienteSearch(
+      (c.nombre || "Sin nombre") +
+        (c.email_contacto ? ` · ${c.email_contacto}` : "")
+    );
+    setShowSuggestions(false);
   }
 
   async function handleSubmit(e) {
@@ -57,8 +94,12 @@ export default function CreateSolicitudAdmin({ onCreated }) {
     const id_cliente = Number(form.id_cliente);
     const id_tipo_solicitud = Number(form.id_tipo_solicitud);
 
-    if (!id_cliente || !id_tipo_solicitud) {
-      alert("Selecciona cliente y tipo de solicitud.");
+    if (!id_cliente) {
+      alert("Selecciona un cliente de la lista.");
+      return;
+    }
+    if (!id_tipo_solicitud) {
+      alert("Selecciona un tipo de solicitud.");
       return;
     }
 
@@ -67,7 +108,7 @@ export default function CreateSolicitudAdmin({ onCreated }) {
       const body = {
         id_cliente,
         id_tipo_solicitud,
-        titulo: form.titulo?.trim() || null,
+        // no mandamos titulo: el backend lo toma del tipo
         descripcion: form.descripcion?.trim() || null,
         origen: "backoffice_manual",
       };
@@ -85,9 +126,9 @@ export default function CreateSolicitudAdmin({ onCreated }) {
       setForm({
         id_cliente: "",
         id_tipo_solicitud: "",
-        titulo: "",
         descripcion: "",
       });
+      setClienteSearch("");
       alert("Solicitud creada correctamente.");
     } finally {
       setSaving(false);
@@ -102,9 +143,9 @@ export default function CreateSolicitudAdmin({ onCreated }) {
       <p className="text-sm font-semibold text-neutral-800 mb-1">
         Crear solicitud manual
       </p>
-      <p className="text-[11px] text-neutral-500">
-        Crea una solicitud sin pasar por el pago. El título se rellenará
-        automáticamente según el tipo seleccionado (puedes editarlo).
+      <p className="text-[11px] text-neutral-500 mb-2">
+        Selecciona el cliente y el tipo de solicitud. El título se tomará
+        automáticamente del tipo elegido.
       </p>
 
       {loadingOpciones && (
@@ -116,27 +157,47 @@ export default function CreateSolicitudAdmin({ onCreated }) {
       {!loadingOpciones && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
+            {/* Cliente con autocompletado */}
+            <div className="relative">
               <label className="block mb-1 font-medium text-xs">
                 Cliente
               </label>
-              <select
-                name="id_cliente"
-                value={form.id_cliente}
-                onChange={handleChange}
+              <input
+                type="text"
+                value={clienteSearch}
+                onChange={handleClienteInput}
+                onFocus={() => setShowSuggestions(true)}
                 className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs bg-white"
-                required
-              >
-                <option value="">Selecciona un cliente…</option>
-                {clientes.map((c) => (
-                  <option key={c.id_cliente} value={c.id_cliente}>
-                    {(c.nombre || "Sin nombre") +
-                      (c.email_contacto ? ` · ${c.email_contacto}` : "")}
-                  </option>
-                ))}
-              </select>
+                placeholder="Escribe nombre o correo del cliente…"
+              />
+              {/* sugerencias */}
+              {showSuggestions && clienteSugerencias.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                  {clienteSugerencias.map((c) => (
+                    <button
+                      type="button"
+                      key={c.id_cliente}
+                      onClick={() => seleccionarCliente(c)}
+                      className="w-full text-left px-2 py-1.5 text-[11px] hover:bg-neutral-100"
+                    >
+                      <div className="font-medium">
+                        {c.nombre || "Sin nombre"}
+                      </div>
+                      <div className="text-[10px] text-neutral-500">
+                        {c.email_contacto || "Sin correo"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {form.id_cliente && (
+                <p className="mt-1 text-[10px] text-emerald-700">
+                  Cliente seleccionado (ID {form.id_cliente})
+                </p>
+              )}
             </div>
 
+            {/* Tipo de solicitud */}
             <div>
               <label className="block mb-1 font-medium text-xs">
                 Tipo de solicitud
@@ -144,7 +205,7 @@ export default function CreateSolicitudAdmin({ onCreated }) {
               <select
                 name="id_tipo_solicitud"
                 value={form.id_tipo_solicitud}
-                onChange={handleChange}
+                onChange={handleChangeTipo}
                 className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs bg-white"
                 required
               >
@@ -158,32 +219,24 @@ export default function CreateSolicitudAdmin({ onCreated }) {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-[10px] text-neutral-500">
+                Título automático:{" "}
+                <span className="font-semibold">{tituloPreview}</span>
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block mb-1 font-medium text-xs">Título</label>
-              <input
-                type="text"
-                name="titulo"
-                value={form.titulo}
-                onChange={handleChange}
-                className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs"
-                placeholder="Se rellenará con el tipo, puedes editarlo…"
-              />
-            </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block mb-1 font-medium text-xs">
-                Descripción
+                Descripción interna (opcional)
               </label>
-              <input
-                type="text"
+              <textarea
                 name="descripcion"
                 value={form.descripcion}
-                onChange={handleChange}
-                className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs"
-                placeholder="Opcional"
+                onChange={handleChangeDescripcion}
+                className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs min-h-[60px]"
+                placeholder="Notas internas sobre esta solicitud (opcional)…"
               />
             </div>
           </div>
