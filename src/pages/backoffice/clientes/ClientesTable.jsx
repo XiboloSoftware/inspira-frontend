@@ -6,7 +6,7 @@ export default function ClientesTable({
   loading,
   onEditar,
   onVerServicios,
-  onEliminar,
+  onToggleActivo,  
   isAdmin,
 }) {
   const [filtroServicio, setFiltroServicio] = useState("todos"); // todos | con | sin
@@ -16,21 +16,18 @@ export default function ClientesTable({
   const clientesFiltrados = useMemo(() => {
     let data = [...clientes];
 
-    // filtro por activo / inactivo
     if (filtroActivo === "activos") {
       data = data.filter((c) => c.activo);
     } else if (filtroActivo === "inactivos") {
       data = data.filter((c) => !c.activo);
     }
 
-    // filtro por servicio
     if (filtroServicio === "con") {
       data = data.filter((c) => c.tiene_servicio);
     } else if (filtroServicio === "sin") {
       data = data.filter((c) => !c.tiene_servicio);
     }
 
-    // filtro por nombre/apellidos
     if (filtroNombre.trim()) {
       const q = filtroNombre.toLowerCase();
       data = data.filter((c) => (c.nombre || "").toLowerCase().includes(q));
@@ -53,7 +50,6 @@ export default function ClientesTable({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          {/* Buscador por nombre/apellidos */}
           <input
             type="text"
             className="border border-neutral-300 rounded-lg px-3 py-1.5 text-xs min-w-[200px]"
@@ -231,10 +227,16 @@ export default function ClientesTable({
 
                           <button
                             type="button"
-                            onClick={() => onEliminar && onEliminar(c)}
-                            className="text-xs px-3 py-1 rounded-lg border border-red-500 text-red-600 hover:bg-red-50"
+                            onClick={() =>
+                              onToggleActivo && onToggleActivo(c)
+                            }
+                            className={`text-xs px-3 py-1 rounded-lg border ${
+                              c.activo
+                                ? "border-red-500 text-red-600 hover:bg-red-50"
+                                : "border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                            }`}
                           >
-                            Desactivar
+                            {c.activo ? "Desactivar" : "Activar"}
                           </button>
                         </div>
                       </td>

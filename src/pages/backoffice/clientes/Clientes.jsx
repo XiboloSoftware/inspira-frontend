@@ -1,6 +1,6 @@
 // src/pages/backoffice/clientes/Clientes.jsx
 import { useEffect, useState } from "react";
-import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi";
+import { boGET, boPOST, boPUT /*, boDELETE */ } from "../../../services/backofficeApi";
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
 import ServiciosClienteModal from "./ServiciosClienteModal";
@@ -11,6 +11,10 @@ const FORM_INICIAL = {
   email_contacto: "",
   telefono: "",
   dni: "",
+  pasaporte: "",
+  pais_origen: "",
+  canal_origen: "",
+  activo: true,
 };
 
 export default function Clientes({ user }) {
@@ -20,6 +24,7 @@ export default function Clientes({ user }) {
   const [q, setQ] = useState("");
   const [form, setForm] = useState(FORM_INICIAL);
   const [modo, setModo] = useState("nuevo"); // nuevo | editar
+
   const [clienteServicios, setClienteServicios] = useState(null);
 
   const isAdmin = user?.rol === "admin";
@@ -50,7 +55,10 @@ export default function Clientes({ user }) {
 
   function onChangeForm(e) {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((f) => ({
+      ...f,
+      [name]: value,
+    }));
   }
 
   function resetForm() {
@@ -67,6 +75,10 @@ export default function Clientes({ user }) {
       email_contacto: c.email_contacto || "",
       telefono: c.telefono || "",
       dni: c.dni || "",
+      pasaporte: c.pasaporte || "",
+      pais_origen: c.pais_origen || "",
+      canal_origen: c.canal_origen || "",
+      activo: c.activo ?? true,
     });
   }
 
@@ -79,21 +91,24 @@ export default function Clientes({ user }) {
     if (!isAdmin) return;
     setSaving(true);
 
+    const payload = {
+      nombre: (form.nombre || "").trim(),
+      email_contacto: (form.email_contacto || "").trim(),
+      telefono: form.telefono || null,
+      dni: form.dni || null,
+      pasaporte: form.pasaporte || null,
+      pais_origen: form.pais_origen || null,
+      canal_origen: form.canal_origen || null,
+      ...(modo === "editar" ? { activo: !!form.activo } : {}),
+    };
+
     let r;
     if (form.id_cliente) {
-      r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, {
-        nombre: form.nombre,
-        email_contacto: form.email_contacto,
-        telefono: form.telefono,
-        dni: form.dni,
-      });
+      // actualizar
+      r = await boPUT(`/backoffice/clientes/${form.id_cliente}`, payload);
     } else {
-      r = await boPOST("/backoffice/clientes", {
-        nombre: form.nombre,
-        email_contacto: form.email_contacto,
-        telefono: form.telefono,
-        dni: form.dni,
-      });
+      // crear
+      r = await boPOST("/backoffice/clientes", payload);
     }
 
     setSaving(false);
@@ -103,28 +118,58 @@ export default function Clientes({ user }) {
       return;
     }
 
+    // refresca listado
     resetForm();
     cargar();
   }
 
-  // desactivar cliente (DELETE = desactivar)
-  async function onEliminarCliente(c) {
+  // Activar / desactivar cliente desde la tabla
+  async function onToggleActivoCliente(c) {
     if (!isAdmin) return;
 
-    const confirmar = window.confirm(
-      `¿Desactivar al cliente "${c.nombre}"? Podrás reactivarlo editando sus datos.`
-    );
-    if (!confirmar) return;
+    const nuevoEstado = !c.activo;
 
-    const r = await boDELETE(`/backoffice/clientes/${c.id_cliente}`);
+    const ok = window.confirm(
+      nuevoEstado
+        ? "¿Quieres activar este cliente?"
+        : "¿Quieres desactivar este cliente?"
+    );
+    if (!ok) return;
+
+    const r = await boPUT(`/backoffice/clientes/${c.id_cliente}`, {
+      nombre: c.nombre || "",
+      email_contacto: c.email_contacto || "",
+      telefono: c.telefono || null,
+      dni: c.dni || null,
+      pasaporte: c.pasaporte || null,
+      pais_origen: c.pais_origen || null,
+      canal_origen: c.canal_origen || null,
+      activo: nuevoEstado,
+    });
 
     if (!r.ok) {
-      alert(r.msg || "Error desactivando cliente");
+      alert(r.msg || "No se pudo actualizar el estado del cliente");
       return;
     }
 
-    // recargar listado
-    cargar();
+    // actualizar en memoria usando la respuesta del backend
+    if (r.cliente) {
+      setClientes((prev) =>
+        prev.map((cli) =>
+          cli.id_cliente === c.id_cliente ? r.cliente : cli
+        )
+      );
+    } else {
+      // fallback: recargar
+      cargar();
+    }
+
+    // si estás editando justo ese cliente, sincroniza el form
+    setForm((f) =>
+      f.id_cliente === c.id_cliente
+        ? { ...f, activo: nuevoEstado }
+        : f
+    );
   }
 
   return (
@@ -162,7 +207,7 @@ export default function Clientes({ user }) {
         loading={loading}
         onEditar={onEditarCliente}
         onVerServicios={onVerServiciosCliente}
-        onEliminar={onEliminarCliente}
+        onToggleActivo={onToggleActivoCliente}   // 👈 aquí
         isAdmin={isAdmin}
       />
 
