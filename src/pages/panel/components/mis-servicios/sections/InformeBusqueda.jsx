@@ -57,7 +57,7 @@ export default function InformeBusqueda({ idSolicitud, informe }) {
   }
 
   return (
-    <section className="md:col-span-2 border border-neutral-200 rounded-lg p-3">
+<section className="border border-neutral-200 rounded-lg p-3 h-full flex flex-col">
       <h3 className="text-sm font-semibold text-neutral-900 mb-1">
         4. Informe de búsqueda de másteres
       </h3>

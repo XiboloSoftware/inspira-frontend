@@ -155,25 +155,22 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
             />
 
             {/* Grid mejorado */}
-           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
-
-              {/* ===== FILA 1 (misma altura prudente) ===== */}
-              <div className="xl:col-span-2 h-[520px]">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+              {/* ===== FILA 1 (1 y 2) ===== */}
+              <div className="h-[520px]">
                 <ChecklistDocumentos
                   checklist={checklist}
                   cargarTodo={cargarTodo}
                   idSolicitud={idSolicitud}
-                // opcional si quieres: fixedHeight
-                // fixedHeight
                 />
               </div>
 
-              <div className="xl:col-span-1 h-[520px]">
+              <div className="h-[520px]">
                 <InstructivosPlantillas instructivos={instructivos} />
               </div>
 
-              {/* ===== FILA 2 (misma altura prudente) ===== */}
-              <div className="h-[420px]">
+              {/* ===== FILA 2 (3 y 4) ===== */}
+              <div className="h-[520px]">
                 <FormularioDatosAcademicos
                   formData={formData}
                   setFormData={setFormData}
@@ -185,7 +182,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 />
               </div>
 
-              <div className="xl:col-span-2 h-[420px]">
+              <div className="h-[520px]">
                 <InformeBusqueda
                   idSolicitud={idSolicitud}
                   informe={{
@@ -195,7 +192,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 />
               </div>
 
-              {/* Full width blocks (estos NO los fuerzo a altura fija) */}
+              {/* ===== Full width (5+) ===== */}
               <div className="col-span-full">
                 <EleccionMastersCliente
                   elecciones={elecciones}
@@ -217,6 +214,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 <CierreServicioMasterCliente idSolicitud={idSolicitud} />
               </div>
             </div>
+
 
 
           </>
