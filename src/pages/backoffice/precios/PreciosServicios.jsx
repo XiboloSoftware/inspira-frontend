@@ -23,7 +23,7 @@ export default function PreciosServicios() {
   const [filtro, setFiltro] = useState("todos"); // activos | inactivos | todos
 
   const [usuario, setUsuario] = useState(null);
-  const isAdmin = usuario?.rol === "admin";
+const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
 
   // ============================
   // Carga de usuario logueado
@@ -33,7 +33,7 @@ export default function PreciosServicios() {
       try {
         const r = await boGET("/backoffice/me");
         if (r.ok) {
-          setUsuario(r.usuario);
+          setUsuario(r.usuario || r.user || null);
         }
       } catch (e) {
         console.error("Error al cargar usuario backoffice", e);
