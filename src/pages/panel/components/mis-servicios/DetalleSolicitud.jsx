@@ -1,24 +1,17 @@
-//inspira-frontend\src\pages\panel\components\mis-servicios\DetalleSolicitud.jsx
+// inspira-frontend/src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-import {
-  formatearFecha,
-  badgeEstadoSolicitud,
-  badgeEstadoItemChecklist,
-} from "./utils";
-
+import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
 import ChecklistDocumentos from "./sections/ChecklistDocumentos";
 import InstructivosPlantillas from "./sections/InstructivosPlantillas";
-import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
 import FormularioDatosAcademicos from "./sections/FormularioDatosAcademicos";
 import InformeBusqueda from "./sections/InformeBusqueda";
 import EleccionMastersCliente from "./sections/EleccionMastersCliente";
 import ProgramacionPostulacionesCliente from "./sections/ProgramacionPostulacionesCliente";
 import PortalesYJustificantesCliente from "./sections/PortalesYJustificantesCliente";
 import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente";
-
 
 export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
@@ -31,7 +24,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   const [formCollapsed, setFormCollapsed] = useState(false);
 
-  // NUEVO: estado para Bloque 5
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
 
@@ -57,65 +49,39 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
         const tiene = Object.keys(rForm.datos || {}).length > 0;
-        // Si ya tiene datos, lo mostramos colapsado por defecto
         setFormCollapsed(tiene);
       } else {
         setFormData({});
-        setFormCollapsed(false); // animar a completarlo
+        setFormCollapsed(false);
       }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
-    if (rInst.ok) {
-      const base = (API_URL || "").replace(/\/+$/, ""); // quita barras finales
-
-      const lista = (rInst.instructivos || []).map((i) => {
-        const rawUrl = i.url || i.archivo_url || "";
-        const isAbsolute = /^https?:\/\//i.test(rawUrl);
-
-        if (isAbsolute) {
-          // ya viene completa (GDrive, GCS, etc.)
-          return { label: i.label, url: rawUrl };
-        }
-
-        // normalizar ruta relativa:
-        const path = rawUrl.replace(/^\/+/, ""); // quita barras iniciales
-        return {
-          label: i.label,
-          url: `${base}/${path}`, // SIEMPRE una sola barra entre dominio y ruta
-        };
-      });
-
-      setInstructivos(lista);
-    } else {
-      setInstructivos([]);
-    }
-
-
-      // NUEVO: elecciones de másteres (bloque 5)
-      const rElec = await apiGET(
-        `/solicitudes/${idSolicitud}/eleccion-masters`
-      );
-      if (rElec.ok && Array.isArray(rElec.elecciones)) {
-        if (rElec.elecciones.length > 0) {
-          setElecciones(rElec.elecciones);
-        } else {
-          // si está vacío, creamos 5 filas base
-          const base = Array.from({ length: 5 }, (_, idx) => ({
-            prioridad: idx + 1,
-            programa: "",
-            comentario: "",
-          }));
-          setElecciones(base);
-        }
+      if (rInst.ok) {
+        const base = (API_URL || "").replace(/\/+$/, "");
+        const lista = (rInst.instructivos || []).map((i) => {
+          const rawUrl = i.url || i.archivo_url || "";
+          const isAbsolute = /^https?:\/\//i.test(rawUrl);
+          if (isAbsolute) return { label: i.label, url: rawUrl };
+          const path = rawUrl.replace(/^\/+/, "");
+          return { label: i.label, url: `${base}/${path}` };
+        });
+        setInstructivos(lista);
       } else {
-        const base = Array.from({ length: 5 }, (_, idx) => ({
-          prioridad: idx + 1,
-          programa: "",
-          comentario: "",
-        }));
-        setElecciones(base);
+        setInstructivos([]);
       }
 
+      const rElec = await apiGET(`/solicitudes/${idSolicitud}/eleccion-masters`);
+      const base5 = Array.from({ length: 5 }, (_, idx) => ({
+        prioridad: idx + 1,
+        programa: "",
+        comentario: "",
+      }));
+
+      if (rElec.ok && Array.isArray(rElec.elecciones)) {
+        setElecciones(rElec.elecciones.length > 0 ? rElec.elecciones : base5);
+      } else {
+        setElecciones(base5);
+      }
     } catch (e) {
       setError("Error al cargar información.");
     } finally {
@@ -135,16 +101,12 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     e.preventDefault();
     setSavingForm(true);
     try {
-      const r = await apiPOST(
-        `/solicitudes/${idSolicitud}/formulario`,
-        formData
-      );
+      const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) {
         window.alert("No se pudo guardar.");
         return;
       }
       window.alert("Datos guardados.");
-      // Después de guardar, lo colapsamos
       setFormCollapsed(true);
     } catch {
       window.alert("Error al guardar.");
@@ -156,12 +118,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   async function handleGuardarElecciones() {
     setSavingElecciones(true);
     try {
-      const r = await apiPOST(
-        `/solicitudes/${idSolicitud}/eleccion-masters`,
-        {
-          elecciones,
-        }
-      );
+      const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, {
+        elecciones,
+      });
       if (!r.ok) {
         window.alert("No se pudo guardar la elección de másteres.");
         return;
@@ -178,13 +137,11 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   return (
     <div className="space-y-4">
-      <button
-        onClick={onVolver}
-        className="text-xs text-[#023A4B] hover:underline"
-      >
+      <button onClick={onVolver} className="text-xs text-[#023A4B] hover:underline">
         ← Volver a mis servicios
       </button>
 
+      {/* Sube el ancho máximo para usar mejor pantalla */}
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4">
         {loading && <p>Cargando…</p>}
         {error && <p className="text-red-600">{error}</p>}
@@ -197,56 +154,66 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              <ChecklistDocumentos
-                checklist={checklist}
-                cargarTodo={cargarTodo}
-                idSolicitud={idSolicitud}
-              />
+            {/* Grid mejorado */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+              {/* Checklist: en xl ocupa 2 columnas para que no quede apretado */}
+              <div className="xl:col-span-2">
+                <ChecklistDocumentos
+                  checklist={checklist}
+                  cargarTodo={cargarTodo}
+                  idSolicitud={idSolicitud}
+                />
+              </div>
 
-              <InstructivosPlantillas instructivos={instructivos} />
+              {/* Instructivos: a la derecha en xl */}
+              <div className="xl:col-span-1">
+                <InstructivosPlantillas instructivos={instructivos} />
+              </div>
 
-              <FormularioDatosAcademicos
-                formData={formData}
-                setFormData={setFormData}
-                handleSubmitFormulario={handleSubmitFormulario}
-                savingForm={savingForm}
-                collapsed={formCollapsed}
-                onToggle={() => setFormCollapsed((v) => !v)}
-                hasData={hasFormData}
-              />
+              {/* Form + Informe: quedan en fila (2 o 3 col) sin bajar tanto */}
+              <div className="xl:col-span-1">
+                <FormularioDatosAcademicos
+                  formData={formData}
+                  setFormData={setFormData}
+                  handleSubmitFormulario={handleSubmitFormulario}
+                  savingForm={savingForm}
+                  collapsed={formCollapsed}
+                  onToggle={() => setFormCollapsed((v) => !v)}
+                  hasData={hasFormData}
+                />
+              </div>
 
-              {/* Bloque 4: Informe */}
-              <InformeBusqueda
-                idSolicitud={idSolicitud}
-                informe={{
-                  informe_nombre_original: detalle.informe_nombre_original,
-                  informe_fecha_subida: detalle.informe_fecha_subida,
-                }}
-              />
+              <div className="xl:col-span-2">
+                <InformeBusqueda
+                  idSolicitud={idSolicitud}
+                  informe={{
+                    informe_nombre_original: detalle.informe_nombre_original,
+                    informe_fecha_subida: detalle.informe_fecha_subida,
+                  }}
+                />
+              </div>
 
-              {/* BLOQUE 5: Elección de másteres */}
-              <EleccionMastersCliente
-                elecciones={elecciones}
-                setElecciones={setElecciones}
-                onGuardar={handleGuardarElecciones}
-                saving={savingElecciones}
-              />
+              {/* De aquí para abajo: mejor a ancho completo para no apretar */}
+              <div className="col-span-full">
+                <EleccionMastersCliente
+                  elecciones={elecciones}
+                  setElecciones={setElecciones}
+                  onGuardar={handleGuardarElecciones}
+                  saving={savingElecciones}
+                />
+              </div>
 
-              {/* BLOQUE 6: Programación de postulaciones */}
-              <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+              <div className="col-span-full">
+                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+              </div>
 
+              <div className="col-span-full">
+                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+              </div>
 
-
-              {/* BLOQUE 7: Portales, claves y justificantes */}
-              <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-
-
-
-              {/* BLOQUE 8: Cierre */}
-
-              <CierreServicioMasterCliente idSolicitud={idSolicitud} />
-
+              <div className="col-span-full">
+                <CierreServicioMasterCliente idSolicitud={idSolicitud} />
+              </div>
             </div>
           </>
         )}
