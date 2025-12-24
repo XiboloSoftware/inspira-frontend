@@ -80,6 +80,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (!detalle) return null;
 
+  // ✅ VISADO = id_tipo_solicitud 15
+  const isVisado =
+    Number(detalle.id_tipo_solicitud) === 15 ||
+    String(detalle.tipo_solicitud || detalle.tipo_nombre || "")
+      .toLowerCase()
+      .includes("visado");
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4">
@@ -93,7 +100,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           guardandoAsesores={guardandoAsesores}
         />
 
-        {/* Checklist y documentos */}
+        {/* 1) Documentos requeridos (Checklist) */}
         <ChecklistSolicitudAdmin
           detalle={detalle}
           checklistPorEtapa={checklistPorEtapa}
@@ -101,36 +108,60 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           recargar={cargar}
         />
 
-        {/* Formulario de datos académicos */}
-        <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            3. Formulario de datos académicos
-          </h3>
-          <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-        </section>
+        {/* ✅ VISADO: solo módulos que aplican */}
+        {isVisado ? (
+          <>
+            {/* 2) Instructivos y plantillas:
+               En tu backoffice los instructivos se gestionan por SERVICIO (pantalla aparte),
+               no por solicitud. Si quieres, aquí puedes poner un bloque informativo/enlace. */}
+            <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                2. Instructivo y plantillas
+              </h3>
+              <p className="text-xs text-neutral-500">
+                Se configuran por servicio en el módulo “Instructivos”.
+              </p>
+            </section>
 
-        {/* Informe */}
-        <InformeAdmin detalle={detalle} recargar={cargar} />
+            {/* 3) Portales, claves y justificantes */}
+            <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+          </>
+        ) : (
+          <>
+            {/* ====== FLUJO MÁSTER (7 bloques) ====== */}
 
-        {/* BLOQUE 5 */}
-        <section className="border border-neutral-200 rounded-lg p-3 mb-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            5. Elección de másteres (cliente)
-          </h3>
-          <p className="text-xs text-neutral-500 mb-2">
-            Másteres que el cliente ha seleccionado y ordenado por prioridad después de revisar el informe.
-          </p>
-          <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
-        </section>
+            {/* 3. Formulario */}
+            <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+                3. Formulario de datos académicos
+              </h3>
+              <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+            </section>
 
-        {/* BLOQUE 6 */}
-        <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+            {/* 4. Informe */}
+            <InformeAdmin detalle={detalle} recargar={cargar} />
 
-        {/* BLOQUE 7 */}
-        <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+            {/* 5. Elección */}
+            <section className="border border-neutral-200 rounded-lg p-3 mb-4">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+                5. Elección de másteres (cliente)
+              </h3>
+              <p className="text-xs text-neutral-500 mb-2">
+                Másteres que el cliente ha seleccionado y ordenado por prioridad después de revisar el informe.
+              </p>
+              <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
+            </section>
 
-        {/* BLOQUE 8 */}
-        <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+            {/* 6. Programación */}
+            <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+
+            {/* 7. Portales */}
+            <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+
+            {/* 8. Cierre */}
+            <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+          </>
+        )}
       </div>
     </div>
   );
