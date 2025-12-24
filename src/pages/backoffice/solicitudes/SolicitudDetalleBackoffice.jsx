@@ -83,12 +83,18 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (!detalle) return null;
 
-  // ✅ Tipo "Visado" (según tu BD: id_tipo_solicitud = 15)
-  const isVisado =
-    Number(detalle.id_tipo_solicitud) === 15 ||
-    (detalle.tipo_solicitud || detalle.nombre_tipo_solicitud || "")
-      .toString()
-      .toLowerCase() === "visado";
+  /**
+   * IMPORTANTE:
+   * En el backoffice el "detalle" viene de /api/admin/solicitudes/:id/checklist (mapper documentos.mappers.js)
+   * y NO trae id_tipo_solicitud.
+   * Sí trae:
+   *  - detalle.tipo   = solicitud.tipo?.categoria (ej: "master" | "servicio")
+   *  - detalle.titulo = solicitud.titulo (ej: "Visado")
+   */
+  const tituloLower = (detalle.titulo || "").toString().trim().toLowerCase();
+  const tipoLower = (detalle.tipo || "").toString().trim().toLowerCase();
+
+  const isVisado = tipoLower === "servicio" && tituloLower === "visado";
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -103,7 +109,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           guardandoAsesores={guardandoAsesores}
         />
 
-        {/* 1) Checklist y documentos (SIEMPRE) */}
+        {/* 1) Documentos requeridos (checklist + subida interna) */}
         <ChecklistSolicitudAdmin
           detalle={detalle}
           checklistPorEtapa={checklistPorEtapa}
@@ -111,20 +117,15 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           recargar={cargar}
         />
 
-        {/* ============================
-            VISADO: solo 3 módulos
-           ============================ */}
         {isVisado ? (
           <>
-            {/* 2) Instructivo y plantillas (opcional dentro del detalle) */}
+            {/* 2) Instructivo y plantillas (en tu sistema se configura por servicio en la pantalla "Instructivos") */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 2. Instructivo y plantillas
               </h3>
               <p className="text-xs text-neutral-600">
-                Este bloque se configura por servicio en la sección de Instructivos.
-                Si quieres verlo dentro del detalle de solicitud, dime qué endpoint/estructura
-                usar (o pásame el componente que ya tengas) y lo conectamos aquí.
+                Este bloque se gestiona por servicio en la sección de <b>Instructivos</b>.
               </p>
             </section>
 
@@ -132,9 +133,6 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
           </>
         ) : (
-          /* ============================
-             MÁSTER (flujo actual): 7 bloques
-             ============================ */
           <>
             {/* BLOQUE 3 */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
