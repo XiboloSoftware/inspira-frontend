@@ -50,26 +50,26 @@ export default function PanelCliente() {
   }
 
   return (
-    <div className="min-h-screen flex bg-neutral-50">
-      <PanelSidebar user={user} activeTab={tab} onChangeTab={setTab} />
+  <div className="h-screen overflow-hidden flex bg-neutral-50">
+    <PanelSidebar user={user} activeTab={tab} onChangeTab={setTab} />
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
-        <header className="mb-6">
-          <p className="text-xs font-medium text-primary uppercase tracking-wide">
-            Panel de cliente
-          </p>
-          <h1 className="text-2xl font-bold text-neutral-900">Mi panel</h1>
-        </header>
+    {/* 👇 la derecha scrollea, la izquierda NO crece */}
+    <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="mb-6">
+        <p className="text-xs font-medium text-primary uppercase tracking-wide">
+          Panel de cliente
+        </p>
+        <h1 className="text-2xl font-bold text-neutral-900">Mi panel</h1>
+      </header>
 
-        {/* ✅ Ancho dinámico: servicios ocupa más */}
-        <div className={tab === "servicios" ? "w-full max-w-7xl mx-auto" : "max-w-4xl"}>
-          {tab === "perfil" && (
-            <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
-          )}
-          {tab === "citas" && <MisCitas />}
-          {tab === "servicios" && <MisServicios />}
-        </div>
-      </main>
-    </div>
-  );
+      <div className={tab === "servicios" ? "w-full max-w-7xl mx-auto" : "max-w-4xl"}>
+        {tab === "perfil" && (
+          <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
+        )}
+        {tab === "citas" && <MisCitas />}
+        {tab === "servicios" && <MisServicios />}
+      </div>
+    </main>
+  </div>
+);
 }

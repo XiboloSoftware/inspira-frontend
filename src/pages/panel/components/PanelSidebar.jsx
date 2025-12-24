@@ -12,21 +12,21 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
   return (
     <aside
       className="
+        h-screen overflow-hidden shrink-0
         bg-gradient-to-b from-[#023A4B] to-[#046C8C]
         text-white
         flex flex-col
-        min-h-screen
         w-full
-        md:w-72
+        md:w-[clamp(220px,20vw,320px)]
       "
     >
       {/* Header usuario */}
-      <div className="px-6 pt-6 pb-4 border-b border-white/10">
+      <div className="px-6 pt-6 pb-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-sm font-semibold">
             {inicial}
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span className="text-sm font-semibold truncate">{nombre}</span>
             <span className="text-xs text-white/70 truncate">{correo}</span>
           </div>
@@ -53,7 +53,7 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
       </div>
 
       {/* Acciones inferiores fijas */}
-      <div className="px-6 py-4 border-t border-white/10 space-y-2">
+      <div className="px-6 py-4 border-t border-white/10 space-y-2 shrink-0">
         <button
           type="button"
           onClick={() => navigate("/")}
@@ -70,9 +70,7 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
           Cerrar sesión
         </button>
 
-        <p className="text-xs text-white/60 mt-1">
-          Inspira | Panel de cliente
-        </p>
+        <p className="text-xs text-white/60 mt-1">Inspira | Panel de cliente</p>
       </div>
     </aside>
   );
