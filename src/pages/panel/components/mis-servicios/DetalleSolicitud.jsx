@@ -170,27 +170,34 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               </div>
 
               {/* ===== FILA 2 (3 y 4) ===== */}
-              <div className="h-[520px]">
-                <FormularioDatosAcademicos
-                  formData={formData}
-                  setFormData={setFormData}
-                  handleSubmitFormulario={handleSubmitFormulario}
-                  savingForm={savingForm}
-                  collapsed={formCollapsed}
-                  onToggle={() => setFormCollapsed((v) => !v)}
-                  hasData={hasFormData}
-                />
-              </div>
+{(() => {
+  const row2Height = formCollapsed ? "h-auto" : "h-[520px]";
+  return (
+    <>
+      <div className={row2Height}>
+        <FormularioDatosAcademicos
+          formData={formData}
+          setFormData={setFormData}
+          handleSubmitFormulario={handleSubmitFormulario}
+          savingForm={savingForm}
+          collapsed={formCollapsed}
+          onToggle={() => setFormCollapsed((v) => !v)}
+          hasData={hasFormData}
+        />
+      </div>
 
-              <div className="h-[520px]">
-                <InformeBusqueda
-                  idSolicitud={idSolicitud}
-                  informe={{
-                    informe_nombre_original: detalle.informe_nombre_original,
-                    informe_fecha_subida: detalle.informe_fecha_subida,
-                  }}
-                />
-              </div>
+      <div className={row2Height}>
+        <InformeBusqueda
+          idSolicitud={idSolicitud}
+          informe={{
+            informe_nombre_original: detalle.informe_nombre_original,
+            informe_fecha_subida: detalle.informe_fecha_subida,
+          }}
+        />
+      </div>
+    </>
+  );
+})()}
 
               {/* ===== Full width (5+) ===== */}
               <div className="col-span-full">
