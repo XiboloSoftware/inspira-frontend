@@ -8,39 +8,30 @@ import MisCitas from "./components/citas/MisCitas";
 import MisServicios from "./components/MisServicios";
 
 export default function PanelCliente() {
-  // 1) Leer la pestaña guardada (si existe)
   const [tab, setTab] = useState(() => {
     if (typeof window === "undefined") return "citas";
-
     const saved = window.localStorage.getItem("panel_tab");
-    // solo aceptamos valores válidos
-    if (saved === "perfil" || saved === "citas" || saved === "servicios") {
-      return saved;
-    }
+    if (saved === "perfil" || saved === "citas" || saved === "servicios") return saved;
     return "citas";
   });
 
   const [user, setUser] = useState(null);
 
-  // 2) CADA VEZ que cambie `tab`, guardar en localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     try {
       window.localStorage.setItem("panel_tab", tab);
     } catch (e) {
       console.error("No se pudo guardar panel_tab", e);
     }
-  }, [tab]); // 👈 se ejecuta cuando `tab` cambia
+  }, [tab]);
 
-  // 3) Mantienes tu useEffect de auth tal cual
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/";
       return;
     }
-
     cargarMe();
   }, []);
 
@@ -62,7 +53,7 @@ export default function PanelCliente() {
     <div className="min-h-screen flex bg-neutral-50">
       <PanelSidebar user={user} activeTab={tab} onChangeTab={setTab} />
 
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
         <header className="mb-6">
           <p className="text-xs font-medium text-primary uppercase tracking-wide">
             Panel de cliente
@@ -70,19 +61,14 @@ export default function PanelCliente() {
           <h1 className="text-2xl font-bold text-neutral-900">Mi panel</h1>
         </header>
 
-        <div className="max-w-4xl">
-  {tab === "perfil" && (
-    <PerfilCliente
-      user={user}
-      onUserUpdated={(nuevo) => setUser(nuevo)}
-    />
-  )}
-  {tab === "citas" && <MisCitas />}
-  {tab === "servicios" && <MisServicios />}
-</div>
-
-
-        
+        {/* ✅ Ancho dinámico: servicios ocupa más */}
+        <div className={tab === "servicios" ? "w-full max-w-7xl mx-auto" : "max-w-4xl"}>
+          {tab === "perfil" && (
+            <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
+          )}
+          {tab === "citas" && <MisCitas />}
+          {tab === "servicios" && <MisServicios />}
+        </div>
       </main>
     </div>
   );
