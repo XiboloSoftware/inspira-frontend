@@ -83,18 +83,12 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (!detalle) return null;
 
-  /**
-   * IMPORTANTE:
-   * En el backoffice el "detalle" viene de /api/admin/solicitudes/:id/checklist (mapper documentos.mappers.js)
-   * y NO trae id_tipo_solicitud.
-   * Sí trae:
-   *  - detalle.tipo   = solicitud.tipo?.categoria (ej: "master" | "servicio")
-   *  - detalle.titulo = solicitud.titulo (ej: "Visado")
-   */
-  const tituloLower = (detalle.titulo || "").toString().trim().toLowerCase();
-  const tipoLower = (detalle.tipo || "").toString().trim().toLowerCase();
-
-  const isVisado = tipoLower === "servicio" && tituloLower === "visado";
+  // ✅ VISADO: detecta por id_tipo_solicitud y/o por título que viene en `detalle.titulo`
+  const titulo = String(detalle.titulo || "").toLowerCase().trim();
+  const isVisado =
+    Number(detalle.id_tipo_solicitud) === 15 ||
+    titulo === "visado" ||
+    titulo.includes("visado");
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -109,7 +103,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           guardandoAsesores={guardandoAsesores}
         />
 
-        {/* 1) Documentos requeridos (checklist + subida interna) */}
+        {/* 1) Documentos requeridos (Checklist) */}
         <ChecklistSolicitudAdmin
           detalle={detalle}
           checklistPorEtapa={checklistPorEtapa}
@@ -119,13 +113,15 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
         {isVisado ? (
           <>
-            {/* 2) Instructivo y plantillas (en tu sistema se configura por servicio en la pantalla "Instructivos") */}
+            {/* 2) Instructivo y plantillas */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 2. Instructivo y plantillas
               </h3>
               <p className="text-xs text-neutral-600">
-                Este bloque se gestiona por servicio en la sección de <b>Instructivos</b>.
+                Este contenido se configura por servicio en <b>Instructivos</b>.
+                (Si quieres que aquí se liste/permita subir instructivos por solicitud,
+                se conecta al endpoint de instructivos del servicio/solicitud).
               </p>
             </section>
 
@@ -134,7 +130,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           </>
         ) : (
           <>
-            {/* BLOQUE 3 */}
+            {/* 3. Formulario */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 3. Formulario de datos académicos
@@ -142,10 +138,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
             </section>
 
-            {/* BLOQUE 4 */}
+            {/* 4. Informe */}
             <InformeAdmin detalle={detalle} recargar={cargar} />
 
-            {/* BLOQUE 5 */}
+            {/* 5. Elección másteres */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 5. Elección de másteres (cliente)
@@ -156,13 +152,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
             </section>
 
-            {/* BLOQUE 6 */}
+            {/* 6. Programación */}
             <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
 
-            {/* BLOQUE 7 */}
+            {/* 7. Portales */}
             <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
 
-            {/* BLOQUE 8 */}
+            {/* 8. Cierre */}
             <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
           </>
         )}
