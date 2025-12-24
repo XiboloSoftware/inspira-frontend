@@ -155,7 +155,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
             />
 
             {/* Grid mejorado */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+
               {/* ===== FILA 1 (misma altura prudente) ===== */}
               <div className="xl:col-span-2 h-[520px]">
                 <ChecklistDocumentos
