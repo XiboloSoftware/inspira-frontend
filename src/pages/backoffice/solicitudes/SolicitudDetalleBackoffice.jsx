@@ -195,41 +195,51 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
 
 
-  async function subirDocumentoInterno(it) {
-    if (!detalle) return;
+async function subirDocumentoInterno(it) {
+  if (!detalle) return;
 
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/pdf,image/*";
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+  input.accept = "application/pdf,image/*,.doc,.docx,.xls,.xlsx";
 
-    input.onchange = async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  input.onchange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-      try {
-        const r = await boUpload(
-          `/api/admin/solicitudes/${detalle.id_solicitud}/items/${it.id_solicitud_item}/documento`,
-          file
-        );
+    try {
+      const formData = new FormData();
+      files.forEach((f) => formData.append("archivos", f));
 
-        if (!r.ok) {
-          alert(r.msg || "No se pudo subir el documento");
-          return;
+      // necesitas un helper boUploadForm o usar fetch directo:
+      const token = localStorage.getItem("bo_token");
+      const resp = await fetch(
+        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/items/${it.id_solicitud_item}/documentos`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
         }
+      );
+      const r = await resp.json();
 
-        // Recargamos checklist / detalle para ver el nuevo doc
-        await cargar();
-      } catch (err) {
-        console.error(err);
-        alert("Error al subir el documento");
-      } finally {
-        // limpiar input
-        e.target.value = "";
+      if (!resp.ok || !r.ok) {
+        alert(r.msg || "No se pudo subir");
+        return;
       }
-    };
 
-    input.click();
-  }
+      await cargar();
+    } catch (err) {
+      console.error(err);
+      alert("Error al subir documentos");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  input.click();
+}
+
 
 
   // =========================================
