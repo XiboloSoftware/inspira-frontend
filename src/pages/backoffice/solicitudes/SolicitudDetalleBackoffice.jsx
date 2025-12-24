@@ -35,7 +35,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     try {
       const body = { ids_asesores: asesoresSeleccionados.map((id) => Number(id)) };
 
-      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/asesores`, body);
+      const r = await boPATCH(
+        `/backoffice/solicitudes/${detalle.id_solicitud}/asesores`,
+        body
+      );
       if (!r.ok) {
         alert(r.msg || "No se pudieron guardar los asesores");
         return;
@@ -80,12 +83,12 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (!detalle) return null;
 
-  // ✅ VISADO = id_tipo_solicitud 15
+  // ✅ Tipo "Visado" (según tu BD: id_tipo_solicitud = 15)
   const isVisado =
     Number(detalle.id_tipo_solicitud) === 15 ||
-    String(detalle.tipo_solicitud || detalle.tipo_nombre || "")
-      .toLowerCase()
-      .includes("visado");
+    (detalle.tipo_solicitud || detalle.nombre_tipo_solicitud || "")
+      .toString()
+      .toLowerCase() === "visado";
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -100,7 +103,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           guardandoAsesores={guardandoAsesores}
         />
 
-        {/* 1) Documentos requeridos (Checklist) */}
+        {/* 1) Checklist y documentos (SIEMPRE) */}
         <ChecklistSolicitudAdmin
           detalle={detalle}
           checklistPorEtapa={checklistPorEtapa}
@@ -108,18 +111,20 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           recargar={cargar}
         />
 
-        {/* ✅ VISADO: solo módulos que aplican */}
+        {/* ============================
+            VISADO: solo 3 módulos
+           ============================ */}
         {isVisado ? (
           <>
-            {/* 2) Instructivos y plantillas:
-               En tu backoffice los instructivos se gestionan por SERVICIO (pantalla aparte),
-               no por solicitud. Si quieres, aquí puedes poner un bloque informativo/enlace. */}
+            {/* 2) Instructivo y plantillas (opcional dentro del detalle) */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
-              <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 2. Instructivo y plantillas
               </h3>
-              <p className="text-xs text-neutral-500">
-                Se configuran por servicio en el módulo “Instructivos”.
+              <p className="text-xs text-neutral-600">
+                Este bloque se configura por servicio en la sección de Instructivos.
+                Si quieres verlo dentro del detalle de solicitud, dime qué endpoint/estructura
+                usar (o pásame el componente que ya tengas) y lo conectamos aquí.
               </p>
             </section>
 
@@ -127,10 +132,11 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
           </>
         ) : (
+          /* ============================
+             MÁSTER (flujo actual): 7 bloques
+             ============================ */
           <>
-            {/* ====== FLUJO MÁSTER (7 bloques) ====== */}
-
-            {/* 3. Formulario */}
+            {/* BLOQUE 3 */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 3. Formulario de datos académicos
@@ -138,10 +144,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
             </section>
 
-            {/* 4. Informe */}
+            {/* BLOQUE 4 */}
             <InformeAdmin detalle={detalle} recargar={cargar} />
 
-            {/* 5. Elección */}
+            {/* BLOQUE 5 */}
             <section className="border border-neutral-200 rounded-lg p-3 mb-4">
               <h3 className="text-sm font-semibold text-neutral-900 mb-2">
                 5. Elección de másteres (cliente)
@@ -152,13 +158,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
             </section>
 
-            {/* 6. Programación */}
+            {/* BLOQUE 6 */}
             <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
 
-            {/* 7. Portales */}
+            {/* BLOQUE 7 */}
             <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
 
-            {/* 8. Cierre */}
+            {/* BLOQUE 8 */}
             <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
           </>
         )}
