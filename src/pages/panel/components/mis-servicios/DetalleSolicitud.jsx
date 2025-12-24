@@ -156,53 +156,45 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
             {/* Grid mejorado */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
-              {/* 1) Checklist (card alto) */}
-              <div className="xl:col-span-2 h-full">
-                <div className="h-full flex flex-col">
-                  <ChecklistDocumentos
-                    checklist={checklist}
-                    cargarTodo={cargarTodo}
-                    idSolicitud={idSolicitud}
-                  />
-                </div>
+              {/* ===== FILA 1 (misma altura prudente) ===== */}
+              <div className="xl:col-span-2 h-[520px]">
+                <ChecklistDocumentos
+                  checklist={checklist}
+                  cargarTodo={cargarTodo}
+                  idSolicitud={idSolicitud}
+                // opcional si quieres: fixedHeight
+                // fixedHeight
+                />
               </div>
 
-              {/* 2) Instructivos (card al lado, misma altura visual) */}
-              <div className="xl:col-span-1 h-full">
-                <div className="h-full flex flex-col">
-                  <InstructivosPlantillas instructivos={instructivos} />
-                </div>
+              <div className="xl:col-span-1 h-[520px]">
+                <InstructivosPlantillas instructivos={instructivos} />
               </div>
 
-              {/* 3) Form (mitad) */}
-              <div className="h-full">
-                <div className="h-full flex flex-col">
-                  <FormularioDatosAcademicos
-                    formData={formData}
-                    setFormData={setFormData}
-                    handleSubmitFormulario={handleSubmitFormulario}
-                    savingForm={savingForm}
-                    collapsed={formCollapsed}
-                    onToggle={() => setFormCollapsed((v) => !v)}
-                    hasData={hasFormData}
-                  />
-                </div>
+              {/* ===== FILA 2 (misma altura prudente) ===== */}
+              <div className="h-[420px]">
+                <FormularioDatosAcademicos
+                  formData={formData}
+                  setFormData={setFormData}
+                  handleSubmitFormulario={handleSubmitFormulario}
+                  savingForm={savingForm}
+                  collapsed={formCollapsed}
+                  onToggle={() => setFormCollapsed((v) => !v)}
+                  hasData={hasFormData}
+                />
               </div>
 
-              {/* 4) Informe (mitad o 2/3 en xl, pero estira) */}
-              <div className="xl:col-span-2 h-full">
-                <div className="h-full flex flex-col">
-                  <InformeBusqueda
-                    idSolicitud={idSolicitud}
-                    informe={{
-                      informe_nombre_original: detalle.informe_nombre_original,
-                      informe_fecha_subida: detalle.informe_fecha_subida,
-                    }}
-                  />
-                </div>
+              <div className="xl:col-span-2 h-[420px]">
+                <InformeBusqueda
+                  idSolicitud={idSolicitud}
+                  informe={{
+                    informe_nombre_original: detalle.informe_nombre_original,
+                    informe_fecha_subida: detalle.informe_fecha_subida,
+                  }}
+                />
               </div>
 
-              {/* Full width blocks */}
+              {/* Full width blocks (estos NO los fuerzo a altura fija) */}
               <div className="col-span-full">
                 <EleccionMastersCliente
                   elecciones={elecciones}
@@ -224,6 +216,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 <CierreServicioMasterCliente idSolicitud={idSolicitud} />
               </div>
             </div>
+
 
           </>
         )}

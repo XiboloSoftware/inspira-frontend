@@ -11,7 +11,7 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
   });
 
   return (
-  <section className="border rounded-lg p-3 h-full flex flex-col">
+<section className="border rounded-lg p-3 h-full flex flex-col">
     <h3 className="text-sm font-semibold mb-2">1. Documentos requeridos</h3>
     <p className="text-xs text-neutral-500 mb-2">Aquí verás el checklist del servicio.</p>
 
@@ -19,7 +19,7 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
         <p className="text-xs text-neutral-500">Aún no hay checklist configurado.</p>
       )}
 
-    <div className="space-y-3 flex-1 min-h-0 overflow-auto pr-1">
+<div className="space-y-3 flex-1 min-h-0 overflow-auto pr-1">
         {Object.entries(grupos).map(([nombre, items]) => (
           <div key={nombre} className="space-y-1">
             <p className="text-[11px] font-semibold uppercase">{nombre}</p>

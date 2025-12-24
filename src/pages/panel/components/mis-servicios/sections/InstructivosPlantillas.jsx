@@ -4,29 +4,26 @@ export default function InstructivosPlantillas({ instructivos }) {
 
   return (
     <section className="border rounded-lg p-3 h-full flex flex-col">
-      {/* Header fijo */}
-      <div className="mb-2">
+      {/* header fijo */}
+      <div className="mb-2 shrink-0">
         <h3 className="text-sm font-semibold">2. Instructivo y plantillas</h3>
         <p className="text-xs text-neutral-500">Descarga la guía paso a paso.</p>
       </div>
 
-      {/* Body que estira */}
-      <div className="flex-1 min-h-0">
+      {/* body con scroll SIEMPRE */}
+      <div className="flex-1 min-h-0 overflow-auto pr-1">
         {lista.length === 0 ? (
-          <div className="h-full flex items-center justify-center border border-dashed rounded-md p-4">
-            <p className="text-xs text-neutral-500 text-center">
-              Aún no hay instructivos configurados.
-            </p>
-          </div>
+          <p className="text-xs text-neutral-500">
+            Aún no hay instructivos configurados.
+          </p>
         ) : (
-          <ul className="space-y-2 h-full overflow-auto pr-1">
+          <ul className="space-y-2">
             {lista.map((doc) => (
               <li
                 key={doc.url}
                 className="flex items-center justify-between gap-3 text-xs border rounded-md px-2 py-1.5"
               >
                 <span className="min-w-0 truncate">{doc.label}</span>
-
                 <a
                   href={doc.url}
                   target="_blank"
