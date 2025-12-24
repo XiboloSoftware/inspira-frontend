@@ -135,13 +135,16 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   const hasFormData = Object.keys(formData || {}).length > 0;
 
+  // ✅ Detecta si esta solicitud es tipo VISADO (no por id_servicio)
+  const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
+  const esVisado = tipoNombre === "visado";
+
   return (
     <div className="space-y-4">
       <button onClick={onVolver} className="text-xs text-[#023A4B] hover:underline">
         ← Volver a mis servicios
       </button>
 
-      {/* Sube el ancho máximo para usar mejor pantalla */}
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4">
         {loading && <p>Cargando…</p>}
         {error && <p className="text-red-600">{error}</p>}
@@ -154,76 +157,92 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            {/* Grid mejorado */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
-              {/* ===== FILA 1 (1 y 2) ===== */}
-              <div className="h-[520px]">
-                <ChecklistDocumentos
-                  checklist={checklist}
-                  cargarTodo={cargarTodo}
-                  idSolicitud={idSolicitud}
-                />
+            {/* =========================
+                VISADO: SOLO 3 BLOQUES
+               ========================= */}
+            {esVisado ? (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+                {/* 1 y 2 en la misma fila en XL */}
+                <div className="h-[520px]">
+                  <ChecklistDocumentos
+                    checklist={checklist}
+                    cargarTodo={cargarTodo}
+                    idSolicitud={idSolicitud}
+                  />
+                </div>
+
+                <div className="h-[520px]">
+                  <InstructivosPlantillas instructivos={instructivos} />
+                </div>
+
+                {/* 3 full width */}
+                <div className="col-span-full">
+                  <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+                </div>
               </div>
+            ) : (
+              /* =========================
+                 MASTER (flujo completo)
+                 ========================= */
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+                {/* FILA 1 */}
+                <div className="xl:col-span-2 h-[520px]">
+                  <ChecklistDocumentos
+                    checklist={checklist}
+                    cargarTodo={cargarTodo}
+                    idSolicitud={idSolicitud}
+                  />
+                </div>
 
-              <div className="h-[520px]">
-                <InstructivosPlantillas instructivos={instructivos} />
+                <div className="xl:col-span-1 h-[520px]">
+                  <InstructivosPlantillas instructivos={instructivos} />
+                </div>
+
+                {/* FILA 2 */}
+                <div className="h-[420px]">
+                  <FormularioDatosAcademicos
+                    formData={formData}
+                    setFormData={setFormData}
+                    handleSubmitFormulario={handleSubmitFormulario}
+                    savingForm={savingForm}
+                    collapsed={formCollapsed}
+                    onToggle={() => setFormCollapsed((v) => !v)}
+                    hasData={hasFormData}
+                  />
+                </div>
+
+                <div className="xl:col-span-2 h-[420px]">
+                  <InformeBusqueda
+                    idSolicitud={idSolicitud}
+                    informe={{
+                      informe_nombre_original: detalle.informe_nombre_original,
+                      informe_fecha_subida: detalle.informe_fecha_subida,
+                    }}
+                  />
+                </div>
+
+                <div className="col-span-full">
+                  <EleccionMastersCliente
+                    elecciones={elecciones}
+                    setElecciones={setElecciones}
+                    onGuardar={handleGuardarElecciones}
+                    saving={savingElecciones}
+                  />
+                </div>
+
+                <div className="col-span-full">
+                  <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+                </div>
+
+                <div className="col-span-full">
+                  <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+                </div>
+
+                <div className="col-span-full">
+                  <CierreServicioMasterCliente idSolicitud={idSolicitud} />
+                </div>
               </div>
-
-              {/* ===== FILA 2 (3 y 4) ===== */}
-{(() => {
-  const row2Height = formCollapsed ? "h-auto" : "h-[520px]";
-  return (
-    <>
-      <div className={row2Height}>
-        <FormularioDatosAcademicos
-          formData={formData}
-          setFormData={setFormData}
-          handleSubmitFormulario={handleSubmitFormulario}
-          savingForm={savingForm}
-          collapsed={formCollapsed}
-          onToggle={() => setFormCollapsed((v) => !v)}
-          hasData={hasFormData}
-        />
-      </div>
-
-      <div className={row2Height}>
-        <InformeBusqueda
-          idSolicitud={idSolicitud}
-          informe={{
-            informe_nombre_original: detalle.informe_nombre_original,
-            informe_fecha_subida: detalle.informe_fecha_subida,
-          }}
-        />
-      </div>
-    </>
-  );
-})()}
-
-              {/* ===== Full width (5+) ===== */}
-              <div className="col-span-full">
-                <EleccionMastersCliente
-                  elecciones={elecciones}
-                  setElecciones={setElecciones}
-                  onGuardar={handleGuardarElecciones}
-                  saving={savingElecciones}
-                />
-              </div>
-
-              <div className="col-span-full">
-                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
-              </div>
-
-              <div className="col-span-full">
-                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-              </div>
-
-              <div className="col-span-full">
-                <CierreServicioMasterCliente idSolicitud={idSolicitud} />
-              </div>
-            </div>
-
-
-
+            )}
           </>
         )}
       </div>
