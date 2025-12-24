@@ -214,7 +214,7 @@ async function subirDocumentoInterno(it) {
       // necesitas un helper boUploadForm o usar fetch directo:
       const token = localStorage.getItem("bo_token");
       const resp = await fetch(
-        `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/items/${it.id_solicitud_item}/documentos`,
+`${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/items/${it.id_solicitud_item}/documento`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },

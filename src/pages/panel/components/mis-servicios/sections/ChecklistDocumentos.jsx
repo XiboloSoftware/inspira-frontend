@@ -59,17 +59,27 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
                 {it.item?.permite_archivo && (
                   <div className="flex justify-between items-center mt-1">
                     <div>
-                      {["enviado", "aprobado", "observado", "no_aplica"].includes(
-                        (it.estado_item || "").toLowerCase()
-                      ) ? (
-                        <span className="text-[11px] text-neutral-600">
-                          Documento enviado ({it.estado_item})
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-neutral-400">
-                          Sin archivo cargado
-                        </span>
-                      )}
+                      {(it.documentos?.length ?? 0) > 0 ? (
+  <div className="text-[11px] text-neutral-600">
+    <div>Documentos cargados ({it.documentos.length})</div>
+
+    <div className="mt-1 space-y-1">
+      {it.documentos.map((d) => (
+        <div key={d.id_documento} className="flex items-center gap-2">
+          <span className="truncate">{d.nombre_original}</span>
+          <span className="text-[10px] text-neutral-400">
+            {d.estado_revision}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+) : (
+  <span className="text-[11px] text-neutral-400">
+    Sin archivo cargado
+  </span>
+)}
+
                     </div>
 
                     <BotonSubirDocumento
