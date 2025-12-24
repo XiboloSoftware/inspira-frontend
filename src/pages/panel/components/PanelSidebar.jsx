@@ -1,3 +1,4 @@
+// src/pages/panel/components/PanelSidebar.jsx
 import SidebarItem from "./SidebarItem";
 import { useAuth } from "../../../context/AuthContext";
 import { navigate } from "../../../services/navigate";
@@ -12,12 +13,18 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
   return (
     <aside
       className="
-        h-screen overflow-hidden shrink-0
         bg-gradient-to-b from-[#023A4B] to-[#046C8C]
         text-white
         flex flex-col
+        h-dvh md:h-screen
+        sticky top-0
+        overflow-hidden
+        flex-none
         w-full
-        md:w-[clamp(220px,20vw,320px)]
+        md:basis-1/5
+        md:w-auto
+        md:min-w-[240px]
+        md:max-w-[340px]
       "
     >
       {/* Header usuario */}

@@ -104,7 +104,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         {/* Formulario de datos académicos */}
         <section className="border border-neutral-200 rounded-lg p-3 mb-4 mt-4">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            Formulario de datos académicos
+            3. Formulario de datos académicos
           </h3>
           <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
         </section>

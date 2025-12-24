@@ -3,13 +3,26 @@ import { useEffect, useState } from "react";
 import { apiGET } from "../../../services/api";
 import ServiciosList from "./mis-servicios/ServiciosList";
 import DetalleSolicitud from "./mis-servicios/DetalleSolicitud";
+import DetalleSolicitudVisado from "./mis-servicios/DetalleSolicitudVisado";
+
+function esVisado(s) {
+  const cod = String(
+    s?.tipo_solicitud ||
+      s?.tipo ||
+      s?.categoria ||
+      s?.servicio?.codigo ||
+      s?.codigo_servicio ||
+      s?.nombre_servicio ||
+      ""
+  ).toUpperCase();
+  return cod.includes("VISADO");
+}
 
 export default function MisServicios() {
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // id de la solicitud previa (si existe en localStorage)
   const [seleccionadaId, setSeleccionadaId] = useState(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -20,7 +33,6 @@ export default function MisServicios() {
     }
   });
 
-  // objeto completo de la solicitud seleccionada actualmente
   const [seleccionada, setSeleccionada] = useState(null);
 
   useEffect(() => {
@@ -33,27 +45,17 @@ export default function MisServicios() {
     setError("");
 
     try {
-      // ⬇⬇⬇ ÚNICO CAMBIO IMPORTANTE: volvemos al endpoint que ya existía
       const resp = await apiGET("/solicitudes/mias");
-
       if (!resp.ok) {
-        throw new Error(
-          resp.msg || resp.message || "No se pudieron cargar los servicios"
-        );
+        throw new Error(resp.msg || resp.message || "No se pudieron cargar los servicios");
       }
 
-      // el backend viejo devuelve { ok: true, solicitudes: [...] }
       const lista = resp.solicitudes || [];
       setServicios(lista);
 
-      // si había un id guardado, busca esa solicitud y selecciónala
       if (!seleccionada && seleccionadaId && lista.length) {
-        const encontrada = lista.find(
-          (s) => Number(s.id_solicitud) === Number(seleccionadaId)
-        );
-        if (encontrada) {
-          setSeleccionada(encontrada);
-        }
+        const encontrada = lista.find((s) => Number(s.id_solicitud) === Number(seleccionadaId));
+        if (encontrada) setSeleccionada(encontrada);
       }
     } catch (e) {
       console.error(e);
@@ -63,24 +65,19 @@ export default function MisServicios() {
     }
   }
 
-  // Al hacer click en “ver detalle”, guardar el id en estado + localStorage
   function manejarVerDetalle(servicio) {
     setSeleccionada(servicio);
     setSeleccionadaId(servicio.id_solicitud);
 
     if (typeof window !== "undefined") {
       try {
-        window.localStorage.setItem(
-          "panel_servicio_id",
-          String(servicio.id_solicitud)
-        );
+        window.localStorage.setItem("panel_servicio_id", String(servicio.id_solicitud));
       } catch (e) {
         console.error("No se pudo guardar panel_servicio_id", e);
       }
     }
   }
 
-  // cuando el usuario vuelve a la lista, limpiamos selección y localStorage
   function manejarVolverLista() {
     setSeleccionada(null);
     setSeleccionadaId(null);
@@ -94,17 +91,14 @@ export default function MisServicios() {
     }
   }
 
-  // Si hay una solicitud seleccionada, mostramos el detalle
   if (seleccionada) {
-    return (
-      <DetalleSolicitud
-        solicitudBase={seleccionada}
-        onVolver={manejarVolverLista}
-      />
+    return esVisado(seleccionada) ? (
+      <DetalleSolicitudVisado solicitudBase={seleccionada} onVolver={manejarVolverLista} />
+    ) : (
+      <DetalleSolicitud solicitudBase={seleccionada} onVolver={manejarVolverLista} />
     );
   }
 
-  // Si no hay seleccionada, mostramos la lista
   return (
     <ServiciosList
       servicios={servicios}
