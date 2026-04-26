@@ -306,38 +306,46 @@ function DocRow({ doc, isAdmin, onEliminar }) {
 }
 
 // ─── Nodo del árbol (colapsable) ──────────────────────────────────────────────
-function TreeNode({ icon, label, sublabel, count, defaultOpen = false, children }) {
+function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen, headerExtra, children }) {
   const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    if (forceOpen !== undefined) setOpen(forceOpen);
+  }, [forceOpen]);
 
   return (
     <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 w-full text-left py-1.5 px-2 hover:bg-neutral-100 rounded-lg"
-      >
-        <span className="text-neutral-400 text-xs w-3">{open ? "▾" : "▸"}</span>
-        <span className="text-base leading-none">{icon}</span>
-        <span className="text-sm font-medium text-neutral-800 flex-1 truncate">
-          {label}
-        </span>
-        {sublabel && (
-          <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0">
-            {sublabel}
+      {/* Fila cabecera: botón toggle + extras fuera del botón para evitar button-in-button */}
+      <div className="flex items-center gap-1 hover:bg-neutral-100 rounded-lg group/node">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-2 flex-1 text-left py-1.5 px-2 min-w-0"
+        >
+          <span className="text-neutral-400 text-xs w-3">{open ? "▾" : "▸"}</span>
+          <span className="text-base leading-none">{icon}</span>
+          <span className="text-sm font-medium text-neutral-800 flex-1 truncate">
+            {label}
           </span>
-        )}
+          {sublabel && (
+            <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0">
+              {sublabel}
+            </span>
+          )}
+        </button>
+        {headerExtra && <span className="shrink-0">{headerExtra}</span>}
         {count !== undefined && (
-          <span className="text-[10px] bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full shrink-0">
+          <span className="text-[10px] bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full shrink-0 mr-2">
             {count}
           </span>
         )}
-      </button>
+      </div>
       {open && <div className="ml-5 border-l border-neutral-200 pl-2 mt-0.5">{children}</div>}
     </div>
   );
 }
 
 // ─── Sección de items de un ítem de checklist ────────────────────────────────
-function ItemNode({ item, isAdmin, onEliminar }) {
+function ItemNode({ item, isAdmin, onEliminar, forceOpen }) {
   const [docs, setDocs] = useState(item.documentos);
 
   function handleEliminar(id) {
@@ -348,7 +356,7 @@ function ItemNode({ item, isAdmin, onEliminar }) {
   if (docs.length === 0) return null;
 
   return (
-    <TreeNode icon="📂" label={item.nombre} count={docs.length}>
+    <TreeNode icon="📂" label={item.nombre} count={docs.length} forceOpen={forceOpen}>
       <div className="mt-1 space-y-0.5">
         {docs.map((doc) => (
           <DocRow
@@ -364,14 +372,14 @@ function ItemNode({ item, isAdmin, onEliminar }) {
 }
 
 // ─── Sección de solicitud ────────────────────────────────────────────────────
-function SolicitudNode({ solicitud, isAdmin, onEliminar }) {
+function SolicitudNode({ solicitud, isAdmin, onEliminar, forceOpen }) {
   const totalDocs = solicitud.items.reduce((acc, it) => acc + it.documentos.length, 0);
   if (totalDocs === 0) return null;
 
   return (
-    <TreeNode icon="📋" label={solicitud.titulo} count={totalDocs}>
+    <TreeNode icon="📋" label={solicitud.titulo} count={totalDocs} forceOpen={forceOpen}>
       {solicitud.items.map((item, i) => (
-        <ItemNode key={i} item={item} isAdmin={isAdmin} onEliminar={onEliminar} />
+        <ItemNode key={i} item={item} isAdmin={isAdmin} onEliminar={onEliminar} forceOpen={forceOpen} />
       ))}
     </TreeNode>
   );
@@ -384,6 +392,11 @@ export default function DocumentosBackoffice() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [expandedMap, setExpandedMap] = useState({});
+
+  function toggleExpand(id) {
+    setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
@@ -532,6 +545,15 @@ export default function DocumentosBackoffice() {
                     (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
                     0
                   )}
+                  forceOpen={expandedMap[cliente.id_cliente] === true ? true : undefined}
+                  headerExtra={
+                    <button
+                      onClick={() => toggleExpand(cliente.id_cliente)}
+                      className="text-[10px] px-2 py-0.5 rounded border border-neutral-300 text-neutral-500 hover:bg-neutral-100 shrink-0"
+                    >
+                      {expandedMap[cliente.id_cliente] ? "Contraer todo" : "Expandir todo"}
+                    </button>
+                  }
                 >
                   {cliente.solicitudes.map((sol) => (
                     <SolicitudNode
@@ -539,6 +561,7 @@ export default function DocumentosBackoffice() {
                       solicitud={sol}
                       isAdmin={isAdmin}
                       onEliminar={handleEliminarGlobal}
+                      forceOpen={expandedMap[cliente.id_cliente]}
                     />
                   ))}
                 </TreeNode>
@@ -568,6 +591,15 @@ export default function DocumentosBackoffice() {
                       (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
                       0
                     )}
+                    forceOpen={expandedMap[usuario.id_usuario] === true ? true : undefined}
+                    headerExtra={
+                      <button
+                        onClick={() => toggleExpand(usuario.id_usuario)}
+                        className="text-[10px] px-2 py-0.5 rounded border border-neutral-300 text-neutral-500 hover:bg-neutral-100 shrink-0"
+                      >
+                        {expandedMap[usuario.id_usuario] ? "Contraer todo" : "Expandir todo"}
+                      </button>
+                    }
                   >
                     {usuario.solicitudes.map((sol) => (
                       <SolicitudNode
@@ -575,6 +607,7 @@ export default function DocumentosBackoffice() {
                         solicitud={sol}
                         isAdmin={isAdmin}
                         onEliminar={handleEliminarGlobal}
+                        forceOpen={expandedMap[usuario.id_usuario]}
                       />
                     ))}
                   </TreeNode>
