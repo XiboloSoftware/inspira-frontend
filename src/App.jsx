@@ -11,6 +11,7 @@ import Pending from "./pages/diagnostico/Pending";
 import MasterLanding from "./pages/servicios/master/MasterLanding";
 import EstanciaLanding from "./pages/servicios/estancia/EstanciaLanding";
 import BackofficeApp from "./pages/backoffice/BackofficeApp";
+import CalculadoraMaster from "./pages/calculadora/CalculadoraMaster";
 
 import PanelCliente from "./pages/panel/PanelCliente";   //  👈 AÑADIDO
 
@@ -46,6 +47,7 @@ export default function App() {
 
       {path === "/servicios/master" && <MasterLanding />}
       {path === "/servicios/estancia" && <EstanciaLanding />}
+      {path === "/calculadora-master" && <CalculadoraMaster />}
 
       {/* Panel cliente con layout propio */}
       {path === "/panel" && <PanelCliente />}
@@ -60,6 +62,7 @@ export default function App() {
         "/auth/success",
         "/servicios/master",
         "/servicios/estancia",
+        "/calculadora-master",
         "/panel",
       ].includes(path) && <Home />}
     </div>

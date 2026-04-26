@@ -12,17 +12,11 @@ export const navItems = [
 },
 
 
-  // paquetes migratorios
+  // calculadora pública gratuita
   {
-    label: "Servicios Migratorios",
-    href: "/servicios-migratorios",
-    children: [
-      { label: "Estancia por Estudios", href: "/servicios/estancia" },
-      { label: "Visa de Estudios", href: "/servicios/visa-estudios" },
-      { label: "Visa Acompañante", href: "/servicios/visa-acompanante" },
-      { label: "Visa Trabajo", href: "/servicios/visa-trabajo" },
-      { label: "Visa No Lucrativa", href: "/servicios/visa-no-lucrativa" },
-    ],
+    label: "Calculadora Máster Gratis",
+    href: "/calculadora-master",
+    badge: true,
   },
 
   { label: "Nosotros", href: "/nosotros" },
