@@ -315,24 +315,34 @@ function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen
 
   return (
     <div>
-      {/* Fila cabecera: botón toggle + extras fuera del botón para evitar button-in-button */}
-      <div className="flex items-center gap-1 hover:bg-neutral-100 rounded-lg group/node">
+      <div className="flex items-center hover:bg-neutral-100 rounded-lg">
+        {/* Botón toggle: solo ocupa el espacio del nombre cuando hay headerExtra */}
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 flex-1 text-left py-1.5 px-2 min-w-0"
+          className={`flex items-center gap-2 text-left py-1.5 pl-2 pr-1 min-w-0 ${
+            headerExtra ? "shrink-0 max-w-[45%]" : "flex-1"
+          }`}
         >
-          <span className="text-neutral-400 text-xs w-3">{open ? "▾" : "▸"}</span>
-          <span className="text-base leading-none">{icon}</span>
-          <span className="text-sm font-medium text-neutral-800 flex-1 truncate">
-            {label}
-          </span>
-          {sublabel && (
-            <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0">
-              {sublabel}
-            </span>
-          )}
+          <span className="text-neutral-400 text-xs w-3 shrink-0">{open ? "▾" : "▸"}</span>
+          <span className="text-base leading-none shrink-0">{icon}</span>
+          <span className="text-sm font-medium text-neutral-800 truncate">{label}</span>
         </button>
-        {headerExtra && <span className="shrink-0">{headerExtra}</span>}
+        {/* headerExtra queda pegado al nombre */}
+        {headerExtra && (
+          <span className="shrink-0 pl-1.5">{headerExtra}</span>
+        )}
+        {/* Espacio clickeable restante */}
+        {headerExtra && (
+          <div
+            className="flex-1 self-stretch cursor-pointer"
+            onClick={() => setOpen((v) => !v)}
+          />
+        )}
+        {sublabel && (
+          <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0 pr-1">
+            {sublabel}
+          </span>
+        )}
         {count !== undefined && (
           <span className="text-[10px] bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full shrink-0 mr-2">
             {count}
@@ -545,13 +555,17 @@ export default function DocumentosBackoffice() {
                     (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
                     0
                   )}
-                  forceOpen={expandedMap[cliente.id_cliente] === true ? true : undefined}
+                  forceOpen={expandedMap[cliente.id_cliente]}
                   headerExtra={
                     <button
                       onClick={() => toggleExpand(cliente.id_cliente)}
-                      className="text-[10px] px-2 py-0.5 rounded border border-neutral-300 text-neutral-500 hover:bg-neutral-100 shrink-0"
+                      className={`text-[10px] px-2 py-0.5 rounded border font-medium transition-colors shrink-0 ${
+                        expandedMap[cliente.id_cliente]
+                          ? "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                          : "border-indigo-300 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                      }`}
                     >
-                      {expandedMap[cliente.id_cliente] ? "Contraer todo" : "Expandir todo"}
+                      {expandedMap[cliente.id_cliente] ? "Contraer ↑" : "Expandir ↓"}
                     </button>
                   }
                 >
@@ -591,13 +605,17 @@ export default function DocumentosBackoffice() {
                       (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
                       0
                     )}
-                    forceOpen={expandedMap[usuario.id_usuario] === true ? true : undefined}
+                    forceOpen={expandedMap[usuario.id_usuario]}
                     headerExtra={
                       <button
                         onClick={() => toggleExpand(usuario.id_usuario)}
-                        className="text-[10px] px-2 py-0.5 rounded border border-neutral-300 text-neutral-500 hover:bg-neutral-100 shrink-0"
+                        className={`text-[10px] px-2 py-0.5 rounded border font-medium transition-colors shrink-0 ${
+                          expandedMap[usuario.id_usuario]
+                            ? "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                            : "border-indigo-300 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                        }`}
                       >
-                        {expandedMap[usuario.id_usuario] ? "Contraer todo" : "Expandir todo"}
+                        {expandedMap[usuario.id_usuario] ? "Contraer ↑" : "Expandir ↓"}
                       </button>
                     }
                   >
