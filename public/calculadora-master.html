@@ -765,6 +765,26 @@ function calcular(){
   document.getElementById('resultado').classList.add('active');
   window.parent.postMessage({type:'scrollTop'},'*');
   window.scrollTo({top:0,behavior:'smooth'});
+
+  // Guardar lead (silencioso — no bloquea la UI si falla)
+  try {
+    const becasCalificadas = becas
+      .filter(b => b.e === 'si' || b.e === 'posible')
+      .map(b => ({ nombre: b.n, estado: b.e }));
+    fetch('https://api.inspira-legal.cloud/api/calculadora/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre, pais,
+        nota_espana: nota,
+        area, presupuesto: pres, vida,
+        auip, funcionario: func_, ods, cyl,
+        universidad: document.getElementById('universidad').value.trim() || null,
+        ranking,
+        becas_califica: becasCalificadas,
+      }),
+    }).catch(() => {});
+  } catch(e) {}
 }
 </script>
 </body>

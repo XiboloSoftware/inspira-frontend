@@ -6,6 +6,7 @@ const items = [
   { label: "Reservas Diagnóstico", href: "/backoffice/diagnosticos" },
   { label: "Solicitudes", href: "/backoffice/solicitudes" },
   { label: "Documentos", href: "/backoffice/documentos" },
+  { label: "Calculadora — Leads", href: "/backoffice/calculadora" },
   { label: "Clientes", href: "/backoffice/clientes" },
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },

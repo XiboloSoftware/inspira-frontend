@@ -14,6 +14,7 @@ import SolicitudesList from "./solicitudes/SolicitudesList";
 import SolicitudDetalleBackoffice from "./solicitudes/SolicitudDetalleBackoffice";
 import InstructivosServicios from "./instructivos/InstructivosServicios";
 import DocumentosBackoffice from "./documentos/DocumentosBackoffice";
+import LeadsCalculadora from "./calculadora/LeadsCalculadora";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -103,6 +104,8 @@ export default function BackofficeApp() {
             {path === "/backoffice/diagnosticos" && (
               <Diagnosticos user={user} />
             )}
+
+            {path === "/backoffice/calculadora" && <LeadsCalculadora />}
 
             {path === "/backoffice/settings" && (
               <UsuariosSettings user={user} />
