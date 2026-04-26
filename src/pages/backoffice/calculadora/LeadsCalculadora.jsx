@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { boGet } from "../../../services/backofficeApi";
+import { boGET } from "../../../services/backofficeApi";
 
 const VIDA_LABEL = { economico: "Económico", equilibrado: "Equilibrado", ambicioso: "Ambicioso" };
 const AUIP_LABEL = { si: "✓ Sí", no: "No" };
@@ -21,7 +21,7 @@ export default function LeadsCalculadora() {
       const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
       if (filtroPais) params.set("pais", filtroPais);
       if (filtroArea) params.set("area", filtroArea);
-      const data = await boGet(`/backoffice/calculadora/leads?${params}`);
+      const data = await boGET(`/backoffice/calculadora/leads?${params}`);
       if (data.ok) {
         setLeads(data.leads);
         setTotal(data.pagination.total);
