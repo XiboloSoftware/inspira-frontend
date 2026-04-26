@@ -396,6 +396,7 @@ export default function DocumentosBackoffice() {
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [expandedMap, setExpandedMap] = useState({});
+  const [tab, setTab] = useState("clientes");
 
   function toggleExpand(id) {
     setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -404,9 +405,7 @@ export default function DocumentosBackoffice() {
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
 
-  useEffect(() => {
-    cargar();
-  }, []);
+  useEffect(() => { cargar(); }, []);
 
   async function cargar() {
     setLoading(true);
@@ -421,7 +420,6 @@ export default function DocumentosBackoffice() {
     setLoading(false);
   }
 
-  // Eliminar un documento del árbol local (sin recargar todo)
   function handleEliminarGlobal(idDocumento) {
     function filtrarDocs(lista) {
       return lista.map((entry) => ({
@@ -439,10 +437,9 @@ export default function DocumentosBackoffice() {
     setInternos((prev) => filtrarDocs(prev));
   }
 
-  // Filtrar árbol por búsqueda (nombre cliente, solicitud o archivo)
   const q = busqueda.toLowerCase().trim();
 
-  function filtrarClientes(lista) {
+  function filtrarLista(lista) {
     if (!q) return lista;
     return lista
       .map((c) => ({
@@ -469,30 +466,46 @@ export default function DocumentosBackoffice() {
       .filter((c) => c.solicitudes.length > 0);
   }
 
-  const clientesFiltrados = filtrarClientes(clientes);
-  const internosFiltrados = filtrarClientes(internos);
-
-  const totalDocs =
-    clientes.reduce(
-      (a, c) =>
-        a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
-      0
-    ) +
-    internos.reduce(
-      (a, u) =>
-        a + u.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
+  function countDocs(lista) {
+    return lista.reduce(
+      (a, c) => a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
       0
     );
+  }
+
+  const clientesFiltrados = filtrarLista(clientes);
+  const internosFiltrados = filtrarLista(internos);
+
+  const totalClienteDocs = countDocs(clientes);
+  const totalInternoDocs = countDocs(internos);
+  const totalDocs = totalClienteDocs + totalInternoDocs;
+  const clientesFiltradosDocs = countDocs(clientesFiltrados);
+  const internosFiltradosDocs = countDocs(internosFiltrados);
+
+  function ExpandBtn({ id }) {
+    return (
+      <button
+        onClick={() => toggleExpand(id)}
+        title={expandedMap[id] ? "Contraer todo" : "Expandir todo"}
+        className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors shrink-0 leading-none ${
+          expandedMap[id]
+            ? "border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100"
+            : "border-indigo-400 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+        }`}
+      >
+        {expandedMap[id] ? "−" : "+"}
+      </button>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
+
+      {/* ── Cabecera ── */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-primary">Documentos</h1>
-          <p className="text-sm text-neutral-500">
-            {loading ? "Cargando…" : `${totalDocs} documento${totalDocs !== 1 ? "s" : ""} en total`}
-          </p>
+          <h1 className="text-3xl font-bold text-neutral-900">Documentos</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Gestión centralizada de archivos</p>
         </div>
         <div className="flex gap-2 items-center">
           <input
@@ -500,142 +513,169 @@ export default function DocumentosBackoffice() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, cliente, solicitud…"
-            className="border border-neutral-300 rounded-lg px-3 py-1.5 text-sm w-64"
+            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
           />
           <button
             onClick={cargar}
-            className="text-sm px-3 py-1.5 rounded-lg border border-neutral-300 hover:bg-neutral-50"
+            title="Recargar"
+            className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base"
           >
             ↻
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
+          <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
         </div>
+        <div
+          onClick={() => setTab("clientes")}
+          className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+            tab === "clientes"
+              ? "bg-indigo-50 border-indigo-300 ring-1 ring-indigo-300"
+              : "bg-white border-neutral-200 hover:border-indigo-200 hover:bg-indigo-50/40"
+          }`}
+        >
+          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Clientes</p>
+          <p className={`text-3xl font-bold ${tab === "clientes" ? "text-indigo-700" : "text-neutral-800"}`}>
+            {loading ? "…" : totalClienteDocs}
+          </p>
+        </div>
+        <div
+          onClick={() => setTab("equipo")}
+          className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+            tab === "equipo"
+              ? "bg-teal-50 border-teal-300 ring-1 ring-teal-300"
+              : "bg-white border-neutral-200 hover:border-teal-200 hover:bg-teal-50/40"
+          }`}
+        >
+          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Equipo</p>
+          <p className={`text-3xl font-bold ${tab === "equipo" ? "text-teal-700" : "text-neutral-800"}`}>
+            {loading ? "…" : totalInternoDocs}
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      {loading && (
-        <div className="p-8 text-center text-neutral-400 text-sm">Cargando documentos…</div>
-      )}
+      {/* ── Tarjeta principal con pestañas ── */}
+      <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
 
-      {!loading && !error && (
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm divide-y divide-neutral-100">
-          {/* Sección Clientes */}
-          <div className="p-3">
-            <TreeNode
-              icon="👥"
-              label="Documentos de clientes"
-              count={clientesFiltrados.reduce(
-                (a, c) =>
-                  a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
-                0
-              )}
-              defaultOpen
-            >
-              {clientesFiltrados.length === 0 && (
-                <p className="text-xs text-neutral-400 py-2 px-2">Sin resultados.</p>
-              )}
-              {clientesFiltrados.map((cliente) => (
-                <TreeNode
-                  key={cliente.id_cliente}
-                  icon="👤"
-                  label={cliente.nombre}
-                  sublabel={cliente.email}
-                  count={cliente.solicitudes.reduce(
-                    (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
-                    0
-                  )}
-                  forceOpen={expandedMap[cliente.id_cliente]}
-                  headerExtra={
-                    <button
-                      onClick={() => toggleExpand(cliente.id_cliente)}
-                      title={expandedMap[cliente.id_cliente] ? "Contraer todo" : "Expandir todo"}
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors shrink-0 leading-none ${
-                        expandedMap[cliente.id_cliente]
-                          ? "border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100"
-                          : "border-indigo-400 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
-                      }`}
-                    >
-                      {expandedMap[cliente.id_cliente] ? "−" : "+"}
-                    </button>
-                  }
-                >
-                  {cliente.solicitudes.map((sol) => (
-                    <SolicitudNode
-                      key={sol.id_solicitud}
-                      solicitud={sol}
-                      isAdmin={isAdmin}
-                      onEliminar={handleEliminarGlobal}
-                      forceOpen={expandedMap[cliente.id_cliente]}
-                    />
-                  ))}
-                </TreeNode>
-              ))}
-            </TreeNode>
-          </div>
+        {/* Pestañas */}
+        <div className="flex border-b border-neutral-200 bg-neutral-50 px-4 pt-2 gap-1">
+          <button
+            onClick={() => setTab("clientes")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
+              tab === "clientes"
+                ? "border-indigo-500 text-indigo-600 bg-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+            }`}
+          >
+            👥 Clientes
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
+              tab === "clientes" ? "bg-indigo-100 text-indigo-600" : "bg-neutral-200 text-neutral-500"
+            }`}>
+              {loading ? "…" : clientesFiltradosDocs}
+            </span>
+          </button>
+          <button
+            onClick={() => setTab("equipo")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
+              tab === "equipo"
+                ? "border-teal-500 text-teal-600 bg-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+            }`}
+          >
+            🏢 Equipo
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
+              tab === "equipo" ? "bg-teal-100 text-teal-600" : "bg-neutral-200 text-neutral-500"
+            }`}>
+              {loading ? "…" : internosFiltradosDocs}
+            </span>
+          </button>
+        </div>
 
-          {/* Sección Internos */}
-          {internosFiltrados.length > 0 && (
-            <div className="p-3">
-              <TreeNode
-                icon="🏢"
-                label="Documentos subidos por el equipo"
-                count={internosFiltrados.reduce(
-                  (a, u) =>
-                    a + u.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
-                  0
-                )}
-              >
-                {internosFiltrados.map((usuario) => (
+        {/* Contenido */}
+        <div className="p-4 min-h-[300px]">
+          {loading && (
+            <div className="py-20 text-center text-neutral-400 text-sm">
+              <div className="text-4xl mb-3">📂</div>
+              Cargando documentos…
+            </div>
+          )}
+
+          {!loading && tab === "clientes" && (
+            clientesFiltrados.length === 0 ? (
+              <div className="py-16 text-center text-neutral-400 text-sm">
+                <div className="text-4xl mb-3">🔍</div>
+                {q ? "Sin resultados para esta búsqueda." : "No hay documentos de clientes aún."}
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {clientesFiltrados.map((cliente) => (
                   <TreeNode
-                    key={usuario.id_usuario}
+                    key={cliente.id_cliente}
                     icon="👤"
-                    label={usuario.nombre}
-                    sublabel={usuario.rol ? `${usuario.rol} · ${usuario.email || ""}` : usuario.email}
-                    count={usuario.solicitudes.reduce(
-                      (a, s) => a + s.items.reduce((b, it) => b + it.documentos.length, 0),
-                      0
-                    )}
-                    forceOpen={expandedMap[usuario.id_usuario]}
-                    headerExtra={
-                      <button
-                        onClick={() => toggleExpand(usuario.id_usuario)}
-                        title={expandedMap[usuario.id_usuario] ? "Contraer todo" : "Expandir todo"}
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors shrink-0 leading-none ${
-                          expandedMap[usuario.id_usuario]
-                            ? "border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100"
-                            : "border-indigo-400 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
-                        }`}
-                      >
-                        {expandedMap[usuario.id_usuario] ? "−" : "+"}
-                      </button>
-                    }
+                    label={cliente.nombre}
+                    sublabel={cliente.email}
+                    count={countDocs([cliente])}
+                    forceOpen={expandedMap[cliente.id_cliente]}
+                    headerExtra={<ExpandBtn id={cliente.id_cliente} />}
                   >
-                    {usuario.solicitudes.map((sol) => (
+                    {cliente.solicitudes.map((sol) => (
                       <SolicitudNode
                         key={sol.id_solicitud}
                         solicitud={sol}
                         isAdmin={isAdmin}
                         onEliminar={handleEliminarGlobal}
-                        forceOpen={expandedMap[usuario.id_usuario]}
+                        forceOpen={expandedMap[cliente.id_cliente]}
                       />
                     ))}
                   </TreeNode>
                 ))}
-              </TreeNode>
-            </div>
+              </div>
+            )
           )}
 
-          {!loading && totalDocs === 0 && (
-            <p className="px-4 py-8 text-center text-sm text-neutral-400">
-              No hay documentos subidos aún.
-            </p>
+          {!loading && tab === "equipo" && (
+            internosFiltrados.length === 0 ? (
+              <div className="py-16 text-center text-neutral-400 text-sm">
+                <div className="text-4xl mb-3">🔍</div>
+                {q ? "Sin resultados para esta búsqueda." : "No hay documentos del equipo aún."}
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {internosFiltrados.map((usr) => (
+                  <TreeNode
+                    key={usr.id_usuario}
+                    icon="👤"
+                    label={usr.nombre}
+                    sublabel={usr.rol ? `${usr.rol} · ${usr.email || ""}` : usr.email}
+                    count={countDocs([usr])}
+                    forceOpen={expandedMap[usr.id_usuario]}
+                    headerExtra={<ExpandBtn id={usr.id_usuario} />}
+                  >
+                    {usr.solicitudes.map((sol) => (
+                      <SolicitudNode
+                        key={sol.id_solicitud}
+                        solicitud={sol}
+                        isAdmin={isAdmin}
+                        onEliminar={handleEliminarGlobal}
+                        forceOpen={expandedMap[usr.id_usuario]}
+                      />
+                    ))}
+                  </TreeNode>
+                ))}
+              </div>
+            )
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
