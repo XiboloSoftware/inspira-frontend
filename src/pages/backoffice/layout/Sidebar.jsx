@@ -5,6 +5,7 @@ const items = [
   { label: "Agenda", href: "/backoffice/agenda" },
   { label: "Reservas Diagnóstico", href: "/backoffice/diagnosticos" },
   { label: "Solicitudes", href: "/backoffice/solicitudes" },
+  { label: "Documentos", href: "/backoffice/documentos" },
   { label: "Clientes", href: "/backoffice/clientes" },
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },

@@ -13,6 +13,7 @@ import ChecklistServicios from "./checklist/ChecklistServicios";
 import SolicitudesList from "./solicitudes/SolicitudesList";
 import SolicitudDetalleBackoffice from "./solicitudes/SolicitudDetalleBackoffice";
 import InstructivosServicios from "./instructivos/InstructivosServicios";
+import DocumentosBackoffice from "./documentos/DocumentosBackoffice";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -93,6 +94,8 @@ export default function BackofficeApp() {
             {path === "/backoffice/instructivos" && (
               <InstructivosServicios />
             )}
+
+            {path === "/backoffice/documentos" && <DocumentosBackoffice />}
 
             {path === "/backoffice/clientes" && <Clientes user={user} />}
             {path === "/backoffice/precios" && <PreciosServicios />}
