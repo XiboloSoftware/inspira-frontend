@@ -109,7 +109,7 @@ export default function Hero() {
           {[
             { n: "98%", label: "Tasa de admisión" },
             { n: "+80", label: "Universidades" },
-            { n: "3+", label: "Becas logradas" },
+            { n: "+100", label: "Becas logradas" },
             { n: "360°", label: "Servicio completo" },
           ].map((s) => (
             <div key={s.label} className="text-center">

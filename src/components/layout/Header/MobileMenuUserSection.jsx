@@ -47,10 +47,17 @@ export default function MobileMenuUserSection({ user, onLogin, onLogout }) {
             </div>
           </div>
 
+          <a
+            href="/panel"
+            className="w-full text-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-light transition"
+          >
+            Mi Panel
+          </a>
+
           <button
             type="button"
             onClick={onLogout}
-            className="w-full text-left rounded-lg px-4 py-2 text-sm text-neutral-900 hover:bg-secondary-light transition"
+            className="w-full text-left rounded-lg px-4 py-2 text-sm text-neutral-500 hover:bg-neutral-100 transition"
           >
             Cerrar sesión
           </button>
