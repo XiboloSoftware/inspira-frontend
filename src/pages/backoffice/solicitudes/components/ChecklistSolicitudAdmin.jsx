@@ -1,6 +1,8 @@
 // src/pages/backoffice/solicitudes/components/ChecklistSolicitudAdmin.jsx
+import { useState } from "react";
 import { boPATCH } from "../../../../services/backofficeApi";
 import { API_URL, formatearFecha } from "../utils";
+import DocViewer from "../../documentos/DocViewer";
 
 const ESTADO_CFG = {
   aprobado:  { label: "Aprobado",  bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
@@ -20,6 +22,22 @@ export default function ChecklistSolicitudAdmin({
   setChecklist,
   recargar,
 }) {
+  const [viewingDoc, setViewingDoc] = useState(null);
+
+  async function abrirEnDrive(doc) {
+    try {
+      const token = localStorage.getItem("bo_token");
+      const r = await fetch(`${API_URL}/api/admin/documentos/${doc.id_documento}/drive-url`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await r.json();
+      if (data.ok && data.url) window.open(data.url, "_blank");
+      else alert(data.msg || "No disponible en Drive aún");
+    } catch {
+      alert("Error al obtener URL de Drive");
+    }
+  }
+
   async function cambiarRevision(doc, nuevoEstado) {
     if (!doc) return;
     let comentario = "";
@@ -101,6 +119,7 @@ export default function ChecklistSolicitudAdmin({
   }
 
   return (
+    <>
     <div className="space-y-5">
       {Object.entries(checklistPorEtapa).map(([nombreEtapa, items]) => (
         <div key={nombreEtapa}>
@@ -109,7 +128,7 @@ export default function ChecklistSolicitudAdmin({
               {nombreEtapa}
             </p>
           )}
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
             {items.map((it) => {
               const docs = Array.isArray(it.documentos)
                 ? it.documentos
@@ -168,7 +187,30 @@ export default function ChecklistSolicitudAdmin({
                               </p>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 justify-end shrink-0">
+                          <div className="flex items-center gap-1 justify-end shrink-0 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setViewingDoc(doc)}
+                              className="text-[11px] px-2 py-1 rounded-lg border border-neutral-300 hover:bg-neutral-50 transition"
+                            >
+                              Ver
+                            </button>
+                            <button
+                              type="button"
+                              title="Abrir en Google Drive"
+                              onClick={() => abrirEnDrive(doc)}
+                              className="group flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-md active:scale-95 transition-all duration-150 shrink-0"
+                            >
+                              <svg width="13" height="13" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/>
+                                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 11.5z" fill="#ea4335"/>
+                                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                              </svg>
+                              <span className="text-neutral-500 group-hover:text-neutral-800 transition-colors font-medium">Drive</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => descargarDocumento(doc)}
@@ -215,5 +257,7 @@ export default function ChecklistSolicitudAdmin({
         </div>
       ))}
     </div>
+    {viewingDoc && <DocViewer doc={viewingDoc} onClose={() => setViewingDoc(null)} />}
+    </>
   );
 }
