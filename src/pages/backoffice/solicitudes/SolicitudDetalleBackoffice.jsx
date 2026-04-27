@@ -175,7 +175,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       <AccordionBackofficeContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
         <div className={`flex-1 min-h-0 ${
           accordionOpenId !== null
-            ? "flex flex-col"                               // sección abierta: ocupa la altura disponible
+            ? "flex flex-col pb-6"                         // sección abierta: flex + margen inferior
             : "overflow-y-auto space-y-3 pb-6 pr-0.5"     // lista: scroll interno
         }`}>
 
