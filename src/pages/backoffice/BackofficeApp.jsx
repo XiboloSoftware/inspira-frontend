@@ -20,6 +20,10 @@ import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(() => {
+    const saved = localStorage.getItem("bo_sidebar_pinned");
+    return saved === null ? true : saved === "true";
+  });
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem("bo_user");
     return u ? JSON.parse(u) : null;
@@ -37,6 +41,15 @@ export default function BackofficeApp() {
   function navigate(to) {
     window.history.pushState({}, "", to);
     window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function toggleSidebarPin() {
+    setSidebarPinned((prev) => {
+      const next = !prev;
+      localStorage.setItem("bo_sidebar_pinned", String(next));
+      if (!next) setSidebarOpen(false);
+      return next;
+    });
   }
 
   function logout() {
@@ -63,11 +76,17 @@ export default function BackofficeApp() {
     <ProtectedRoute onLogout={logout}>
       {/* Layout de altura fija, con sidebar izquierdo + panel derecho con scroll */}
       <div className="flex w-full h-dvh overflow-hidden">
-        <Sidebar path={path} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          path={path}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          pinned={sidebarPinned}
+          onTogglePin={toggleSidebarPin}
+        />
 
         {/* Panel derecho: header fijo y contenido scrollable */}
         <div className="flex-1 flex flex-col h-full bg-white min-w-0">
-          <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} />
+          <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} sidebarPinned={sidebarPinned} />
 
           <main className="flex-1 flex flex-col overflow-y-auto">
             {/* Rutas internas */}
