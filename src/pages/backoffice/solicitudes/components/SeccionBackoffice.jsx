@@ -33,14 +33,18 @@ export default function SeccionBackoffice({
     return null;
   }
 
+  // Cuando esta sección está abierta en modo acordeón, ocupa el espacio disponible (flex-1)
+  const isFullScreen = !!(sectionId && accordion && open);
+
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
   return (
-    <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+    <section className={`border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden ${isFullScreen ? "flex flex-col flex-1 min-h-0" : ""}`}>
+      {/* Header — shrink-0 para que no se comprima con el contenido */}
       <button
         type="button"
         onClick={toggle}
-        className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
+        className="shrink-0 w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           {numero && (
@@ -80,7 +84,9 @@ export default function SeccionBackoffice({
 
       {open && (
         <div
-          className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100dvh-220px)] [&::-webkit-scrollbar]:hidden"
+          className={`border-t border-neutral-100 px-5 py-4 overflow-y-auto [&::-webkit-scrollbar]:hidden ${
+            isFullScreen ? "flex-1 min-h-0" : ""
+          }`}
           style={{ scrollbarWidth: "none" }}
         >
           {children}

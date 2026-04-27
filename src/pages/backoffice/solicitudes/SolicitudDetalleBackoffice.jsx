@@ -1,5 +1,5 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
@@ -14,7 +14,6 @@ import AsesoresAsignadosAdmin from "./AsesoresAsignadosAdmin";
 import { AccordionBackofficeContext } from "./components/AccordionBackofficeContext";
 import { formatearFecha } from "./utils";
 
-// Mismos campos requeridos que el panel cliente
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
   "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
@@ -23,14 +22,6 @@ const CAMPOS_REQUERIDOS_FORMULARIO = [
 
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [accordionOpenId, setAccordionOpenId] = useState(null);
-
-  // Bloquear scroll del <main> cuando una sección está abierta
-  useEffect(() => {
-    const mainEl = document.querySelector("main");
-    if (!mainEl) return;
-    mainEl.style.overflowY = accordionOpenId !== null ? "hidden" : "";
-    return () => { mainEl.style.overflowY = ""; };
-  }, [accordionOpenId]);
 
   const {
     detalle, setDetalle,
@@ -72,7 +63,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center gap-3 text-neutral-500">
+      <div className="h-full flex items-center justify-center gap-3 text-neutral-500">
         <div className="w-5 h-5 border-2 border-[#023A4B] border-t-transparent rounded-full animate-spin" />
         <span className="text-sm">Cargando solicitud…</span>
       </div>
@@ -98,37 +89,51 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   const asesorEstado = asesoresSeleccionados.length > 0 ? "completado" : "pendiente";
   const informeEstado = detalle.informe_fecha_subida ? "completado" : "pendiente";
-
-  // Formulario: requiere todos los campos obligatorios, no solo "alguno"
   const datos = detalle.datos_formulario || {};
   const tieneFormulario = CAMPOS_REQUERIDOS_FORMULARIO.every(
     (campo) => datos[campo] !== undefined && datos[campo] !== null && datos[campo] !== ""
   );
-
   const tieneEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
   const nAsesores = asesoresSeleccionados.length;
   const nElecciones = tieneEleccion ? detalle.eleccion_masters.length : 0;
 
+  // Layout: ocupa toda la altura del <main>, scroll solo en el interior
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-3">
+    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 gap-3">
 
-      {/* Botón volver al listado */}
-      <button
-        type="button"
-        onClick={onVolver}
-        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm group"
-      >
-        <span className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-          <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-        </span>
-        Solicitudes
-      </button>
+      {/* Botón volver — fijo arriba, no crece */}
+      <div className="shrink-0 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onVolver}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm group"
+        >
+          <span className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
+            <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </span>
+          Solicitudes
+        </button>
 
-      {/* Tarjeta cabecera — se oculta cuando hay una sección abierta */}
+        {/* Botón "Ver todas" — aparece cuando hay sección abierta */}
+        {accordionOpenId !== null && (
+          <button
+            type="button"
+            onClick={() => setAccordionOpenId(null)}
+            className="inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-xl bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all group"
+          >
+            <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Ver todas las secciones
+          </button>
+        )}
+      </div>
+
+      {/* Cabecera del expediente — solo cuando no hay sección abierta */}
       {accordionOpenId === null && (
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4">
+        <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1">
@@ -166,147 +171,102 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         </div>
       )}
 
-      {/* Botón "Ver todas las secciones" cuando hay una abierta */}
-      {accordionOpenId !== null && (
-        <button
-          type="button"
-          onClick={() => setAccordionOpenId(null)}
-          className="inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-xl bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all group"
-        >
-          <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Ver todas las secciones
-        </button>
-      )}
-
-      {/* Secciones en modo acordeón exclusivo */}
+      {/* Secciones — flex-1 = ocupa el resto de la altura disponible */}
       <AccordionBackofficeContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
+        <div className={`flex-1 min-h-0 ${
+          accordionOpenId !== null
+            ? "flex flex-col"                               // sección abierta: ocupa la altura disponible
+            : "overflow-y-auto space-y-3 pb-6 pr-0.5"     // lista: scroll interno
+        }`}>
 
-        <SeccionBackoffice
-          sectionId="asesores"
-          titulo="Asesores asignados"
-          subtitulo={
-            nAsesores > 0
-              ? `${nAsesores} asesor${nAsesores > 1 ? "es" : ""} asignado${nAsesores > 1 ? "s" : ""}`
-              : "Sin asesores asignados"
-          }
-          estado={asesorEstado}
-        >
-          <AsesoresAsignadosAdmin
-            asesoresDisponibles={asesoresDisponibles}
-            asesoresSeleccionados={asesoresSeleccionados}
-            onChangeSeleccionados={setAsesoresSeleccionados}
-            onGuardar={handleGuardarAsesores}
-            guardando={guardandoAsesores}
-          />
-        </SeccionBackoffice>
+          <SeccionBackoffice
+            sectionId="asesores"
+            titulo="Asesores asignados"
+            subtitulo={nAsesores > 0 ? `${nAsesores} asesor${nAsesores > 1 ? "es" : ""} asignado${nAsesores > 1 ? "s" : ""}` : "Sin asesores asignados"}
+            estado={asesorEstado}
+          >
+            <AsesoresAsignadosAdmin
+              asesoresDisponibles={asesoresDisponibles}
+              asesoresSeleccionados={asesoresSeleccionados}
+              onChangeSeleccionados={setAsesoresSeleccionados}
+              onGuardar={handleGuardarAsesores}
+              guardando={guardandoAsesores}
+            />
+          </SeccionBackoffice>
 
-        <SeccionBackoffice
-          sectionId="checklist"
-          numero="1"
-          titulo="Documentos requeridos"
-          subtitulo={checklistStats.subtitulo}
-          estado={checklistStats.estado}
-        >
-          <ChecklistSolicitudAdmin
-            detalle={detalle}
-            checklistPorEtapa={checklistPorEtapa}
-            setChecklist={setChecklist}
-            recargar={cargar}
-          />
-        </SeccionBackoffice>
+          <SeccionBackoffice
+            sectionId="checklist"
+            numero="1"
+            titulo="Documentos requeridos"
+            subtitulo={checklistStats.subtitulo}
+            estado={checklistStats.estado}
+          >
+            <ChecklistSolicitudAdmin
+              detalle={detalle}
+              checklistPorEtapa={checklistPorEtapa}
+              setChecklist={setChecklist}
+              recargar={cargar}
+            />
+          </SeccionBackoffice>
 
-        {isVisado ? (
-          <>
-            <SeccionBackoffice
-              sectionId="instructivo"
-              numero="2"
-              titulo="Instructivo y plantillas"
-              subtitulo="Contenido configurado por servicio en Instructivos"
-            >
-              <p className="text-sm text-neutral-500">
-                Este contenido se configura por servicio en <b>Instructivos</b>.
-              </p>
-            </SeccionBackoffice>
+          {isVisado ? (
+            <>
+              <SeccionBackoffice sectionId="instructivo" numero="2" titulo="Instructivo y plantillas" subtitulo="Contenido configurado por servicio en Instructivos">
+                <p className="text-sm text-neutral-500">
+                  Este contenido se configura por servicio en <b>Instructivos</b>.
+                </p>
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="portales"
-              numero="3"
-              titulo="Portales, claves y justificantes"
-              subtitulo="Registra portales, claves, estado del trámite y justificantes"
-            >
-              <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-            </SeccionBackoffice>
-          </>
-        ) : (
-          <>
-            <SeccionBackoffice
-              sectionId="formulario"
-              numero="3"
-              titulo="Formulario de datos académicos"
-              subtitulo={tieneFormulario ? "Formulario completado" : "El cliente aún no ha completado el formulario"}
-              estado={tieneFormulario ? "completado" : "pendiente"}
-            >
-              <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-            </SeccionBackoffice>
+              <SeccionBackoffice sectionId="portales" numero="3" titulo="Portales, claves y justificantes" subtitulo="Registra portales, claves, estado del trámite y justificantes">
+                <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+              </SeccionBackoffice>
+            </>
+          ) : (
+            <>
+              <SeccionBackoffice
+                sectionId="formulario"
+                numero="3"
+                titulo="Formulario de datos académicos"
+                subtitulo={tieneFormulario ? "Formulario completado" : "El cliente aún no ha completado el formulario"}
+                estado={tieneFormulario ? "completado" : "pendiente"}
+              >
+                <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="informe"
-              numero="4"
-              titulo="Informe de búsqueda de másteres"
-              subtitulo={
-                detalle.informe_fecha_subida
-                  ? `Subido el ${formatearFecha(detalle.informe_fecha_subida)}`
-                  : "Aún no se ha subido el informe"
-              }
-              estado={informeEstado}
-            >
-              <InformeAdmin detalle={detalle} recargar={cargar} />
-            </SeccionBackoffice>
+              <SeccionBackoffice
+                sectionId="informe"
+                numero="4"
+                titulo="Informe de búsqueda de másteres"
+                subtitulo={detalle.informe_fecha_subida ? `Subido el ${formatearFecha(detalle.informe_fecha_subida)}` : "Aún no se ha subido el informe"}
+                estado={informeEstado}
+              >
+                <InformeAdmin detalle={detalle} recargar={cargar} />
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="eleccion"
-              numero="5"
-              titulo="Elección de másteres (cliente)"
-              subtitulo={
-                tieneEleccion
-                  ? `${nElecciones} máster${nElecciones > 1 ? "es" : ""} seleccionado${nElecciones > 1 ? "s" : ""}`
-                  : "El cliente aún no ha seleccionado másteres"
-              }
-              estado={tieneEleccion ? "completado" : "pendiente"}
-            >
-              <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
-            </SeccionBackoffice>
+              <SeccionBackoffice
+                sectionId="eleccion"
+                numero="5"
+                titulo="Elección de másteres (cliente)"
+                subtitulo={tieneEleccion ? `${nElecciones} máster${nElecciones > 1 ? "es" : ""} seleccionado${nElecciones > 1 ? "s" : ""}` : "El cliente aún no ha seleccionado másteres"}
+                estado={tieneEleccion ? "completado" : "pendiente"}
+              >
+                <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="programacion"
-              numero="6"
-              titulo="Programación de postulaciones"
-              subtitulo="Gestiona las tareas por cada máster confirmado"
-            >
-              <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
-            </SeccionBackoffice>
+              <SeccionBackoffice sectionId="programacion" numero="6" titulo="Programación de postulaciones" subtitulo="Gestiona las tareas por cada máster confirmado">
+                <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="portales"
-              numero="7"
-              titulo="Portales, claves y justificantes"
-              subtitulo="Registra portales, claves, estado del trámite y justificantes"
-            >
-              <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-            </SeccionBackoffice>
+              <SeccionBackoffice sectionId="portales" numero="7" titulo="Portales, claves y justificantes" subtitulo="Registra portales, claves, estado del trámite y justificantes">
+                <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+              </SeccionBackoffice>
 
-            <SeccionBackoffice
-              sectionId="cierre"
-              numero="8"
-              titulo="Cierre de servicio de máster y siguientes pasos"
-              subtitulo="Másteres admitidos, matriculados y cierre del expediente"
-            >
-              <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
-            </SeccionBackoffice>
-          </>
-        )}
+              <SeccionBackoffice sectionId="cierre" numero="8" titulo="Cierre de servicio de máster y siguientes pasos" subtitulo="Másteres admitidos, matriculados y cierre del expediente">
+                <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+              </SeccionBackoffice>
+            </>
+          )}
+        </div>
       </AccordionBackofficeContext.Provider>
     </div>
   );
