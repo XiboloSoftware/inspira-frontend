@@ -56,6 +56,36 @@ export async function descargarDocumento(doc) {
   }
 }
 
+export async function abrirInforme(informe) {
+  const token = localStorage.getItem("bo_token");
+  try {
+    const r = await fetch(
+      `${API_URL}/api/admin/solicitudes/${informe.id_solicitud}/informe`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) { alert("No se pudo abrir el informe"); return; }
+    const blob = await r.blob();
+    window.open(URL.createObjectURL(blob), "_blank");
+  } catch {
+    alert("Error al abrir el informe");
+  }
+}
+
+export async function abrirJustificante(j) {
+  const token = localStorage.getItem("bo_token");
+  try {
+    const r = await fetch(
+      `${API_URL}/api/portales/justificantes/${j.id_justificante}/descargar`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) { alert("No se pudo abrir el justificante"); return; }
+    const blob = await r.blob();
+    window.open(URL.createObjectURL(blob), "_blank");
+  } catch {
+    alert("Error al abrir el justificante");
+  }
+}
+
 export async function descargarInforme(informe) {
   const token = localStorage.getItem("bo_token");
   try {

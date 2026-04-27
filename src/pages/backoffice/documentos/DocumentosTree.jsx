@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { boDELETE } from "../../../services/backofficeApi";
 import DocViewer from "./DocViewer";
-import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
+import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, abrirInforme, descargarInforme, abrirJustificante, descargarJustificante } from "./documentosUtils";
 
 export function EstadoBadge({ estado }) {
   const map = {
@@ -144,6 +144,12 @@ export function SolicitudNode({ solicitud, isAdmin, onEliminar, forceOpen }) {
           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">INFORME</span>
           <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(solicitud.informe.tamano_bytes)}</span>
           <button
+            onClick={() => abrirInforme(solicitud.informe)}
+            className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0"
+          >
+            Abrir
+          </button>
+          <button
             onClick={() => descargarInforme(solicitud.informe)}
             className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
           >
@@ -157,6 +163,12 @@ export function SolicitudNode({ solicitud, isAdmin, onEliminar, forceOpen }) {
           <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{j.nombre_original || "Justificante"}</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700">PORTAL</span>
           <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(j.tamano_bytes)}</span>
+          <button
+            onClick={() => abrirJustificante(j)}
+            className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0"
+          >
+            Abrir
+          </button>
           <button
             onClick={() => descargarJustificante(j)}
             className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
