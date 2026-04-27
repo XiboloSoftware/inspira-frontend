@@ -38,7 +38,7 @@ export default function FormularioDatosAcademicos({
             </div>
             <p className="text-sm text-neutral-500 ml-9">
               {collapsed && hasData
-                ? "Haz clic en "Modificar datos" para actualizar la información enviada."
+                ? "Haz clic en 'Modificar datos' para actualizar la información enviada."
                 : collapsed
                 ? "Completa este formulario para personalizar tu informe de búsqueda."
                 : "Completa todos los campos y guarda los cambios."}
