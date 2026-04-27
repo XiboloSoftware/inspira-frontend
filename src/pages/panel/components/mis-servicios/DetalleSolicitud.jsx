@@ -173,7 +173,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       {!loading && !error && detalle && (
         <AccordionContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
           {accordionOpenId !== null && (
-            {/* Botón secundario — claramente diferente del primario */}
             <button
               type="button"
               onClick={() => setAccordionOpenId(null)}
