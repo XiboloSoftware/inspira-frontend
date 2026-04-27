@@ -174,7 +174,7 @@ function Input({ value, onChange, placeholder, type = "text", ...rest }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function FormularioDatosAcademicos({
-  formData, setFormData, handleSubmitFormulario,
+  formData, setFormData, handleSubmitFormulario, onGuardarSilencioso,
   savingForm, hasData,
 }) {
   const [step, setStep] = useState(0);
@@ -769,7 +769,7 @@ export default function FormularioDatosAcademicos({
       subtitulo={subtitulo}
       estado={estado}
       sectionId="3"
-      contentClassName="flex flex-col overflow-hidden max-h-[calc(100vh-160px)]"
+      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
       <form onSubmit={handleSubmitFormulario} className="flex flex-col flex-1 min-h-0">
 
@@ -819,7 +819,7 @@ export default function FormularioDatosAcademicos({
                 <span className="text-xl flex-shrink-0">{STEPS[step].icon}</span>
                 <h3 className="text-sm font-bold text-[#023A4B] truncate">{STEPS[step].title}</h3>
               </div>
-              <button type="submit" disabled={savingForm}
+              <button type="button" onClick={onGuardarSilencioso} disabled={savingForm}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-[#023A4B] hover:bg-neutral-50 rounded-lg disabled:opacity-40 transition border border-transparent hover:border-neutral-200 flex-shrink-0">
                 {savingForm
                   ? <span className="w-3 h-3 border-2 border-neutral-300 border-t-[#023A4B] rounded-full animate-spin" />

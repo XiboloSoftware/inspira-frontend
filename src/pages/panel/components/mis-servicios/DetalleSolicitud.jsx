@@ -83,18 +83,22 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     return Math.round((done * 100) / checklist.length);
   }, [checklist]);
 
-  async function handleSubmitFormulario(e) {
-    e.preventDefault();
+  async function guardarFormulario(conAlerta = true) {
     setSavingForm(true);
     try {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
-      if (!r.ok) { window.alert("No se pudo guardar."); return; }
-      window.alert("Datos guardados.");
+      if (!r.ok) { if (conAlerta) window.alert("No se pudo guardar."); return; }
+      if (conAlerta) window.alert("Datos guardados.");
     } catch {
-      window.alert("Error al guardar.");
+      if (conAlerta) window.alert("Error al guardar.");
     } finally {
       setSavingForm(false);
     }
+  }
+
+  async function handleSubmitFormulario(e) {
+    e.preventDefault();
+    await guardarFormulario(true);
   }
 
   async function handleGuardarElecciones() {
@@ -182,7 +186,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               Todas las secciones
             </button>
           )}
-          <div className={`flex-1 min-h-0 space-y-2 pb-4 pr-1 ${accordionOpenId !== null ? "overflow-hidden" : "overflow-y-auto"}`}>
+          <div className={accordionOpenId !== null ? "flex-1 min-h-0 flex flex-col" : "flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1"}>
             <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
             <InstructivosPlantillas instructivos={instructivos} />
@@ -191,6 +195,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               formData={formData}
               setFormData={setFormData}
               handleSubmitFormulario={handleSubmitFormulario}
+              onGuardarSilencioso={() => guardarFormulario(false)}
               savingForm={savingForm}
               hasData={hasFormData}
             />

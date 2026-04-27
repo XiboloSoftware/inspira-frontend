@@ -41,15 +41,18 @@ export default function SeccionPanel({
     return null;
   }
 
+  // Pantalla completa: sectionId + accordion + open → propaga altura vía flex
+  const isFullScreen = !!(sectionId && accordion && open);
+
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
   return (
-    <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+    <section className={`border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden ${isFullScreen ? "flex flex-col flex-1 min-h-0" : ""}`}>
       {/* Header clickable */}
       <button
         type="button"
         onClick={toggle}
-        className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
+        className="shrink-0 w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-6 h-6 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
@@ -83,7 +86,13 @@ export default function SeccionPanel({
       </button>
 
       {open && (
-        <div className={`border-t border-neutral-100 ${contentClassName ?? "px-5 py-4 overflow-y-auto max-h-[calc(100vh-160px)]"}`}>
+        <div className={`border-t border-neutral-100 ${
+          contentClassName !== undefined
+            ? contentClassName
+            : isFullScreen
+              ? "flex-1 min-h-0 overflow-y-auto px-5 py-4"
+              : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-220px)]"
+        }`}>
           {children}
         </div>
       )}
