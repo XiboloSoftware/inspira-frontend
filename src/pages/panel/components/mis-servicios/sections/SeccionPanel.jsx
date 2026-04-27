@@ -32,31 +32,29 @@ export default function SeccionPanel({
       <button
         type="button"
         onClick={toggle}
-        className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
+        className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
-            <span className="text-white text-sm font-bold">{numero}</span>
+          <div className="w-6 h-6 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
+            <span className="text-white text-xs font-bold">{numero}</span>
           </div>
           <div className="min-w-0">
-            <p className="text-base font-bold text-neutral-900">{titulo}</p>
+            <p className="text-sm font-bold text-neutral-900">{titulo}</p>
             {subtitulo && (
-              <p className="text-sm text-neutral-500 mt-0.5">{subtitulo}</p>
+              <p className="text-xs text-neutral-500 mt-0.5 truncate">{subtitulo}</p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {cfg && (
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-            >
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
               {cfg.label}
             </span>
           )}
           <svg
-            className={`w-5 h-5 text-neutral-400 transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-neutral-400 transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -67,9 +65,9 @@ export default function SeccionPanel({
         </div>
       </button>
 
-      {/* Cuerpo */}
+      {/* Cuerpo con scroll interno — máx. 45vh para secciones largas */}
       {open && (
-        <div className="border-t border-neutral-100 px-6 py-5">
+        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[45vh]">
           {children}
         </div>
       )}

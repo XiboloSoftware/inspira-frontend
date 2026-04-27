@@ -2,79 +2,55 @@
 import { formatearFecha, badgeEstadoSolicitud } from "../utils";
 
 export default function EncabezadoSolicitud({ detalle, solicitudBase, progresoChecklist }) {
-  const estadoBadge = badgeEstadoSolicitud(
-    detalle?.estado?.nombre,
-    detalle?.estado?.es_final
-  );
+  const estadoBadge = badgeEstadoSolicitud(detalle?.estado?.nombre, detalle?.estado?.es_final);
 
-  const progresoColor =
-    progresoChecklist >= 100
-      ? "bg-emerald-500"
-      : progresoChecklist >= 50
-      ? "bg-[#F49E4B]"
-      : "bg-[#F49E4B]";
+  const progresoColor = progresoChecklist >= 100 ? "bg-emerald-500" : "bg-[#F49E4B]";
 
   return (
-    <div className="mb-6 pb-6 border-b border-neutral-100">
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-
-        {/* Info principal */}
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold text-[#046C8C] uppercase tracking-widest mb-2">
-            Solicitud #{detalle.id_solicitud}
-          </p>
-          <h2 className="text-2xl font-bold text-neutral-900 leading-tight mb-3">
-            {detalle.titulo || solicitudBase.titulo || "Servicio sin título"}
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {detalle.tipo?.nombre && (
-              <span className="text-xs px-3 py-1 rounded-full bg-[#023A4B]/10 text-[#023A4B] font-semibold">
-                {detalle.tipo.nombre}
-              </span>
-            )}
-            <span className={estadoBadge.classesLg || estadoBadge.classes}>
-              {estadoBadge.text}
+    <div className="flex items-center justify-between gap-6">
+      {/* Info izquierda */}
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-[#046C8C] uppercase tracking-widest mb-1">
+          Solicitud #{detalle.id_solicitud}
+        </p>
+        <h2 className="text-xl font-bold text-neutral-900 leading-tight truncate">
+          {detalle.titulo || solicitudBase.titulo || "Servicio sin título"}
+        </h2>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          {detalle.tipo?.nombre && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-[#023A4B]/10 text-[#023A4B] font-semibold">
+              {detalle.tipo.nombre}
             </span>
-            <span className="text-xs text-neutral-400 font-mono bg-neutral-100 px-2 py-1 rounded">
-              {detalle.codigo_publico}
-            </span>
-          </div>
-
-          <p className="text-sm text-neutral-400 mt-3">
-            Creada el {formatearFecha(detalle.fecha_creacion)}
-            {detalle.fecha_cierre && (
-              <> · Cerrada el {formatearFecha(detalle.fecha_cierre)}</>
-            )}
-          </p>
+          )}
+          <span className={estadoBadge.classes}>{estadoBadge.text}</span>
+          <span className="text-xs text-neutral-400 font-mono bg-neutral-100 px-2 py-0.5 rounded hidden sm:inline">
+            {detalle.codigo_publico}
+          </span>
+          <span className="text-xs text-neutral-400">
+            · {formatearFecha(detalle.fecha_creacion)}
+          </span>
         </div>
+      </div>
 
-        {/* Progreso del checklist */}
-        <div className="lg:min-w-[240px] lg:max-w-[280px] w-full lg:w-auto">
-          <div className="bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4">
-            <div className="flex justify-between items-baseline mb-3">
-              <span className="text-sm font-semibold text-neutral-700">
-                Progreso del checklist
-              </span>
-              <span className="text-2xl font-bold text-neutral-900">
-                {progresoChecklist}%
-              </span>
-            </div>
-            <div className="h-3 bg-neutral-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${progresoColor}`}
-                style={{ width: `${progresoChecklist}%` }}
-              />
-            </div>
-            <p className="text-xs text-neutral-400 mt-2">
-              {progresoChecklist >= 100
-                ? "¡Documentos completos!"
-                : progresoChecklist === 0
-                ? "Sube tus documentos para avanzar"
-                : "En progreso — sigue subiendo documentos"}
-            </p>
-          </div>
+      {/* Progreso derecha */}
+      <div className="shrink-0 w-40 sm:w-52">
+        <div className="flex justify-between items-baseline mb-1.5">
+          <span className="text-xs font-semibold text-neutral-600">Progreso</span>
+          <span className="text-lg font-bold text-neutral-900">{progresoChecklist}%</span>
         </div>
+        <div className="h-2.5 bg-neutral-200 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${progresoColor}`}
+            style={{ width: `${progresoChecklist}%` }}
+          />
+        </div>
+        <p className="text-xs text-neutral-400 mt-1">
+          {progresoChecklist >= 100
+            ? "¡Documentos completos!"
+            : progresoChecklist === 0
+            ? "Sube tus documentos"
+            : "En progreso"}
+        </p>
       </div>
     </div>
   );

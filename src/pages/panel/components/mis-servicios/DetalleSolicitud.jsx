@@ -21,9 +21,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
-
   const [formCollapsed, setFormCollapsed] = useState(true);
-
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
 
@@ -31,8 +29,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   useEffect(() => {
     cargarTodo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idSolicitud]);
+  }, [idSolicitud]); // eslint-disable-line
 
   async function cargarTodo() {
     setLoading(true);
@@ -47,30 +44,25 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const rForm = await apiGET(`/solicitudes/${idSolicitud}/formulario`);
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
-        setFormCollapsed(true);
       } else {
         setFormData({});
-        setFormCollapsed(true);
       }
+      setFormCollapsed(true);
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
       if (rInst.ok) {
         const base = (API_URL || "").replace(/\/+$/, "");
-        const lista = (rInst.instructivos || []).map((i) => {
+        setInstructivos((rInst.instructivos || []).map((i) => {
           const rawUrl = i.url || i.archivo_url || "";
           const isAbsolute = /^https?:\/\//i.test(rawUrl);
-          if (isAbsolute) return { label: i.label, url: rawUrl };
-          return { label: i.label, url: `${base}/${rawUrl.replace(/^\/+/, "")}` };
-        });
-        setInstructivos(lista);
+          return { label: i.label, url: isAbsolute ? rawUrl : `${base}/${rawUrl.replace(/^\/+/, "")}` };
+        }));
       } else {
         setInstructivos([]);
       }
 
       const rElec = await apiGET(`/solicitudes/${idSolicitud}/eleccion-masters`);
-      const base5 = Array.from({ length: 5 }, (_, idx) => ({
-        prioridad: idx + 1, programa: "", comentario: "",
-      }));
+      const base5 = Array.from({ length: 5 }, (_, idx) => ({ prioridad: idx + 1, programa: "", comentario: "" }));
       if (rElec.ok && Array.isArray(rElec.elecciones)) {
         setElecciones(rElec.elecciones.length > 0 ? rElec.elecciones : base5);
       } else {
@@ -124,11 +116,13 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const esVisado = tipoNombre === "visado";
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      {/* Botón volver */}
+    // Ocupa toda la altura disponible, sin scroll externo
+    <div className="flex flex-col h-full min-h-0">
+
+      {/* Botón volver — no crece */}
       <button
         onClick={onVolver}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#023A4B] hover:text-[#046C8C] transition-colors group"
+        className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-[#023A4B] hover:text-[#046C8C] transition-colors group mb-3"
       >
         <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -136,39 +130,29 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         Volver a mis servicios
       </button>
 
-      {/* Encabezado */}
-      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6 sm:p-8">
+      {/* Encabezado compacto — no crece */}
+      <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
         {loading && (
-          <div className="flex flex-col items-center gap-3 py-16 text-neutral-400">
-            <div className="w-8 h-8 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Cargando tu solicitud…</span>
+          <div className="flex items-center gap-2 py-2 text-neutral-400">
+            <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Cargando…</span>
           </div>
         )}
-
         {error && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
             <span className="text-red-500">⚠</span>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
-
         {!loading && !error && detalle && (
-          <EncabezadoSolicitud
-            detalle={detalle}
-            solicitudBase={solicitudBase}
-            progresoChecklist={progresoChecklist}
-          />
+          <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
         )}
       </div>
 
-      {/* Secciones colapsables */}
+      {/* Lista de secciones — crece y scrollea internamente */}
       {!loading && !error && detalle && (
-        <div className="space-y-3">
-          <ChecklistDocumentos
-            checklist={checklist}
-            cargarTodo={cargarTodo}
-            idSolicitud={idSolicitud}
-          />
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
+          <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
           <InstructivosPlantillas instructivos={instructivos} />
 
