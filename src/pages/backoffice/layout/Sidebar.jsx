@@ -163,10 +163,10 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex flex-col relative bg-primary text-white shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-primary text-white shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ width: `${width}px` }}
+        style={{ width: `${width}px`, position: "fixed" }}
       >
         {sidebarInner}
       </aside>
