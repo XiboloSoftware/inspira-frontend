@@ -185,20 +185,34 @@ export default function LeadsCalculadora({ user }) {
 
       {/* ── Desktop: tabla ── */}
       <div className="hidden sm:block overflow-x-auto rounded-xl border border-neutral-200 shadow-sm">
-        <table className="w-full text-sm" style={{ minWidth: "1350px" }}>
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col style={{ width: "120px" }} />  {/* Fecha/Hora */}
+            <col style={{ width: "11%" }} />     {/* Nombre */}
+            <col style={{ width: "68px" }} />    {/* País */}
+            <col style={{ width: "62px" }} />    {/* Nota ES */}
+            <col style={{ width: "11%" }} />     {/* Área */}
+            <col style={{ width: "72px" }} />    {/* Presup. */}
+            <col style={{ width: "82px" }} />    {/* Perfil */}
+            <col style={{ width: "46px" }} />    {/* AUIP */}
+            <col style={{ width: "14%" }} />     {/* Email */}
+            <col style={{ width: "96px" }} />    {/* WhatsApp */}
+            <col style={{ width: "22%" }} />     {/* Becas */}
+            <col style={{ width: "82px" }} />    {/* Acciones */}
+          </colgroup>
           <thead>
             <tr className="bg-secondary-light text-primary text-left">
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Fecha / Hora</th>
-              <th className="px-3 py-3 font-semibold" style={{ minWidth: 130 }}>Nombre</th>
+              <th className="px-3 py-3 font-semibold">Nombre</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">País</th>
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">Nota ES</th>
-              <th className="px-3 py-3 font-semibold" style={{ minWidth: 150 }}>Área</th>
+              <th className="px-3 py-3 font-semibold">Área</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Presup.</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Perfil</th>
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">AUIP</th>
-              <th className="px-3 py-3 font-semibold" style={{ minWidth: 170 }}>Email</th>
-              <th className="px-3 py-3 font-semibold" style={{ minWidth: 120 }}>WhatsApp</th>
-              <th className="px-3 py-3 font-semibold" style={{ minWidth: 200 }}>Becas</th>
+              <th className="px-3 py-3 font-semibold">Email</th>
+              <th className="px-3 py-3 font-semibold">WhatsApp</th>
+              <th className="px-3 py-3 font-semibold">Becas</th>
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
@@ -231,7 +245,7 @@ export default function LeadsCalculadora({ user }) {
                           value={editForm.nombre}
                           onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
                         />
-                      : <span className="whitespace-nowrap">{l.nombre}</span>}
+                      : <span style={{ overflowWrap: "break-word" }}>{l.nombre}</span>}
                   </td>
 
                   <td className="px-3 py-2.5 text-sm whitespace-nowrap">{l.pais}</td>
@@ -241,7 +255,7 @@ export default function LeadsCalculadora({ user }) {
                   </td>
 
                   <td className="px-3 py-2.5 text-sm" title={l.area}>
-                    <span className="block" style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {l.area}
                     </span>
                   </td>
@@ -487,14 +501,14 @@ function BecasPills({ becas }) {
   const califica = becas.filter(b => b.estado === "si");
   const posible  = becas.filter(b => b.estado === "posible");
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1" style={{ maxHeight: "5.5rem", overflowY: "auto" }}>
       {califica.map((b, i) => (
-        <span key={i} className="bg-green-100 text-green-700 text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+        <span key={i} className="bg-green-100 text-green-700 text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap self-start">
           ✓ {b.nombre.split("—")[0].trim()}
         </span>
       ))}
       {posible.map((b, i) => (
-        <span key={i} className="bg-yellow-100 text-yellow-700 text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span key={i} className="bg-yellow-100 text-yellow-700 text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap self-start">
           ~ {b.nombre.split("—")[0].trim()}
         </span>
       ))}
