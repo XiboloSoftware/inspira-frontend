@@ -1,6 +1,6 @@
 // Árbol de documentos: EstadoBadge, DocRow, TreeNode, ItemNode, SolicitudNode
 import { useEffect, useState } from "react";
-import { boDELETE } from "../../../services/backofficeApi";
+import { boDELETE, boPATCH } from "../../../services/backofficeApi";
 import DocViewer from "./DocViewer";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
 
@@ -63,10 +63,31 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
   const [eliminando, setEliminando] = useState(false);
   const [verDoc, setVerDoc] = useState(false);
   const [abriendo, setAbriendo] = useState(false);
+  const [estadoDoc, setEstadoDoc] = useState(doc.estado_revision);
 
   const isPdf = doc.mime_type?.includes("pdf");
   const isImage = doc.mime_type?.includes("image");
   const canPreview = isPdf || isImage;
+
+  async function cambiarRevision(nuevoEstado) {
+    let comentario = "";
+    if (nuevoEstado === "OBSERVADO") {
+      comentario = window.prompt("Comentario para el cliente (por qué se observa el documento):", "");
+      if (comentario === null) return false;
+    }
+    try {
+      const r = await boPATCH(`/api/admin/documentos/${doc.id_documento}/revision`, {
+        estado_revision: nuevoEstado,
+        comentario_revision: comentario || null,
+      });
+      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo actualizar"); return false; }
+      setEstadoDoc(nuevoEstado);
+      return true;
+    } catch {
+      window.alert("Error al actualizar el documento.");
+      return false;
+    }
+  }
 
   async function handleAbrir() {
     if (canPreview) { setVerDoc(true); return; }
@@ -101,7 +122,7 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
       <div className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg group">
         <span className="text-base leading-none">{fileIcon(doc.mime_type)}</span>
         <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{doc.nombre_original}</span>
-        <EstadoBadge estado={doc.estado_revision} />
+        <EstadoBadge estado={estadoDoc} />
         <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(doc.tamano_bytes)}</span>
         <span className="text-[11px] text-neutral-400 shrink-0 hidden sm:block">{formatDate(doc.fecha_subida)}</span>
         <button onClick={handleAbrir} disabled={abriendo} className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0 disabled:opacity-50">
@@ -117,7 +138,14 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
           </button>
         )}
       </div>
-      {verDoc && <DocViewer doc={doc} onClose={() => setVerDoc(false)} />}
+      {verDoc && (
+        <DocViewer
+          doc={doc}
+          onClose={() => setVerDoc(false)}
+          onAprobar={async () => { const ok = await cambiarRevision("APROBADO"); if (ok) setVerDoc(false); }}
+          onObservar={async () => { const ok = await cambiarRevision("OBSERVADO"); if (ok) setVerDoc(false); }}
+        />
+      )}
     </>
   );
 }
