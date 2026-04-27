@@ -20,6 +20,23 @@ function countDocs(lista) {
   );
 }
 
+function countByEstado(lista) {
+  const counts = { APROBADO: 0, OBSERVADO: 0, SUBIDO: 0 };
+  for (const c of lista) {
+    for (const s of c.solicitudes) {
+      for (const it of s.items) {
+        for (const doc of it.documentos) {
+          const e = doc.estado_revision;
+          if (e === "APROBADO") counts.APROBADO++;
+          else if (e === "OBSERVADO") counts.OBSERVADO++;
+          else counts.SUBIDO++;
+        }
+      }
+    }
+  }
+  return counts;
+}
+
 function filtrarLista(lista, q) {
   if (!q) return lista;
   return lista
@@ -110,6 +127,11 @@ export default function DocumentosBackoffice() {
   const totalClienteDocs = countDocs(clientes);
   const totalInternoDocs = countDocs(internos);
 
+  const estadoCounts = (() => {
+    const all = [...clientes, ...internos];
+    return countByEstado(all);
+  })();
+
   function ExpandBtn({ id }) {
     return (
       <button
@@ -155,8 +177,8 @@ export default function DocumentosBackoffice() {
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+      {/* Stat cards — totales */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
           <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
           <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
@@ -177,6 +199,31 @@ export default function DocumentosBackoffice() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Stat cards — estados de revisión */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="bg-green-50 rounded-xl border border-green-200 shadow-sm p-4 flex items-center gap-3">
+          <span className="text-2xl leading-none">✅</span>
+          <div>
+            <p className="text-[11px] text-green-600 font-semibold uppercase tracking-wider mb-0.5">Aprobados</p>
+            <p className="text-2xl font-bold text-green-700">{loading ? "…" : estadoCounts.APROBADO}</p>
+          </div>
+        </div>
+        <div className="bg-yellow-50 rounded-xl border border-yellow-200 shadow-sm p-4 flex items-center gap-3">
+          <span className="text-2xl leading-none">⚠️</span>
+          <div>
+            <p className="text-[11px] text-yellow-600 font-semibold uppercase tracking-wider mb-0.5">Observados</p>
+            <p className="text-2xl font-bold text-yellow-700">{loading ? "…" : estadoCounts.OBSERVADO}</p>
+          </div>
+        </div>
+        <div className="bg-blue-50 rounded-xl border border-blue-200 shadow-sm p-4 flex items-center gap-3">
+          <span className="text-2xl leading-none">📤</span>
+          <div>
+            <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Sin revisar</p>
+            <p className="text-2xl font-bold text-blue-700">{loading ? "…" : estadoCounts.SUBIDO}</p>
+          </div>
+        </div>
       </div>
 
       {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
