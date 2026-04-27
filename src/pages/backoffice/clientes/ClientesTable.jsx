@@ -20,33 +20,36 @@ function ToggleGroup({ value, onChange, options }) {
   );
 }
 
+// Fila de tabla — solo desktop
 function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
   return (
     <tr className="border-b last:border-0 hover:bg-neutral-50">
       <td className="py-2 px-3">
         <div className="flex items-center gap-2">
-          <span>{c.nombre || "—"}</span>
-          {!c.activo && <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-700">Inactivo</span>}
+          <span className="font-medium text-neutral-900">{c.nombre || "—"}</span>
+          {!c.activo && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-neutral-200 text-neutral-600">Inactivo</span>}
         </div>
       </td>
-      <td className="py-2 px-3">{c.email_contacto}</td>
-      <td className="py-2 px-3">{c.telefono || "—"}</td>
-      <td className="py-2 px-3">{c.dni || "—"}</td>
+      <td className="py-2 px-3 text-sm text-neutral-600 max-w-[160px] truncate">{c.email_contacto}</td>
+      <td className="py-2 px-3 text-sm text-neutral-600 whitespace-nowrap">{c.telefono || "—"}</td>
+      <td className="py-2 px-3 text-sm text-neutral-600">{c.dni || "—"}</td>
       <td className="py-2 px-3">
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${c.tiene_servicio ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
           {c.tiene_servicio ? "Con servicio" : "Sin servicio"}
         </span>
       </td>
-      <td className="py-2 px-3">{c.fecha_registro ? new Date(c.fecha_registro).toLocaleDateString() : "—"}</td>
+      <td className="py-2 px-3 text-xs text-neutral-500 whitespace-nowrap">
+        {c.fecha_registro ? new Date(c.fecha_registro).toLocaleDateString("es-ES") : "—"}
+      </td>
       {isAdmin && (
         <td className="py-2 px-3 text-right">
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => onVerServicios?.(c)} className="text-xs px-3 py-1 rounded-lg border border-emerald-500 text-emerald-700 hover:bg-emerald-50">Servicios</button>
-            <button type="button" onClick={() => onEditar(c)} className="text-xs px-3 py-1 rounded-lg border border-primary text-primary hover:bg-primary/5">Editar</button>
+          <div className="flex justify-end gap-1.5">
+            <button type="button" onClick={() => onVerServicios?.(c)} className="text-xs px-2.5 py-1 rounded-lg border border-emerald-400 text-emerald-700 hover:bg-emerald-50">Servicios</button>
+            <button type="button" onClick={() => onEditar(c)} className="text-xs px-2.5 py-1 rounded-lg border border-primary text-primary hover:bg-primary/5">Editar</button>
             <button
               type="button"
               onClick={() => onToggleActivo?.(c)}
-              className={`text-xs px-3 py-1 rounded-lg border ${c.activo ? "border-red-500 text-red-600 hover:bg-red-50" : "border-emerald-500 text-emerald-700 hover:bg-emerald-50"}`}
+              className={`text-xs px-2.5 py-1 rounded-lg border ${c.activo ? "border-red-400 text-red-600 hover:bg-red-50" : "border-emerald-400 text-emerald-700 hover:bg-emerald-50"}`}
             >
               {c.activo ? "Desactivar" : "Activar"}
             </button>
@@ -57,10 +60,58 @@ function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
   );
 }
 
+// Card para móvil
+function ClienteCard({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
+  return (
+    <div className="p-4 border-b last:border-0 hover:bg-neutral-50 active:bg-neutral-100">
+      {/* Nombre + badges */}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div>
+          <p className="text-sm font-semibold text-neutral-900 leading-snug">{c.nombre || "—"}</p>
+          <p className="text-xs text-neutral-400 mt-0.5">{c.email_contacto}</p>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className={`text-[11px] px-2 py-0.5 rounded-full ${c.tiene_servicio ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
+            {c.tiene_servicio ? "Con servicio" : "Sin servicio"}
+          </span>
+          {!c.activo && <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-500">Inactivo</span>}
+        </div>
+      </div>
+
+      {/* Datos secundarios */}
+      {(c.telefono || c.dni) && (
+        <div className="flex gap-4 mb-2 mt-1">
+          {c.telefono && <span className="text-xs text-neutral-500">📞 {c.telefono}</span>}
+          {c.dni && <span className="text-xs text-neutral-500">ID: {c.dni}</span>}
+        </div>
+      )}
+
+      {/* Acciones */}
+      {isAdmin && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <button type="button" onClick={() => onVerServicios?.(c)} className="flex-1 min-w-[80px] text-xs py-2 rounded-lg border border-emerald-400 text-emerald-700 font-medium active:bg-emerald-50">
+            Servicios
+          </button>
+          <button type="button" onClick={() => onEditar(c)} className="flex-1 min-w-[80px] text-xs py-2 rounded-lg border border-primary text-primary font-medium active:bg-primary/5">
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleActivo?.(c)}
+            className={`flex-1 min-w-[80px] text-xs py-2 rounded-lg border font-medium ${c.activo ? "border-red-400 text-red-600 active:bg-red-50" : "border-emerald-400 text-emerald-700 active:bg-emerald-50"}`}
+          >
+            {c.activo ? "Desactivar" : "Activar"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const FILTROS_SERVICIO = [
-  { value: "todos", label: "Todos serv.", activeClass: "bg-neutral-900 text-white" },
-  { value: "con",   label: "Con servicio", activeClass: "bg-emerald-600 text-white" },
-  { value: "sin",   label: "Sin servicio", activeClass: "bg-neutral-200 text-neutral-800" },
+  { value: "todos", label: "Todos", activeClass: "bg-neutral-900 text-white" },
+  { value: "con",   label: "Con serv.", activeClass: "bg-emerald-600 text-white" },
+  { value: "sin",   label: "Sin serv.", activeClass: "bg-neutral-200 text-neutral-800" },
 ];
 
 const FILTROS_ACTIVO = [
@@ -88,59 +139,70 @@ export default function ClientesTable({ clientes, loading, onEditar, onVerServic
   }, [clientes, filtroServicio, filtroActivo, filtroNombre]);
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+    <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
       {/* Filtros */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-800">Listado de clientes</h2>
-          <p className="text-[11px] text-neutral-500">Filtra por estado, servicio y busca por nombre.</p>
+      <div className="p-4 border-b border-neutral-100 bg-neutral-50 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-800">Listado de clientes</h2>
+            <p className="text-[11px] text-neutral-400">
+              {loading ? "Cargando…" : `${clientesFiltrados.length} de ${clientes.length} clientes`}
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
-          <input
-            type="text"
-            className="border border-neutral-300 rounded-lg px-3 py-1.5 text-xs min-w-[200px]"
-            placeholder="Buscar por nombre y apellidos..."
-            value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
-          />
+
+        <input
+          type="text"
+          className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+          placeholder="Buscar por nombre…"
+          value={filtroNombre}
+          onChange={(e) => setFiltroNombre(e.target.value)}
+        />
+
+        <div className="flex flex-wrap gap-2">
           <ToggleGroup value={filtroServicio} onChange={setFiltroServicio} options={FILTROS_SERVICIO} />
           <ToggleGroup value={filtroActivo} onChange={setFiltroActivo} options={FILTROS_ACTIVO} />
-          {loading && <span className="text-xs text-neutral-500 whitespace-nowrap">Cargando…</span>}
         </div>
       </div>
 
-      {!loading && clientes.length === 0 && <p className="text-sm text-neutral-500">No se encontraron clientes.</p>}
+      {loading && <p className="p-6 text-sm text-neutral-400 text-center">Cargando clientes…</p>}
+
+      {!loading && clientes.length === 0 && (
+        <p className="p-6 text-sm text-neutral-400 text-center">No se encontraron clientes.</p>
+      )}
+
       {!loading && clientes.length > 0 && clientesFiltrados.length === 0 && (
-        <p className="text-sm text-neutral-500">No hay clientes que coincidan con los filtros actuales.</p>
+        <p className="p-6 text-sm text-neutral-400 text-center">Sin resultados para los filtros seleccionados.</p>
       )}
 
       {clientesFiltrados.length > 0 && (
-        <div className="border border-neutral-100 rounded-lg overflow-hidden">
-          <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
+        <>
+          {/* ── Desktop: tabla ── */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 bg-white z-10">
-                <tr className="text-left text-xs text-neutral-500 border-b">
-                  {["Nombre y apellidos", "Correo", "Celular", "DNI", "Estado servicio", "Fecha registro"].map((h) => (
-                    <th key={h} className="py-2 px-3">{h}</th>
+              <thead className="border-b bg-white">
+                <tr className="text-left text-xs text-neutral-400">
+                  {["Nombre y apellidos", "Correo", "Celular", "DNI", "Servicio", "Fecha"].map((h) => (
+                    <th key={h} className="py-2 px-3 font-medium">{h}</th>
                   ))}
-                  {isAdmin && <th className="py-2 px-3 text-right">Acciones</th>}
+                  {isAdmin && <th className="py-2 px-3 text-right font-medium">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
                 {clientesFiltrados.map((c) => (
-                  <ClienteRow
-                    key={c.id_cliente}
-                    c={c}
-                    isAdmin={isAdmin}
-                    onEditar={onEditar}
-                    onVerServicios={onVerServicios}
-                    onToggleActivo={onToggleActivo}
-                  />
+                  <ClienteRow key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} />
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+
+          {/* ── Móvil: cards ── */}
+          <div className="sm:hidden divide-y divide-neutral-100">
+            {clientesFiltrados.map((c) => (
+              <ClienteCard key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

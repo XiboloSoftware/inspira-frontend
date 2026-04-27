@@ -167,30 +167,22 @@ export default function Clientes({ user }) {
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-4 max-w-6xl mx-auto">
+      <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-primary">Clientes</h1>
-          <p className="text-sm text-neutral-600">
-            Buscar y gestionar clientes de la plataforma.
-          </p>
+          <h1 className="text-xl sm:text-2xl font-bold text-primary">Clientes</h1>
+          <p className="text-sm text-neutral-500">Buscar y gestionar clientes de la plataforma.</p>
         </div>
 
-        <form
-          onSubmit={onSearchSubmit}
-          className="flex items-center gap-2 max-w-md w-full"
-        >
+        <form onSubmit={onSearchSubmit} className="flex gap-2">
           <input
             type="text"
-            className="flex-1 border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="Buscar por nombre, correo, celular o DNI..."
+            className="flex-1 min-w-0 border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="Buscar por nombre, correo, celular o DNI…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button
-            type="submit"
-            className="px-3 py-2 text-sm bg-primary text-white rounded-lg"
-          >
+          <button type="submit" className="px-4 py-2 text-sm bg-primary text-white rounded-lg font-medium whitespace-nowrap">
             Buscar
           </button>
         </form>

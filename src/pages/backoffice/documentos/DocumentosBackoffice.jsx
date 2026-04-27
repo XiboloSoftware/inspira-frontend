@@ -291,18 +291,18 @@ export default function DocumentosBackoffice() {
           <h1 className="text-2xl font-bold text-neutral-900 leading-tight">Documentos</h1>
           <p className="text-xs text-neutral-400">Gestión centralizada de archivos</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center w-full sm:w-auto">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, cliente, solicitud…"
-            className="border border-neutral-300 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            placeholder="Buscar por nombre, cliente…"
+            className="flex-1 sm:w-56 border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
           <button
             onClick={cargar}
             title="Recargar"
-            className="p-1.5 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base"
+            className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base shrink-0"
           >
             ↻
           </button>
@@ -313,11 +313,38 @@ export default function DocumentosBackoffice() {
         <div className="shrink-0 p-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      {/* ── Layout: sidebar + panel ──────────────────────────────── */}
+      {/* ── Stats: fila en móvil, sidebar en desktop ─────────────── */}
+      {/* Móvil: fila horizontal scrollable de stats */}
+      <div className="sm:hidden shrink-0 flex gap-2 overflow-x-auto pb-1">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-3 min-w-[90px] shrink-0">
+          <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">Total</p>
+          <p className="text-2xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
+          <p className="text-[10px] text-neutral-400">{listaFiltrada.length} clientes</p>
+        </div>
+        {FILTROS.map((f) => {
+          const active = filtroEstado === f.key;
+          const c = COLOR[f.color];
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFiltroEstado(active ? null : f.key)}
+              className={`rounded-xl border shadow-sm p-3 text-left transition-all select-none min-w-[90px] shrink-0 ${active ? `${c.active} ring-2 ring-offset-1` : `${c.card}`}`}
+            >
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className="text-sm">{f.icon}</span>
+                <p className={`text-[10px] font-semibold uppercase ${active ? "text-white/90" : c.sub}`}>{f.label}</p>
+              </div>
+              <p className={`text-xl font-bold ${active ? "text-white" : c.text}`}>{loading ? "…" : estadoCounts[f.key]}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Layout: sidebar (solo desktop) + panel ───────────────── */}
       <div className="flex gap-4 flex-1 min-h-0">
 
-        {/* Sidebar */}
-        <div className="w-44 shrink-0 flex flex-col gap-2.5 overflow-y-auto">
+        {/* Sidebar — solo desktop */}
+        <div className="hidden sm:flex w-44 shrink-0 flex-col gap-2.5 overflow-y-auto">
 
           {/* Total */}
           <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-3.5">

@@ -1,68 +1,92 @@
 // src/pages/backoffice/settings/components/UsuariosTable.jsx
-export default function UsuariosTable({
-  usuarios,
-  loading,
-  onToggleActivo,
-  onEditClick,
-}) {
+export default function UsuariosTable({ usuarios, loading, onToggleActivo, onEditClick }) {
   return (
-    <div className="bg-white border rounded-xl overflow-hidden">
-      <div className="px-4 py-2 border-b bg-neutral-50 text-sm font-semibold text-neutral-700">
+    <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b bg-neutral-50 text-sm font-semibold text-neutral-700">
         Staff registrado
       </div>
 
-      {loading ? (
-        <div className="p-4 text-sm text-neutral-600">Cargando...</div>
-      ) : usuarios.length === 0 ? (
-        <div className="p-4 text-sm text-neutral-600">
-          No hay usuarios internos registrados.
-        </div>
-      ) : (
-        <table className="min-w-full text-sm">
-          <thead className="bg-neutral-50">
-            <tr>
-              <th className="text-left px-4 py-2">Nombre</th>
-              <th className="text-left px-4 py-2">Email</th>
-              <th className="text-left px-4 py-2">Rol</th>
-              <th className="text-left px-4 py-2">Estado</th>
-              <th className="text-left px-4 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
+      {loading && <div className="p-6 text-sm text-neutral-400 text-center">Cargando…</div>}
+
+      {!loading && usuarios.length === 0 && (
+        <div className="p-6 text-sm text-neutral-400 text-center">No hay usuarios registrados.</div>
+      )}
+
+      {!loading && usuarios.length > 0 && (
+        <>
+          {/* Desktop: tabla */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-neutral-50 border-b">
+                <tr className="text-left text-xs text-neutral-400">
+                  <th className="px-4 py-2 font-medium">Nombre</th>
+                  <th className="px-4 py-2 font-medium">Email</th>
+                  <th className="px-4 py-2 font-medium">Rol</th>
+                  <th className="px-4 py-2 font-medium">Estado</th>
+                  <th className="px-4 py-2 font-medium text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.map((u) => (
+                  <tr key={u.id_usuario} className="border-t hover:bg-neutral-50">
+                    <td className="px-4 py-2.5 font-medium text-neutral-800">{u.nombre}</td>
+                    <td className="px-4 py-2.5 text-neutral-600 text-xs">{u.email}</td>
+                    <td className="px-4 py-2.5 capitalize text-neutral-600">{u.rol}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${u.activo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {u.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => onEditClick(u)} className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-100 transition">
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => onToggleActivo(u)}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition ${u.activo ? "border-red-300 text-red-600 hover:bg-red-50" : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}
+                        >
+                          {u.activo ? "Desactivar" : "Activar"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Móvil: cards */}
+          <div className="sm:hidden divide-y divide-neutral-100">
             {usuarios.map((u) => (
-              <tr key={u.id_usuario} className="border-t">
-                <td className="px-4 py-2">{u.nombre}</td>
-                <td className="px-4 py-2">{u.email}</td>
-                <td className="px-4 py-2 capitalize">{u.rol}</td>
-                <td className="px-4 py-2">
-                  {u.activo ? (
-                    <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                      Activo
+              <div key={u.id_usuario} className="p-4">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-900">{u.nombre}</p>
+                    <p className="text-xs text-neutral-400">{u.email}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${u.activo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                      {u.activo ? "Activo" : "Inactivo"}
                     </span>
-                  ) : (
-                    <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">
-                      Inactivo
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-2 space-x-2">
-                  <button
-                    onClick={() => onEditClick(u)}
-                    className="text-xs px-3 py-1 rounded-lg border text-neutral-700 hover:bg-neutral-100"
-                  >
+                    <span className="text-[11px] text-neutral-400 capitalize">{u.rol}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => onEditClick(u)} className="flex-1 text-xs py-2 rounded-lg border border-neutral-300 text-neutral-700 font-medium active:bg-neutral-100 transition">
                     Editar
                   </button>
                   <button
                     onClick={() => onToggleActivo(u)}
-                    className="text-xs px-3 py-1 rounded-lg border text-neutral-700 hover:bg-neutral-100"
+                    className={`flex-1 text-xs py-2 rounded-lg border font-medium transition ${u.activo ? "border-red-300 text-red-600 active:bg-red-50" : "border-emerald-300 text-emerald-700 active:bg-emerald-50"}`}
                   >
                     {u.activo ? "Desactivar" : "Activar"}
                   </button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </>
       )}
     </div>
   );

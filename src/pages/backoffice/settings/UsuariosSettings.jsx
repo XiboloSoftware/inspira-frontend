@@ -117,7 +117,7 @@ export default function UsuariosSettings({ user }) {
   // Bloqueo visual si no es admin (el backend igual lo valida)
   if (!user || user.rol !== "admin") {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <h1 className="text-2xl font-bold text-primary">Usuarios internos</h1>
         <p className="mt-2 text-neutral-700">
           Solo los usuarios con rol{" "}
@@ -129,8 +129,8 @@ export default function UsuariosSettings({ user }) {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Usuarios internos</h1>
+    <div className="p-4 sm:p-6 space-y-5 max-w-3xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold text-primary">Usuarios internos</h1>
 
       <UsuariosForm
         form={form}

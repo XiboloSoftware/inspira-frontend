@@ -1,9 +1,9 @@
 export default function Dashboard() {
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+    <div className="p-4 sm:p-6 space-y-5">
+      <h1 className="text-xl sm:text-2xl font-bold text-primary">Dashboard</h1>
 
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card title="Diagnósticos pagados hoy" value="—" />
         <Card title="Leads nuevos" value="—" />
         <Card title="Documentos pendientes" value="—" />
