@@ -34,45 +34,35 @@ function ThSort({ label, campo, center, sortKey, sortDir, onSort }) {
   );
 }
 
+// ─── Ícono por tipo de nota ───────────────────────────────────────────────────
+const NOTA_ICON = { link: "🔗", nota: "📝" };
+
 // ─── Becas con colapso ────────────────────────────────────────────────────────
 function BecasPills({ becas }) {
   const [expanded, setExpanded] = useState(false);
   if (!becas || becas.length === 0) return <span className="text-neutral-300">—</span>;
-
   const califica = becas.filter(b => b.estado === "si");
   const posible  = becas.filter(b => b.estado === "posible");
   const all      = [...califica, ...posible];
   const visible  = expanded ? all : all.slice(0, 2);
   const ocultos  = all.length - 2;
-
   return (
     <div className="flex flex-wrap gap-1 items-start">
       {visible.map((b, i) => {
         const ok = b.estado === "si";
         return (
-          <span
-            key={i}
-            className={`text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap ${
-              ok ? "bg-green-100 text-green-700 font-medium" : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
+          <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap ${ok ? "bg-green-100 text-green-700 font-medium" : "bg-yellow-100 text-yellow-700"}`}>
             {ok ? "✓" : "~"} {b.nombre.split("—")[0].trim()}
           </span>
         );
       })}
       {!expanded && ocultos > 0 && (
-        <button
-          onClick={() => setExpanded(true)}
-          className="text-[11px] text-neutral-400 hover:text-primary border border-neutral-200 hover:border-primary/40 rounded-full px-2 py-0.5 transition whitespace-nowrap"
-        >
+        <button onClick={() => setExpanded(true)} className="text-[11px] text-neutral-400 hover:text-primary border border-neutral-200 hover:border-primary/40 rounded-full px-2 py-0.5 transition whitespace-nowrap">
           +{ocultos} más
         </button>
       )}
       {expanded && all.length > 2 && (
-        <button
-          onClick={() => setExpanded(false)}
-          className="text-[11px] text-neutral-400 hover:text-primary border border-neutral-200 hover:border-primary/40 rounded-full px-2 py-0.5 transition whitespace-nowrap"
-        >
+        <button onClick={() => setExpanded(false)} className="text-[11px] text-neutral-400 hover:text-primary border border-neutral-200 rounded-full px-2 py-0.5 transition whitespace-nowrap">
           Ver menos
         </button>
       )}
@@ -96,12 +86,17 @@ export default function LeadsCalculadora({ user }) {
   const [filtroPerfil, setFiltroPerfil] = useState("");
   const [filtroAuip,   setFiltroAuip]   = useState("");
 
-  // Modal editar
-  const [modalEdit, setModalEdit] = useState(null); // null | { id, nombre, email, whatsapp }
+  // Modal: editar datos básicos
+  const [modalEdit, setModalEdit] = useState(null);
   const [saving,    setSaving]    = useState(false);
 
-  // Modal eliminar
-  const [confirmDel, setConfirmDel] = useState(null); // null | { id, nombre }
+  // Modal: notas
+  const [modalNotas,   setModalNotas]   = useState(null); // null | { id, nombre, notas[] }
+  const [newNota,      setNewNota]      = useState({ tipo: "link", label: "", valor: "" });
+  const [savingNotas,  setSavingNotas]  = useState(false);
+
+  // Modal: eliminar
+  const [confirmDel, setConfirmDel] = useState(null);
 
   // Ordenamiento client-side
   const [sortKey, setSortKey] = useState("fecha_creacion");
@@ -125,7 +120,7 @@ export default function LeadsCalculadora({ user }) {
 
   function resetPage() { setPage(1); }
 
-  // ── Editar ──
+  // ── Editar datos básicos ──
   function openEdit(l) {
     setModalEdit({ id: l.id_lead, nombre: l.nombre, email: l.email || "", whatsapp: l.whatsapp || "" });
   }
@@ -138,6 +133,31 @@ export default function LeadsCalculadora({ user }) {
       const res = await boPATCH(`/backoffice/calculadora/leads/${id}`, { nombre, email, whatsapp });
       if (res.ok) { closeEdit(); cargar(); }
     } finally { setSaving(false); }
+  }
+
+  // ── Notas ──
+  function openNotas(l) {
+    const notas = Array.isArray(l.notas) ? [...l.notas] : [];
+    setModalNotas({ id: l.id_lead, nombre: l.nombre, notas });
+    setNewNota({ tipo: "link", label: "", valor: "" });
+  }
+  function closeNotas() { setModalNotas(null); }
+
+  function addNota() {
+    if (!newNota.valor.trim()) return;
+    setModalNotas(m => ({ ...m, notas: [...m.notas, { tipo: newNota.tipo, label: newNota.label.trim(), valor: newNota.valor.trim() }] }));
+    setNewNota(n => ({ ...n, label: "", valor: "" }));
+  }
+  function removeNota(i) {
+    setModalNotas(m => ({ ...m, notas: m.notas.filter((_, idx) => idx !== i) }));
+  }
+  async function saveNotas() {
+    if (!modalNotas) return;
+    setSavingNotas(true);
+    try {
+      const res = await boPATCH(`/backoffice/calculadora/leads/${modalNotas.id}`, { notas: modalNotas.notas });
+      if (res.ok) { closeNotas(); cargar(); }
+    } finally { setSavingNotas(false); }
   }
 
   // ── Eliminar ──
@@ -161,9 +181,7 @@ export default function LeadsCalculadora({ user }) {
 
   const sortedLeads = [...leads].sort((a, b) => {
     let va = a[sortKey], vb = b[sortKey];
-    if (sortKey === "fecha_creacion") {
-      return sortDir === "asc" ? new Date(va) - new Date(vb) : new Date(vb) - new Date(va);
-    }
+    if (sortKey === "fecha_creacion") return sortDir === "asc" ? new Date(va) - new Date(vb) : new Date(vb) - new Date(va);
     if (typeof va === "number") return sortDir === "asc" ? va - vb : vb - va;
     va = String(va ?? "").toLowerCase();
     vb = String(vb ?? "").toLowerCase();
@@ -188,38 +206,109 @@ export default function LeadsCalculadora({ user }) {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre</label>
-                <input
-                  autoFocus
-                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  value={modalEdit.nombre}
-                  onChange={e => setModalEdit(m => ({ ...m, nombre: e.target.value }))}
-                />
+                <input autoFocus className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" value={modalEdit.nombre} onChange={e => setModalEdit(m => ({ ...m, nombre: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Email</label>
-                <input
-                  type="email"
-                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  value={modalEdit.email}
-                  onChange={e => setModalEdit(m => ({ ...m, email: e.target.value }))}
-                />
+                <input type="email" className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" value={modalEdit.email} onChange={e => setModalEdit(m => ({ ...m, email: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">WhatsApp</label>
-                <input
-                  type="tel"
-                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  value={modalEdit.whatsapp}
-                  onChange={e => setModalEdit(m => ({ ...m, whatsapp: e.target.value }))}
-                />
+                <input type="tel" className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" value={modalEdit.whatsapp} onChange={e => setModalEdit(m => ({ ...m, whatsapp: e.target.value }))} />
               </div>
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={closeEdit} className="flex-1 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition font-medium">
-                Cancelar
-              </button>
-              <button onClick={saveModal} disabled={saving} className="flex-1 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50">
-                {saving ? "Guardando…" : "Guardar"}
+              <button onClick={closeEdit} className="flex-1 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition font-medium">Cancelar</button>
+              <button onClick={saveModal} disabled={saving} className="flex-1 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Notas ── */}
+      {modalNotas && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" style={{ maxHeight: "88vh", overflowY: "auto" }}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="font-bold text-neutral-800 text-base">Notas</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">{modalNotas.nombre}</p>
+              </div>
+              <button onClick={closeNotas} className="text-neutral-400 hover:text-neutral-600 text-2xl leading-none shrink-0">×</button>
+            </div>
+
+            {/* Lista de notas */}
+            {modalNotas.notas.length === 0 && (
+              <p className="text-sm text-neutral-400 text-center py-4 bg-neutral-50 rounded-xl">Sin notas todavía. Agrega un link o comentario.</p>
+            )}
+            <div className="space-y-2">
+              {modalNotas.notas.map((n, i) => (
+                <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-neutral-50 border border-neutral-100 group">
+                  <span className="text-base shrink-0 mt-0.5">{NOTA_ICON[n.tipo] ?? "📝"}</span>
+                  <div className="flex-1 min-w-0">
+                    {n.label && <p className="text-xs font-semibold text-neutral-600 mb-0.5">{n.label}</p>}
+                    {n.tipo === "link"
+                      ? <a href={n.valor} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline break-all">{n.valor}</a>
+                      : <p className="text-sm text-neutral-700 break-words whitespace-pre-wrap">{n.valor}</p>
+                    }
+                  </div>
+                  <button onClick={() => removeNota(i)} className="shrink-0 text-neutral-300 hover:text-red-400 transition text-lg leading-none opacity-0 group-hover:opacity-100">×</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Agregar nueva nota */}
+            <div className="border-t border-neutral-100 pt-4 space-y-2">
+              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Nueva nota</p>
+              <div className="flex gap-2">
+                <select
+                  className="border border-neutral-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white shrink-0"
+                  value={newNota.tipo}
+                  onChange={e => setNewNota(n => ({ ...n, tipo: e.target.value }))}
+                >
+                  <option value="link">🔗 Link</option>
+                  <option value="nota">📝 Nota</option>
+                </select>
+                <input
+                  className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Etiqueta (ej: LinkedIn, Instagram…)"
+                  value={newNota.label}
+                  onChange={e => setNewNota(n => ({ ...n, label: e.target.value }))}
+                />
+              </div>
+              <div className="flex gap-2">
+                {newNota.tipo === "nota"
+                  ? <textarea
+                      rows={2}
+                      className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                      placeholder="Escribe el comentario…"
+                      value={newNota.valor}
+                      onChange={e => setNewNota(n => ({ ...n, valor: e.target.value }))}
+                    />
+                  : <input
+                      className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      placeholder="https://linkedin.com/in/..."
+                      value={newNota.valor}
+                      onChange={e => setNewNota(n => ({ ...n, valor: e.target.value }))}
+                      onKeyDown={e => e.key === "Enter" && addNota()}
+                    />
+                }
+                <button
+                  onClick={addNota}
+                  disabled={!newNota.valor.trim()}
+                  className="px-3 py-2 text-sm bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 disabled:opacity-30 transition whitespace-nowrap shrink-0"
+                >
+                  + Agregar
+                </button>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex gap-3 pt-2 border-t border-neutral-100">
+              <button onClick={closeNotas} className="flex-1 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition font-medium">Cancelar</button>
+              <button onClick={saveNotas} disabled={savingNotas} className="flex-1 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50">
+                {savingNotas ? "Guardando…" : "Guardar notas"}
               </button>
             </div>
           </div>
@@ -234,22 +323,15 @@ export default function LeadsCalculadora({ user }) {
               <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-xl">🗑️</div>
               <div>
                 <h2 className="font-bold text-neutral-800 text-base">Eliminar lead</h2>
-                <p className="text-sm text-neutral-500 mt-0.5">
-                  Vas a eliminar permanentemente el lead de{" "}
-                  <span className="font-semibold text-neutral-700">{confirmDel.nombre}</span>.
-                </p>
+                <p className="text-sm text-neutral-500 mt-0.5">Vas a eliminar permanentemente el lead de <span className="font-semibold text-neutral-700">{confirmDel.nombre}</span>.</p>
               </div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
               Esta acción <strong>no se puede deshacer</strong>. Los datos se eliminarán de forma permanente y no podrán recuperarse.
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={() => setConfirmDel(null)} className="flex-1 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition font-medium">
-                Cancelar
-              </button>
-              <button onClick={confirmarEliminar} className="flex-1 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">
-                Sí, eliminar
-              </button>
+              <button onClick={() => setConfirmDel(null)} className="flex-1 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition font-medium">Cancelar</button>
+              <button onClick={confirmarEliminar} className="flex-1 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -263,49 +345,19 @@ export default function LeadsCalculadora({ user }) {
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-end">
-        <input
-          className="flex-1 min-w-[130px] border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          placeholder="Buscar nombre…"
-          value={filtroNombre}
-          onChange={e => { setFiltroNombre(e.target.value); resetPage(); }}
-        />
-        <input
-          className="w-full sm:w-24 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          placeholder="País…"
-          value={filtroPais}
-          onChange={e => { setFiltroPais(e.target.value); resetPage(); }}
-        />
-        <input
-          className="flex-1 min-w-[130px] border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          placeholder="Área de estudio…"
-          value={filtroArea}
-          onChange={e => { setFiltroArea(e.target.value); resetPage(); }}
-        />
-        <select
-          className="border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-          value={filtroPerfil}
-          onChange={e => { setFiltroPerfil(e.target.value); resetPage(); }}
-        >
+        <input className="flex-1 min-w-[130px] border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Buscar nombre…" value={filtroNombre} onChange={e => { setFiltroNombre(e.target.value); resetPage(); }} />
+        <input className="w-full sm:w-24 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="País…" value={filtroPais} onChange={e => { setFiltroPais(e.target.value); resetPage(); }} />
+        <input className="flex-1 min-w-[130px] border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Área de estudio…" value={filtroArea} onChange={e => { setFiltroArea(e.target.value); resetPage(); }} />
+        <select className="border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white" value={filtroPerfil} onChange={e => { setFiltroPerfil(e.target.value); resetPage(); }}>
           <option value="">Todos los perfiles</option>
           <option value="economico">Económico</option>
           <option value="equilibrado">Equilibrado</option>
           <option value="ambicioso">Ambicioso</option>
         </select>
-        <button
-          onClick={() => { setFiltroAuip(filtroAuip === "si" ? "" : "si"); resetPage(); }}
-          className={`px-3 py-2 text-xs font-medium rounded-lg border transition whitespace-nowrap ${
-            filtroAuip === "si"
-              ? "bg-emerald-100 border-emerald-300 text-emerald-700"
-              : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-          }`}
-        >
+        <button onClick={() => { setFiltroAuip(filtroAuip === "si" ? "" : "si"); resetPage(); }} className={`px-3 py-2 text-xs font-medium rounded-lg border transition whitespace-nowrap ${filtroAuip === "si" ? "bg-emerald-100 border-emerald-300 text-emerald-700" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}>
           ✓ AUIP
         </button>
-        {hayFiltros && (
-          <button onClick={limpiarFiltros} className="px-3 py-2 text-xs text-neutral-500 border border-neutral-200 rounded-lg hover:bg-neutral-50 whitespace-nowrap">
-            ✕ Limpiar
-          </button>
-        )}
+        {hayFiltros && <button onClick={limpiarFiltros} className="px-3 py-2 text-xs text-neutral-500 border border-neutral-200 rounded-lg hover:bg-neutral-50 whitespace-nowrap">✕ Limpiar</button>}
       </div>
 
       {/* ── Desktop: tabla ── */}
@@ -322,8 +374,9 @@ export default function LeadsCalculadora({ user }) {
             <col style={{ width: "52px" }}  />
             <col style={{ width: "142px" }} />
             <col style={{ width: "92px" }}  />
-            <col />
-            <col style={{ width: "76px" }}  />
+            <col />                           {/* Becas — auto */}
+            <col style={{ width: "88px" }}  /> {/* Notas */}
+            <col style={{ width: "76px" }}  /> {/* Acc. */}
           </colgroup>
           <thead>
             <tr className="bg-secondary-light text-primary text-left">
@@ -338,75 +391,81 @@ export default function LeadsCalculadora({ user }) {
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Email</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">WhatsApp</th>
               <th className="px-3 py-3 font-semibold">Becas</th>
+              <th className="px-3 py-3 font-semibold whitespace-nowrap">Notas</th>
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">Acc.</th>
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr><td colSpan={12} className="px-4 py-8 text-center text-neutral-400">Cargando...</td></tr>
-            )}
-            {!loading && sortedLeads.length === 0 && (
-              <tr><td colSpan={12} className="px-4 py-8 text-center text-neutral-400">Sin leads todavía.</td></tr>
-            )}
-            {!loading && sortedLeads.map((l, i) => (
-              <tr
-                key={l.id_lead}
-                className={`border-t border-neutral-100 transition ${
-                  i % 2 === 0 ? "hover:bg-secondary-light/50" : "bg-neutral-50/40 hover:bg-secondary-light/50"
-                }`}
-              >
-                {/* Fecha arriba · hora abajo */}
-                <td className="px-3 py-2.5">
-                  <span className="block text-neutral-700 text-xs whitespace-nowrap">{fmtFecha(l.fecha_creacion)}</span>
-                  <span className="block text-neutral-400 text-[11px] whitespace-nowrap">{fmtHora(l.fecha_creacion)}</span>
-                </td>
+            {loading && <tr><td colSpan={13} className="px-4 py-8 text-center text-neutral-400">Cargando...</td></tr>}
+            {!loading && sortedLeads.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-neutral-400">Sin leads todavía.</td></tr>}
+            {!loading && sortedLeads.map((l, i) => {
+              const notas = Array.isArray(l.notas) ? l.notas : [];
+              return (
+                <tr key={l.id_lead} className={`border-t border-neutral-100 transition ${i % 2 === 0 ? "hover:bg-secondary-light/50" : "bg-neutral-50/40 hover:bg-secondary-light/50"}`}>
 
-                <td className="px-3 py-2.5 font-medium text-primary">
-                  <span style={{ overflowWrap: "break-word" }}>{l.nombre}</span>
-                </td>
+                  <td className="px-3 py-2.5">
+                    <span className="block text-neutral-700 text-xs whitespace-nowrap">{fmtFecha(l.fecha_creacion)}</span>
+                    <span className="block text-neutral-400 text-[11px] whitespace-nowrap">{fmtHora(l.fecha_creacion)}</span>
+                  </td>
 
-                <td className="px-3 py-2.5 text-xs whitespace-nowrap">{l.pais}</td>
+                  <td className="px-3 py-2.5 font-medium text-primary">
+                    <span style={{ overflowWrap: "break-word" }}>{l.nombre}</span>
+                  </td>
 
-                <td className="px-3 py-2.5 font-semibold text-center text-sm">{Number(l.nota_espana).toFixed(2)}</td>
+                  <td className="px-3 py-2.5 text-xs whitespace-nowrap">{l.pais}</td>
 
-                <td className="px-3 py-2.5 text-xs" title={l.area}>
-                  <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                    {l.area}
-                  </span>
-                </td>
+                  <td className="px-3 py-2.5 font-semibold text-center text-sm">{Number(l.nota_espana).toFixed(2)}</td>
 
-                <td className="px-3 py-2.5 text-xs whitespace-nowrap">{l.presupuesto.toLocaleString("es-ES")} €</td>
+                  <td className="px-3 py-2.5 text-xs" title={l.area}>
+                    <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{l.area}</span>
+                  </td>
 
-                <td className="px-3 py-2.5 text-xs whitespace-nowrap">{VIDA_LABEL[l.vida] ?? l.vida}</td>
+                  <td className="px-3 py-2.5 text-xs whitespace-nowrap">{l.presupuesto.toLocaleString("es-ES")} €</td>
 
-                <td className="px-3 py-2.5 text-center">
-                  {l.auip === "si" ? <span className="text-emerald-600 font-bold">✓</span> : <span className="text-neutral-300">—</span>}
-                </td>
+                  <td className="px-3 py-2.5 text-xs whitespace-nowrap">{VIDA_LABEL[l.vida] ?? l.vida}</td>
 
-                <td className="px-3 py-2.5">
-                  {l.email
-                    ? <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline text-xs" style={{ overflowWrap: "break-word", wordBreak: "break-all" }}>{l.email}</a>
-                    : <span className="text-neutral-300">—</span>}
-                </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {l.auip === "si" ? <span className="text-emerald-600 font-bold">✓</span> : <span className="text-neutral-300">—</span>}
+                  </td>
 
-                <td className="px-3 py-2.5">
-                  {l.whatsapp
-                    ? <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline text-xs whitespace-nowrap">{l.whatsapp}</a>
-                    : <span className="text-neutral-300">—</span>}
-                </td>
+                  <td className="px-3 py-2.5">
+                    {l.email ? <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline text-xs" style={{ overflowWrap: "break-word", wordBreak: "break-all" }}>{l.email}</a> : <span className="text-neutral-300">—</span>}
+                  </td>
 
-                <td className="px-3 py-2.5"><BecasPills becas={l.becas_califica} /></td>
+                  <td className="px-3 py-2.5">
+                    {l.whatsapp ? <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline text-xs whitespace-nowrap">{l.whatsapp}</a> : <span className="text-neutral-300">—</span>}
+                  </td>
 
-                <td className="px-3 py-2.5 text-center">
-                  <div className="flex gap-1 justify-center">
-                    <button onClick={() => openEdit(l)} className="px-2 py-1 text-xs text-neutral-600 border border-neutral-200 rounded hover:bg-neutral-50 transition" title="Editar">✏️</button>
-                    {isAdmin && (
-                      <button onClick={() => pedirEliminar(l)} className="px-2 py-1 text-xs text-red-400 border border-red-200 rounded hover:bg-red-50 transition" title="Eliminar">🗑️</button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-3 py-2.5"><BecasPills becas={l.becas_califica} /></td>
+
+                  {/* Notas */}
+                  <td className="px-3 py-2.5">
+                    <button
+                      onClick={() => openNotas(l)}
+                      className="flex items-center gap-1 text-xs group"
+                      title="Ver / agregar notas"
+                    >
+                      {notas.length > 0 ? (
+                        <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-2 py-0.5 font-medium hover:bg-primary/20 transition">
+                          📝 {notas.length}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-300 hover:text-primary/60 transition border border-dashed border-neutral-200 hover:border-primary/30 rounded-full px-2 py-0.5">
+                          + nota
+                        </span>
+                      )}
+                    </button>
+                  </td>
+
+                  <td className="px-3 py-2.5 text-center">
+                    <div className="flex gap-1 justify-center">
+                      <button onClick={() => openEdit(l)} className="px-2 py-1 text-xs text-neutral-600 border border-neutral-200 rounded hover:bg-neutral-50 transition" title="Editar">✏️</button>
+                      {isAdmin && <button onClick={() => pedirEliminar(l)} className="px-2 py-1 text-xs text-red-400 border border-red-200 rounded hover:bg-red-50 transition" title="Eliminar">🗑️</button>}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -415,36 +474,38 @@ export default function LeadsCalculadora({ user }) {
       <div className="sm:hidden space-y-3">
         {loading && <p className="text-center text-neutral-400 py-8 text-sm">Cargando…</p>}
         {!loading && sortedLeads.length === 0 && <p className="text-center text-neutral-400 py-8 text-sm">Sin leads todavía.</p>}
-        {!loading && sortedLeads.map((l) => (
-          <div key={l.id_lead} className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-primary text-sm truncate">{l.nombre}</p>
-                <p className="text-xs text-neutral-400">{l.pais} · {fmtFechaHora(l.fecha_creacion)}</p>
+        {!loading && sortedLeads.map((l) => {
+          const notas = Array.isArray(l.notas) ? l.notas : [];
+          return (
+            <div key={l.id_lead} className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-primary text-sm truncate">{l.nombre}</p>
+                  <p className="text-xs text-neutral-400">{l.pais} · {fmtFechaHora(l.fecha_creacion)}</p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-light text-primary font-medium whitespace-nowrap shrink-0">{VIDA_LABEL[l.vida] ?? l.vida}</span>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-light text-primary font-medium whitespace-nowrap shrink-0">
-                {VIDA_LABEL[l.vida] ?? l.vida}
-              </span>
+              {l.area && <p className="text-xs text-neutral-600">{l.area}</p>}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <span className="text-neutral-500">Nota ES: <b>{Number(l.nota_espana).toFixed(2)}</b></span>
+                <span className="text-neutral-500">Presupuesto: <b>{l.presupuesto.toLocaleString("es-ES")} €</b></span>
+                {l.auip === "si" && <span className="text-emerald-600 font-medium">✓ AUIP</span>}
+              </div>
+              <div className="flex flex-col gap-1 text-xs">
+                {l.email && <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline break-all">{l.email}</a>}
+                {l.whatsapp && <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline">📱 {l.whatsapp}</a>}
+              </div>
+              {l.becas_califica && l.becas_califica.length > 0 && <div className="pt-1"><BecasPills becas={l.becas_califica} /></div>}
+              <div className="pt-2 border-t border-neutral-100 flex gap-2">
+                <button onClick={() => openEdit(l)} className="flex-1 py-1.5 text-xs text-neutral-600 border border-neutral-200 rounded hover:bg-neutral-50">✏️ Editar</button>
+                <button onClick={() => openNotas(l)} className={`flex-1 py-1.5 text-xs rounded border transition ${notas.length > 0 ? "text-primary border-primary/30 bg-primary/5 hover:bg-primary/10" : "text-neutral-500 border-neutral-200 hover:bg-neutral-50"}`}>
+                  📝 {notas.length > 0 ? `Notas (${notas.length})` : "Notas"}
+                </button>
+                {isAdmin && <button onClick={() => pedirEliminar(l)} className="px-3 py-1.5 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">🗑️</button>}
+              </div>
             </div>
-            {l.area && <p className="text-xs text-neutral-600">{l.area}</p>}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-              <span className="text-neutral-500">Nota ES: <b>{Number(l.nota_espana).toFixed(2)}</b></span>
-              <span className="text-neutral-500">Presupuesto: <b>{l.presupuesto.toLocaleString("es-ES")} €</b></span>
-              {l.auip === "si" && <span className="text-emerald-600 font-medium">✓ AUIP</span>}
-            </div>
-            <div className="flex flex-col gap-1 text-xs">
-              {l.email && <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline break-all">{l.email}</a>}
-              {l.whatsapp && <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline">📱 {l.whatsapp}</a>}
-            </div>
-            {l.becas_califica && l.becas_califica.length > 0 && (
-              <div className="pt-1"><BecasPills becas={l.becas_califica} /></div>
-            )}
-            <div className="pt-2 border-t border-neutral-100 flex gap-2">
-              <button onClick={() => openEdit(l)} className="flex-1 py-1.5 text-xs text-neutral-600 border border-neutral-200 rounded hover:bg-neutral-50">✏️ Editar</button>
-              {isAdmin && <button onClick={() => pedirEliminar(l)} className="px-4 py-1.5 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">🗑️</button>}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Paginación */}
