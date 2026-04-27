@@ -51,6 +51,8 @@ function eliminarDocDeEstructura(lista, idDocumento) {
   }));
 }
 
+const POR_PAGINA = 15;
+
 export default function DocumentosBackoffice() {
   const [clientes, setClientes] = useState([]);
   const [internos, setInternos] = useState([]);
@@ -59,6 +61,7 @@ export default function DocumentosBackoffice() {
   const [busqueda, setBusqueda] = useState("");
   const [expandedMap, setExpandedMap] = useState({});
   const [tab, setTab] = useState("clientes");
+  const [pagina, setPagina] = useState(0);
 
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
@@ -88,8 +91,11 @@ export default function DocumentosBackoffice() {
   }
 
   const q = busqueda.toLowerCase().trim();
-  const clientesFiltrados = filtrarLista(clientes, q);
-  const internosFiltrados = filtrarLista(internos, q);
+  const clientesFiltrados = filtrarLista(clientes, q).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const internosFiltrados = filtrarLista(internos, q).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  // Resetear página al cambiar búsqueda o pestaña
+  useEffect(() => { setPagina(0); }, [busqueda, tab]);
 
   const totalDocs = countDocs(clientes) + countDocs(internos);
   const totalClienteDocs = countDocs(clientes);
@@ -117,6 +123,8 @@ export default function DocumentosBackoffice() {
   };
 
   const activeTab = tabConfig[tab];
+  const totalPaginas = Math.ceil(activeTab.lista.length / POR_PAGINA);
+  const listaVisible = activeTab.lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
@@ -182,7 +190,7 @@ export default function DocumentosBackoffice() {
               <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
                 tab === key ? `bg-${cfg.color}-100 text-${cfg.color}-600` : "bg-neutral-200 text-neutral-500"
               }`}>
-                {loading ? "…" : cfg.count}
+                {loading ? "…" : `${cfg.lista.length} · ${cfg.count} archivos`}
               </span>
             </button>
           ))}
@@ -205,32 +213,58 @@ export default function DocumentosBackoffice() {
           )}
 
           {!loading && activeTab.lista.length > 0 && (
-            <div className="space-y-0.5">
-              {activeTab.lista.map((entry) => {
-                const id = entry[activeTab.idKey];
-                return (
-                  <TreeNode
-                    key={id}
-                    icon="👤"
-                    label={entry.nombre}
-                    sublabel={entry.rol ? `${entry.rol} · ${entry.email || ""}` : entry.email}
-                    count={countDocs([entry])}
-                    forceOpen={expandedMap[id]}
-                    headerExtra={<ExpandBtn id={id} />}
-                  >
-                    {entry.solicitudes.map((sol) => (
-                      <SolicitudNode
-                        key={sol.id_solicitud}
-                        solicitud={sol}
-                        isAdmin={isAdmin}
-                        onEliminar={handleEliminarGlobal}
-                        forceOpen={expandedMap[id]}
-                      />
-                    ))}
-                  </TreeNode>
-                );
-              })}
-            </div>
+            <>
+              <div className="space-y-0.5">
+                {listaVisible.map((entry) => {
+                  const id = entry[activeTab.idKey] ?? `null-${entry.nombre}`;
+                  return (
+                    <TreeNode
+                      key={id}
+                      icon="👤"
+                      label={entry.nombre}
+                      sublabel={entry.rol ? `${entry.rol} · ${entry.email || ""}` : entry.email}
+                      count={countDocs([entry])}
+                      forceOpen={expandedMap[id]}
+                      headerExtra={<ExpandBtn id={id} />}
+                    >
+                      {entry.solicitudes.map((sol) => (
+                        <SolicitudNode
+                          key={sol.id_solicitud ?? sol.titulo}
+                          solicitud={sol}
+                          isAdmin={isAdmin}
+                          onEliminar={handleEliminarGlobal}
+                          forceOpen={expandedMap[id]}
+                        />
+                      ))}
+                    </TreeNode>
+                  );
+                })}
+              </div>
+
+              {totalPaginas > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-200">
+                  <span className="text-xs text-neutral-400">
+                    Página {pagina + 1} de {totalPaginas} · {activeTab.lista.length} {tab === "clientes" ? "clientes" : "usuarios"}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                      disabled={pagina === 0}
+                      className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40"
+                    >
+                      ← Anterior
+                    </button>
+                    <button
+                      onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+                      disabled={pagina >= totalPaginas - 1}
+                      className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
