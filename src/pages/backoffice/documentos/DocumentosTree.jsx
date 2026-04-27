@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { boDELETE } from "../../../services/backofficeApi";
 import DocViewer from "./DocViewer";
-import { fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
+import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
 
 export function EstadoBadge({ estado }) {
   const map = {
@@ -20,6 +20,31 @@ export function EstadoBadge({ estado }) {
 export function DocRow({ doc, isAdmin, onEliminar }) {
   const [eliminando, setEliminando] = useState(false);
   const [verDoc, setVerDoc] = useState(false);
+  const [abriendo, setAbriendo] = useState(false);
+
+  const isPdf = doc.mime_type?.includes("pdf");
+  const isImage = doc.mime_type?.includes("image");
+  const canPreview = isPdf || isImage;
+
+  async function handleAbrir() {
+    if (canPreview) { setVerDoc(true); return; }
+    setAbriendo(true);
+    try {
+      const token = localStorage.getItem("bo_token");
+      const r = await fetch(`${API_URL}/api/admin/documentos/${doc.id_documento}/drive-url`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await r.json();
+      if (data.ok && data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        alert(data.msg || "Archivo no disponible en Drive aún. Usa Descargar.");
+      }
+    } catch {
+      alert("Error al obtener URL de Drive");
+    }
+    setAbriendo(false);
+  }
 
   async function handleEliminar() {
     if (!window.confirm(`¿Eliminar "${doc.nombre_original}"? Esta acción no se puede deshacer.`)) return;
@@ -37,8 +62,8 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
         <EstadoBadge estado={doc.estado_revision} />
         <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(doc.tamano_bytes)}</span>
         <span className="text-[11px] text-neutral-400 shrink-0 hidden sm:block">{formatDate(doc.fecha_subida)}</span>
-        <button onClick={() => setVerDoc(true)} className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0">
-          Abrir
+        <button onClick={handleAbrir} disabled={abriendo} className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0 disabled:opacity-50">
+          {abriendo ? "…" : "Abrir"}
         </button>
         <button onClick={() => descargarDocumento(doc)} className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0">
           Descargar
