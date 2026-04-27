@@ -11,6 +11,7 @@ const items = [
   { label: "Precios/Servicios", href: "/backoffice/precios" },
   { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
   { label: "Instructivos", href: "/backoffice/instructivos" },
+  { label: "Panel Asesoras", href: "/backoffice/panel-asesoras" },
   { label: "Settings", href: "/backoffice/settings" },
 ];
 

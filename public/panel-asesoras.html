@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Asesoras — Inspira Legal</title>
+<style>
+:root{color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:13px;background:#f5f5f3;color:#111;min-height:100vh}
+.wrap{max-width:920px;margin:0 auto;padding:1rem}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px}
+.topbar-title{font-size:16px;font-weight:600;color:#111}
+.topbar-btns{display:flex;gap:5px}
+.tbtn{padding:5px 12px;border-radius:7px;border:.5px solid #ccc;background:#fff;color:#111;cursor:pointer;font-size:11px}
+.tbtn.add{background:#EAF3DE;color:#3B6D11;border-color:#97C459;font-weight:600}
+.tbtn.exp{background:#E6F1FB;color:#185FA5;border-color:#85B7EB}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.tab{padding:4px 12px;border-radius:20px;border:.5px solid #ccc;background:transparent;cursor:pointer;font-size:12px;color:#666}
+.tab.on{background:#eee;color:#111;border-color:#999;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.sc{background:#fff;border-radius:8px;padding:8px 10px;border:.5px solid #e0e0e0}
+.sl{font-size:10px;color:#888;margin-bottom:2px}
+.sn{font-size:20px;font-weight:600}
+.tbar{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.tbar input,.tbar select{padding:6px 9px;border-radius:7px;border:.5px solid #ccc;background:#fff;color:#111;font-size:12px}
+.tbar input{flex:1;min-width:130px}
+.grid{display:flex;flex-direction:column;gap:5px}
+.card{background:#fff;border:.5px solid #e0e0e0;border-radius:10px;overflow:hidden}
+.card.portal-linked{border-left:3px solid #534AB7}
+.ch{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;user-select:none}
+.ch:hover{background:#f9f9f7}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.cn{flex:1;min-width:0}
+.nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb{font-size:11px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.bdg{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.ba{background:#EAF3DE;color:#3B6D11}.bn{background:#F1EFE8;color:#5F5E5A}.bac{background:#FAEEDA;color:#854F0B}
+.bdg-beca{background:#FDE8FF;color:#6B1A7E;border:.5px solid #D49FE8;font-size:9px;padding:1px 6px;border-radius:8px}
+.pdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF9F27;margin-right:3px}
+.pc{font-size:10px;color:#888}
+.portal-tag{font-size:9px;padding:1px 5px;border-radius:8px;background:#EEEDFE;color:#3C3489;border:.5px solid #AFA9EC}
+.chv{font-size:9px;color:#bbb;transition:transform .18s;margin-left:2px}
+.card.exp .chv{transform:rotate(180deg)}
+.edbtn{padding:3px 8px;border-radius:6px;border:.5px solid #ccc;background:#f5f5f3;cursor:pointer;font-size:11px;color:#333}
+.delbtn{padding:3px 8px;border-radius:6px;border:.5px solid #F09595;background:#FCEBEB;cursor:pointer;font-size:11px;color:#A32D2D}
+.det{display:none;border-top:.5px solid #eee;padding:10px 12px}
+.card.exp .det{display:block}
+.section{margin-bottom:10px}
+.stitle{font-size:11px;font-weight:600;color:#888;margin-bottom:5px;padding-bottom:3px;border-bottom:.5px solid #eee}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.dl{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.dv{font-size:12px}.dv.miss{color:#A32D2D;font-style:italic}.dv.ok{color:#3B6D11;font-weight:600}
+.carpeta-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.carpeta-val{font-size:12px}
+.carp-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;border:.5px solid;font-size:10px;cursor:pointer;text-decoration:none;font-weight:500}
+.carp-drive{background:#E8F0FE;color:#1A55C7;border-color:#93B0F0}
+.carp-portal{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC}
+.carp-disabled{opacity:.35;cursor:default;pointer-events:none}
+.phases-check{display:flex;flex-direction:column;gap:4px;margin-bottom:4px}
+.phase-row{display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-radius:7px;background:#f9f9f7;border:.5px solid #eee}
+.phase-row.ph-done{background:#EAF3DE;border-color:#97C459}
+.phase-row.ph-current{background:#FAEEDA;border-color:#EF9F27}
+.phase-label{font-size:11px;font-weight:600;flex:1}
+.phase-pend{font-size:10px;color:#A32D2D;margin-top:2px;font-style:italic}
+.phase-pend-ok{font-size:10px;color:#3B6D11;margin-top:2px}
+.beca-box{background:#FDE8FF;border:.5px solid #D49FE8;border-radius:7px;padding:7px 10px;margin-top:5px}
+.beca-box.no{background:#f5f5f3;border-color:#ddd}
+.beca-title{font-size:10px;font-weight:600;color:#6B1A7E;margin-bottom:3px}
+.beca-title.no{color:#888}
+.beca-det{font-size:11px;color:#444;line-height:1.4}
+.steps{display:flex;gap:3px;flex-wrap:wrap}
+.step{padding:2px 7px;border-radius:10px;font-size:10px;border:.5px solid}
+.sd{background:#EAF3DE;color:#3B6D11;border-color:#97C459}
+.sp{background:#FCEBEB;color:#A32D2D;border-color:#F09595}
+.utbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.utbl th{text-align:left;padding:3px 5px;color:#888;font-weight:600;border-bottom:.5px solid #eee;font-size:10px}
+.utbl td{padding:3px 5px;border-bottom:.5px solid #f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-adm{color:#0F6E56;font-weight:600}.u-lea{color:#854F0B}.u-pos{color:#185FA5}.u-rej{color:#A32D2D}.u-pen{color:#888}.u-nop{color:#bbb}
+.portal-note{font-size:10px;color:#534AB7;background:#EEEDFE;padding:5px 9px;border-radius:6px;margin-top:6px;border:.5px solid #AFA9EC}
+.plist{display:flex;flex-direction:column;gap:2px}
+.pi{display:flex;align-items:flex-start;gap:5px;padding:2px 0;font-size:11px}
+.pi:before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:#EF9F27;margin-top:3px;flex-shrink:0}
+.paybar{display:flex;align-items:center;gap:8px;margin-top:6px}
+.paytrack{flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;border:.5px solid #e0e0e0}
+.payfill{height:100%;border-radius:3px;background:#3B6D11}
+.modal-wrap{background:rgba(0,0,0,.45);padding:16px;border-radius:10px;margin-top:6px}
+.modal{background:#fff;border-radius:12px;border:.5px solid #ddd;padding:16px;max-width:700px;margin:0 auto}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mhead h3{font-size:14px;font-weight:600}
+.mbtns{display:flex;gap:5px}
+.mcl{padding:5px 12px;border-radius:6px;border:.5px solid #ccc;background:transparent;cursor:pointer;font-size:12px;color:#666}
+.msv{padding:5px 14px;border-radius:6px;border:.5px solid #3B6D11;background:#EAF3DE;color:#3B6D11;cursor:pointer;font-size:12px;font-weight:600}
+.fg{margin-bottom:8px}
+.fg label{display:block;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.fg input,.fg select,.fg textarea{width:100%;padding:6px 8px;border-radius:6px;border:.5px solid #ccc;background:#fff;color:#111;font-size:12px;font-family:inherit}
+.fg textarea{min-height:52px;resize:vertical}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.chkrow{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0}
+.chkrow label{display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer}
+.chkrow input[type=checkbox]{width:13px;height:13px}
+.etbl{width:100%;border-collapse:collapse}
+.etbl th{font-size:10px;color:#888;padding:2px 3px;text-align:left;font-weight:600}
+.etbl td{padding:2px 3px}
+.etbl input,.etbl select{width:100%;padding:3px 5px;border-radius:4px;border:.5px solid #ccc;background:#fff;color:#111;font-size:11px;font-family:inherit}
+.addbtn{padding:3px 9px;border-radius:5px;border:.5px solid #ccc;background:transparent;color:#666;cursor:pointer;font-size:11px;margin-top:3px}
+.rembtn{padding:1px 5px;border-radius:4px;border:none;background:#FCEBEB;color:#A32D2D;cursor:pointer;font-size:10px}
+.msec{font-size:11px;font-weight:600;color:#888;margin:10px 0 4px;padding-top:8px;border-top:.5px solid #eee}
+.svc-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.svc-opt{padding:6px 14px;border-radius:8px;border:.5px solid #ccc;background:#fff;cursor:pointer;font-size:12px;color:#666}
+.svc-opt.sel{border-color:#3B6D11;background:#EAF3DE;color:#3B6D11;font-weight:600}
+.del-confirm{background:#FCEBEB;border:.5px solid #F09595;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:6px}
+.del-confirm span{flex:1;font-size:12px;color:#A32D2D}
+.del-yes{padding:4px 12px;border-radius:6px;border:none;background:#A32D2D;color:#fff;cursor:pointer;font-size:11px;font-weight:600}
+.del-no{padding:4px 12px;border-radius:6px;border:.5px solid #ccc;background:#fff;cursor:pointer;font-size:11px}
+.fase-edit-box{background:#f9f9f7;border:.5px solid #ddd;border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.fase-edit-row{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:.5px solid #eee}
+.fase-edit-row:last-child{border-bottom:none}
+.fase-edit-label{font-size:11px;font-weight:600;flex-shrink:0;padding-top:3px;min-width:190px}
+.fase-edit-pend{flex:1;padding:3px 6px;border-radius:5px;border:.5px solid #ccc;font-size:11px;font-family:inherit;background:#fff;color:#111}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const FASES_VE=["Estrategia realizada","Preparación documentaria","Cita programada","Documentos listos"];
+const UNI_EST=["ADMITIDO","LISTA DE ESPERA ALTA","LISTA DE ESPERA MEDIA","LISTA DE ESPERA BAJA","POSTULADO","POSTULAR","NO POSTULAR AUN","PROCESO PREVIO","PENDIENTE","EXCLUIDO","FINALIZADO"];
+const CL_EST=["ACTIVO","NO ACTIVO","ACTIVAR"];
+const SVC_LABELS={master:"Máster",visa:"Visa estudios",ee:"Estancia est.",fp:"FP / Grado",legal:"Legal / RR"};
+const SVC_KEYS=["master","visa","ee","fp","legal"];
+const AVG={master:["#EEEDFE","#3C3489"],visa:["#E6F1FB","#0C447C"],ee:["#E1F5EE","#085041"],fp:["#FAEEDA","#633806"],legal:["#FBEAF0","#72243E"]};
+const TABS_LIST=[{id:"all",label:"Todos"},{id:"master",label:"Máster"},{id:"visa",label:"Visa estudios"},{id:"ee",label:"Estancia est."},{id:"fp",label:"FP / Grado"},{id:"legal",label:"Legal / RR"}];
+
+function mkFases(){return FASES_VE.map(f=>({label:f,done:false,pendiente:""}))}
+function mkP(){return{tipo:"",total:"",pagadas:"",pendiente:"",cuotas:""}}
+function mkPS(){return{fichero:false,informe:false,escogio:false,postulacion:false}}
+function mkBeca(){return{aprobable:false,detalle:""}}
+
+// Persistencia localStorage
+function saveData(){try{localStorage.setItem("inspira_panel_data",JSON.stringify(DATA))}catch(e){}}
+function loadData(){try{const s=localStorage.getItem("inspira_panel_data");if(s)Object.assign(DATA,JSON.parse(s))}catch(e){}}
+
+let DATA={
+master:[
+  {name:"Ximena Quispe",estado:"NO ACTIVO",paquete:"Andalucía",carpeta:"C-1A-179",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:[]},
+  {name:"Natalie",estado:"NO ACTIVO",paquete:"",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Verificar carpeta"]},
+  {name:"John Vasquez",estado:"NO ACTIVO",paquete:"Madrid completo",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Marketing",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:false,informe:true,escogio:false,postulacion:false},pagos:mkP(),unis:[],pending:[]},
+  {name:"July Andizabal",estado:"NO ACTIVO",paquete:"Andalucía Check-In",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:false,informe:true,escogio:false,postulacion:false},pagos:mkP(),unis:[],pending:[]},
+  {name:"Viki Inkakutipa",estado:"NO ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[],pending:["Respuesta correo pendiente"]},
+  {name:"Marina Gomero",estado:"NO ACTIVO",paquete:"Galicia + opciones",carpeta:"C-Galicia-270",driveUrl:"",portalUrl:"",promedio:"14.66",interes:"Obstetricia / Salud",uni_origen:"USMP",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Coruña",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"USC",master:"",fPost:"",fResult:"",est:"ADMITIDO"}],pending:["Proponer visa o EE"]},
+  {name:"Andrea del Pilar Serrano Castro",estado:"NO ACTIVO",paquete:"Andalucía + Plus",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:true,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:true,escogio:true,postulacion:false},pagos:mkP(),unis:[{u:"USC",master:"",fPost:"",fResult:"21 abr",est:"ADMITIDO"},{u:"USAL",master:"",fPost:"3 abr-18 jul",fResult:"",est:"POSTULADO"}],pending:[]},
+  {name:"Kristell",estado:"NO ACTIVO",paquete:"Andalucía + opciones",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Biotecnología",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"ADMITIDO"}],pending:["Gestionar matrícula"]},
+  {name:"Jimena",estado:"NO ACTIVO",paquete:"Por definir",carpeta:"",driveUrl:"",portalUrl:"",promedio:"14",interes:"Logística",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA BAJA"}],pending:["Falta pago","Elegir más universidades"]},
+  {name:"Yuriko Ramos Torres",estado:"NO ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"FINALIZADO"}],pending:[]},
+  {name:"Andrea Ortiz",estado:"NO ACTIVO",paquete:"Full Lista 1",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Iniciar proceso de visa"]},
+  {name:"Bexy",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"C-Ashley Muñoa",driveUrl:"",portalUrl:"",promedio:"",interes:"Derecho Penal / DDHH",uni_origen:"",masterElegido:"",notaMedia:true,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:true,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"USAL",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"U. Alicante",master:"",fPost:"16/03-26/06",fResult:"",est:"POSTULAR"}],pending:["Confirmar postulaciones"]},
+  {name:"Patricia de la Cruz",estado:"ACTIVO",paquete:"Full Económico",carpeta:"",driveUrl:"",portalUrl:"",promedio:"15.64",interes:"Hotelería",uni_origen:"CIENTIFICA",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"UPV",master:"",fPost:"2 mar-2 may",fResult:"",est:"POSTULADO"},{u:"UV",master:"",fPost:"3 mar-13 jun",fResult:"",est:"POSTULADO"},{u:"USC",master:"",fPost:"",fResult:"",est:"PENDIENTE"}],pending:["Confirmar postulaciones"]},
+  {name:"Eunice",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Estomatología",uni_origen:"FRANKLIN ROOSVELT",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"USC",master:"",fPost:"",fResult:"",est:"PENDIENTE"}],pending:["Programar y postular"]},
+  {name:"Hipolito",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Ingeniería Civil",uni_origen:"UPN",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Pendiente pago"]},
+  {name:"Libte",estado:"ACTIVO",paquete:"Valencia + Castilla y León",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"UV",master:"",fPost:"",fResult:"",est:"POSTULADO"}],pending:["Completar postulaciones"]},
+  {name:"Eli Esquives",estado:"ACTIVO",paquete:"Andalucía + Galicia + AUIP",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Programar y postular"]},
+  {name:"Jhon",estado:"ACTIVO",paquete:"Madrid completo",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"MBA",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[],pending:["Postular Madrid"]},
+  {name:"Anggela Judith",estado:"ACTIVO",paquete:"Valencia",carpeta:"C-Val-271",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:true,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:true,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"UPV",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"UV",master:"",fPost:"",fResult:"",est:"POSTULADO"}],pending:["Apostillas pendientes","Falta nota media firmada"]},
+  {name:"Marly Almonte",estado:"ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Nutrición",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"}],pending:["Proponer Galicia extra"]},
+  {name:"Tania Bravo Quintana",estado:"ACTIVO",paquete:"Andalucía + opciones",carpeta:"C-PEE-271",driveUrl:"",portalUrl:"",promedio:"14.33",interes:"Turismo / Administrativo",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"}],pending:["Proponer Galicia extra"]},
+  {name:"Ana Condori",estado:"ACTIVO",paquete:"Valencia",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Urbanismo",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Valencia",master:"",fPost:"",fResult:"",est:"PENDIENTE"}],pending:["Esperar resultados AUIP"]},
+  {name:"Arlyn Medali Rivera Flores",estado:"ACTIVO",paquete:"Valencia + Galicia + Beca + Homologación",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"UNMSM",masterElegido:"",notaMedia:true,cvEuropass:true,docCompletos:false,portalLinked:false,beca:{aprobable:true,detalle:"Perfil AUIP — área STEM. Análisis previo aprobado."},pasos:{fichero:true,informe:true,escogio:true,postulacion:true},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"},{u:"UPV",master:"",fPost:"",fResult:"junio",est:"POSTULADO"}],pending:["Tramitar homologación"]},
+  {name:"Edwin Roger Flores Huarcaya",estado:"ACTIVO",paquete:"Valencia + Galicia + Beca + Homologación",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"UNMSM",masterElegido:"",notaMedia:true,cvEuropass:true,docCompletos:false,portalLinked:false,beca:{aprobable:true,detalle:"Perfil AUIP — área STEM. Análisis previo aprobado."},pasos:{fichero:true,informe:true,escogio:true,postulacion:true},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"},{u:"UPV",master:"",fPost:"",fResult:"junio",est:"POSTULADO"},{u:"UV",master:"",fPost:"",fResult:"",est:"POSTULADO"}],pending:["Tramitar homologación"]},
+  {name:"Saul Guardia",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"180-SAUL GUARDIA",driveUrl:"",portalUrl:"",promedio:"",interes:"Gestión BIM / Proyectos",uni_origen:"UNFV",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"9 abr",est:"LISTA DE ESPERA ALTA"},{u:"USC",master:"",fPost:"",fResult:"21 abr",est:"LISTA DE ESPERA BAJA"},{u:"Coruña",master:"",fPost:"",fResult:"22 may",est:"POSTULADO"},{u:"Vigo",master:"",fPost:"",fResult:"",est:"POSTULAR"},{u:"Valladolid",master:"",fPost:"",fResult:"16 abr",est:"POSTULADO"},{u:"Burgos",master:"",fPost:"1 abr-15 jul",fResult:"",est:"POSTULAR"},{u:"Oviedo",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA BAJA"}],pending:["Postular Vigo 2ª fase","Subsanar Coruña","Falta docs apostilla"]},
+  {name:"Margarita Pariona",estado:"ACTIVAR",paquete:"",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Iniciar proceso"]},
+  {name:"Henry",estado:"ACTIVAR",paquete:"",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[],pending:["Iniciar proceso"]},
+  {name:"Gabriela Barragan",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"180-GABRIELA BARRAGAN",driveUrl:"",portalUrl:"",promedio:"",interes:"Contabilidad / Finanzas / MBA",uni_origen:"UNFV",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"USC",master:"",fPost:"",fResult:"21 abr",est:"ADMITIDO"},{u:"Coruña",master:"",fPost:"",fResult:"22 may",est:"POSTULADO"},{u:"Vigo",master:"",fPost:"11 mar-8 abr",fResult:"10 may",est:"POSTULADO"},{u:"Valladolid",master:"",fPost:"",fResult:"",est:"ADMITIDO"},{u:"Burgos",master:"",fPost:"1 abr-15 jul",fResult:"",est:"POSTULADO"},{u:"Oviedo",master:"",fPost:"",fResult:"",est:"ADMITIDO"}],pending:["Falta docs apostilla","Automatrícula Valladolid"]},
+  {name:"Vania Robles",estado:"ACTIVO",paquete:"Full Lista 1",carpeta:"C-FE-182",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"PUCP",masterElegido:"",notaMedia:true,cvEuropass:true,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:true,escogio:true,postulacion:false},pagos:mkP(),unis:[{u:"Valladolid",master:"",fPost:"",fResult:"16 abr",est:"POSTULAR"},{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"USAL",master:"",fPost:"3 abr-18 jul",fResult:"",est:"POSTULADO"}],pending:["Postular Valladolid","Postular Salamanca"]},
+  {name:"Mery Gomez",estado:"ACTIVO",paquete:"Full Económico I",carpeta:"",driveUrl:"",portalUrl:"",promedio:"12.56",interes:"Comercio Exterior / Logística",uni_origen:"USIL",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Coruña",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"Vigo",master:"",fPost:"11 mar-8 abr",fResult:"",est:"POSTULADO"},{u:"Valladolid",master:"",fPost:"",fResult:"",est:"POSTULAR"},{u:"UPV",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"UV",master:"",fPost:"",fResult:"",est:"POSTULADO"}],pending:["Postular Valladolid","Confirmar Oviedo"]},
+  {name:"Estrella Romero",estado:"ACTIVO",paquete:"Andalucía + opciones",carpeta:"",driveUrl:"",portalUrl:"",promedio:"7.76",interes:"Comunicación / Redes",uni_origen:"UAP",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"junio",est:"PENDIENTE"},{u:"USC",master:"",fPost:"",fResult:"21 abr",est:"ADMITIDO"}],pending:["Postular Andalucía (junio)","Postular Vigo"]},
+  {name:"Patricia",estado:"ACTIVO",paquete:"Full España",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Gestión de Proyectos",uni_origen:"UPC",masterElegido:"",notaMedia:true,cvEuropass:false,docCompletos:true,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:true,escogio:true,postulacion:false},pagos:mkP(),unis:[{u:"UC3M",master:"",fPost:"1 feb-31 mar",fResult:"",est:"POSTULADO"},{u:"UPV",master:"",fPost:"2 mar-2 may",fResult:"",est:"POSTULADO"},{u:"UV",master:"",fPost:"3 mar-13 jun",fResult:"",est:"POSTULADO"},{u:"USC",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA BAJA"},{u:"Vigo",master:"",fPost:"11 mar-8 abr",fResult:"",est:"POSTULADO"}],pending:["Oviedo y Andalucía pendientes"]},
+  {name:"Sandra",estado:"ACTIVO",paquete:"Full Económico",carpeta:"",driveUrl:"",portalUrl:"",promedio:"12.9",interes:"Derecho Empresarial",uni_origen:"UIGV",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"USAL",master:"",fPost:"3 abr-18 jul",fResult:"",est:"POSTULADO"},{u:"UV",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"USC",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA MEDIA"}],pending:["Falta firma nota media UV","Pago tasa USAL 200€"]},
+  {name:"Ana Cecilia",estado:"ACTIVO",paquete:"Andalucía + Becas",carpeta:"",driveUrl:"",portalUrl:"",promedio:"11",interes:"Logística",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA BAJA"},{u:"Coruña",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"Vigo",master:"",fPost:"11 mar-8 abr",fResult:"",est:"POSTULADO"}],pending:["Confirmar equivalencia título"]},
+  {name:"Cecilia Gutierrez",estado:"ACTIVO",paquete:"Andalucía + Plus",carpeta:"",driveUrl:"",portalUrl:"",promedio:"15.67",interes:"Educación",uni_origen:"UNMSM",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:{aprobable:true,detalle:"Promedio alto + área Educación. Revisar beca MAEC o AUIP."},pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"UV",master:"",fPost:"30 mar-21 abr",fResult:"",est:"POSTULADO"},{u:"UCM",master:"",fPost:"27 abr-22 may",fResult:"",est:"PENDIENTE"},{u:"Oviedo",master:"",fPost:"18 may-19 jun",fResult:"",est:"PENDIENTE"}],pending:["Postular UCM","Postular Oviedo"]},
+  {name:"Melani",estado:"ACTIVO",paquete:"Andalucía + Plus",carpeta:"",driveUrl:"",portalUrl:"",promedio:"16",interes:"Derecho Digital",uni_origen:"UPC",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:{aprobable:true,detalle:"Promedio 16 + área Derecho Digital. Candidata AUIP/MAEC."},pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"12 mar",est:"LISTA DE ESPERA ALTA"},{u:"Coruña",master:"",fPost:"",fResult:"",est:"POSTULADO"},{u:"CLM",master:"",fPost:"",fResult:"",est:"NO POSTULAR AUN"}],pending:["Pendiente pago CLM y León"]},
+  {name:"Kelly Isabel Campomanes Ávila",estado:"ACTIVO",paquete:"Valencia + Madrid",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"Logística",uni_origen:"",masterElegido:"Máster elegido en portal — confirmar",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:true,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:true,postulacion:false},pagos:mkP(),unis:[],pending:["Confirmar máster elegido en portal","Postular universidades"]},
+  {name:"Ashley",estado:"ACTIVO",paquete:"Becas y Madrid",carpeta:"C-Ashley Muñoa",driveUrl:"",portalUrl:"",promedio:"",interes:"MBA",uni_origen:"",masterElegido:"",notaMedia:true,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"USAL",master:"",fPost:"",fResult:"",est:"POSTULADO"}],pending:["Subir CV Europass","Pagar tasa apostilla"]},
+  {name:"Javier Palacios",estado:"ACTIVO",paquete:"Andalucía + opciones",carpeta:"C-Javier Palacios",driveUrl:"",portalUrl:"",promedio:"",interes:"DDHH / Cooperación",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"}],pending:["Elegir nuevos máster","Pago pendiente"]},
+  {name:"Elias",estado:"ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"UPEU",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA ALTA"}],pending:["Esperar resultados"]},
+  {name:"Karen Farfan",estado:"ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"ADMITIDO"}],pending:["Confirmar admisión"]},
+  {name:"Evelyn Farfan",estado:"ACTIVO",paquete:"Andalucía",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:{fichero:true,informe:false,escogio:false,postulacion:false},pagos:mkP(),unis:[{u:"Andalucía",master:"",fPost:"",fResult:"",est:"LISTA DE ESPERA BAJA"}],pending:["Esperar resultados"]},
+  {name:"Andres Amin Moran",estado:"ACTIVO",paquete:"Valencia fase 0",carpeta:"",driveUrl:"",portalUrl:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),pagos:mkP(),unis:[{u:"Valencia",master:"",fPost:"",fResult:"",est:"PENDIENTE"}],pending:["Esperar resultados Valencia"]},
+],
+visa:[
+  {name:"Adriana",estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:true,pendiente:""},{label:"Cita programada",done:false,pendiente:""},{label:"Documentos listos",done:false,pendiente:""}],fechaCita:"Cita programada",nie:"Pendiente",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:"",pagos:mkP(),pending:["Preparar documentación fase 2"]},
+  {name:"Oscar",estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:true,pendiente:""},{label:"Cita programada",done:false,pendiente:""},{label:"Documentos listos",done:false,pendiente:""}],fechaCita:"Cita programada",nie:"Pendiente",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:"",pagos:mkP(),pending:["Completar documentación cita"]},
+  {name:"Leslie Rojas",estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:false,pendiente:""},{label:"Cita programada",done:false,pendiente:"Programar cita julio"},{label:"Documentos listos",done:false,pendiente:""}],fechaCita:"Por programar — julio",nie:"Pendiente",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:"",pagos:mkP(),pending:["Programar cita julio"]},
+  {name:"Maria Eugenia Aliaga",estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:false,pendiente:""},{label:"Cita programada",done:false,pendiente:""},{label:"Documentos listos",done:false,pendiente:""}],fechaCita:"Por programar — mayo/junio",nie:"Pendiente",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:"",pagos:mkP(),pending:["Programar cita"]},
+  {name:"Maria hermana",estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:mkFases(),fechaCita:"",nie:"",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:"",pagos:mkP(),pending:["Iniciar proceso"]},
+],
+ee:[
+  {name:"Diego Mallqui",estado:"ACTIVO",paquete:"Estancia por estudios",carpeta:"190-EE-Claudia",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:false,pendiente:"Enviar docs + homologación"},{label:"Cita programada",done:false,pendiente:""},{label:"Documentos listos",done:false,pendiente:""}],detalle:"FP Andalucía — homologación requerida",llegada:"",plazoMax:"",plazoIdeal:"",pasaporte:"",fNac:"",nie:"Pendiente",expediente:"",fPresentacion:"",pagos:mkP(),pending:["Apersonarse en España","Homologación requerida"]},
+  {name:"Adriana Vilcarromero",estado:"ACTIVO",paquete:"Estancia por estudios",carpeta:"",driveUrl:"",portalUrl:"",fases:[{label:"Estrategia realizada",done:true,pendiente:""},{label:"Preparación documentaria",done:true,pendiente:""},{label:"Cita programada",done:false,pendiente:""},{label:"Documentos listos",done:false,pendiente:""}],detalle:"Homologación completada — proceso de visa",llegada:"",plazoMax:"",plazoIdeal:"",pasaporte:"",fNac:"",nie:"Pendiente",expediente:"",fPresentacion:"",pagos:mkP(),pending:["Iniciar proceso de visa"]},
+],
+fp:[
+  {name:"Christian Gabriel Mendoza Torres",estado:"ACTIVO",paquete:"FP España",carpeta:"190-EE-Claudia",driveUrl:"",portalUrl:"",centro:"Andalucía",estadoAdm:"Ingreso",nie:"",expediente:"",pagos:mkP(),pending:["Proponer proceso de visa"]},
+  {name:"Yheira",estado:"ACTIVO",paquete:"FP España",carpeta:"",driveUrl:"",portalUrl:"",centro:"Andalucía",estadoAdm:"Lista alta",nie:"",expediente:"",pagos:mkP(),pending:["Esperar resultados"]},
+],
+legal:[
+  {name:"Pedro",estado:"ACTIVO",paquete:"Legal Extranjería",carpeta:"",driveUrl:"",portalUrl:"",resultado:"FAVORABLE",tipo:"Recurso Reposición",asesor:"Igor",nie:"",expediente:"",resolucion:"",pagos:mkP(),pending:[]},
+  {name:"Luis Leonardo",estado:"ACTIVO",paquete:"Legal Extranjería",carpeta:"",driveUrl:"",portalUrl:"",resultado:"FAVORABLE",tipo:"Recurso Reposición",asesor:"Igor",nie:"",expediente:"",resolucion:"",pagos:mkP(),pending:[]},
+  {name:"Giandira",estado:"ACTIVO",paquete:"Legal Extranjería",carpeta:"",driveUrl:"",portalUrl:"",resultado:"FAVORABLE",tipo:"Recurso Reposición",asesor:"Igor",nie:"",expediente:"",resolucion:"",pagos:mkP(),pending:[]},
+  {name:"Daniel",estado:"ACTIVO",paquete:"Legal Extranjería",carpeta:"",driveUrl:"",portalUrl:"",resultado:"FAVORABLE",tipo:"Recurso Reposición",asesor:"Igor",nie:"",expediente:"",resolucion:"",pagos:mkP(),pending:[]},
+]};
+
+loadData();
+
+let curTab="all",expKey=null,editKey=null,editSvc=null,addMode=null,addSvc="master",delKey=null,delSvc=null,tmpUnis=[];
+
+function ini(n){return n.split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase()}
+function stC(s){return s==="ACTIVO"?"ba":s==="NO ACTIVO"?"bn":"bac"}
+function uCl(e){if(e==="ADMITIDO")return"u-adm";if(e&&e.includes("ESPERA"))return"u-lea";if(e==="POSTULADO"||e==="POSTULAR")return"u-pos";if(e==="EXCLUIDO"||e==="RECHAZADO")return"u-rej";if(e==="NO POSTULAR AUN")return"u-nop";return"u-pen"}
+function fv(v){return(v&&v.trim())?v:"—"}
+function miss(v){return!v||!v.trim()}
+function payPct(p){if(!p)return 0;const t=parseFloat(p.total)||0,paid=parseFloat(p.pagadas)||0;if(!t)return 0;return Math.min(100,Math.round(paid/t*100))}
+
+function carpetaHtml(c){
+  const hasCarpeta=c.carpeta&&c.carpeta.trim();
+  const hasDrive=c.driveUrl&&c.driveUrl.trim();
+  const hasPortal=c.portalUrl&&c.portalUrl.trim();
+  return`<div class="carpeta-row">
+    <span class="carpeta-val">${hasCarpeta?c.carpeta:"—"}</span>
+    ${hasDrive?`<a class="carp-btn carp-drive" href="${c.driveUrl}" target="_blank">📁 Drive</a>`:`<span class="carp-btn carp-drive carp-disabled">📁 Drive</span>`}
+    ${hasPortal?`<a class="carp-btn carp-portal" href="${c.portalUrl}" target="_blank">🔗 Portal</a>`:`<span class="carp-btn carp-portal carp-disabled">🔗 Portal</span>`}
+  </div>`;
+}
+
+function fasesCheckHtml(fases){
+  if(!fases||!fases.length)return"";
+  const nextUndone=fases.findIndex(x=>!x.done);
+  let h=`<div class="phases-check">`;
+  fases.forEach((f,i)=>{
+    const isDone=f.done;
+    const isCurrent=i===nextUndone;
+    h+=`<div class="phase-row ${isDone?'ph-done':isCurrent?'ph-current':''}">
+      <span style="font-size:14px;line-height:1">${isDone?'✅':isCurrent?'🔄':'⬜'}</span>
+      <div style="flex:1">
+        <div class="phase-label">${f.label}</div>
+        ${f.pendiente&&f.pendiente.trim()?`<div class="phase-pend">⚠️ ${f.pendiente}</div>`:(isDone?`<div class="phase-pend-ok">Completada</div>`:"")}
+      </div>
+    </div>`;
+  });
+  return h+`</div>`;
+}
+
+function becaHtml(beca){
+  if(!beca)return"";
+  return`<div class="beca-box ${beca.aprobable?'':'no'}">
+    <div class="beca-title ${beca.aprobable?'':'no'}">${beca.aprobable?'✨ Beca aprobable — análisis previo realizado':'Beca: sin análisis aprobable registrado'}</div>
+    ${beca.detalle?`<div class="beca-det">${beca.detalle}</div>`:''}
+  </div>`;
+}
+
+function pagoHtml(p){
+  p=p||mkP();const pct=payPct(p);
+  return`<div class="section"><div class="stitle">Pagos</div>
+  <div class="dg3">
+    <div><div class="dl">Tipo</div><div class="dv ${miss(p.tipo)?'miss':''}">${fv(p.tipo)}</div></div>
+    <div><div class="dl">Total (€)</div><div class="dv ${miss(p.total)?'miss':''}">${fv(p.total)}</div></div>
+    <div><div class="dl">Cuotas</div><div class="dv">${fv(p.cuotas)}</div></div>
+  </div>
+  <div class="paybar">
+    <span style="font-size:10px;color:#888;min-width:64px">Pagado: ${fv(p.pagadas)}</span>
+    <div class="paytrack"><div class="payfill" style="width:${pct}%"></div></div>
+    <span style="font-size:10px;color:${miss(p.pendiente)?'#A32D2D':'#3B6D11'};min-width:72px">Pendiente: ${fv(p.pendiente)}</span>
+  </div></div>`;
+}
+
+function detHtml(c){
+  const sv=c._svc;let h="";
+  if(sv==="master"){
+    const p=c.pasos||{};
+    h+=`<div class="section"><div class="stitle">Datos generales</div><div class="dg">
+      <div><div class="dl">Paquete</div><div class="dv">${fv(c.paquete)}</div></div>
+      <div><div class="dl">Carpeta</div>${carpetaHtml(c)}</div>
+      ${c.promedio?`<div><div class="dl">Promedio ponderado</div><div class="dv ok">${c.promedio}</div></div>`:''}
+      ${c.uni_origen?`<div><div class="dl">Uni origen</div><div class="dv">${c.uni_origen}</div></div>`:''}
+      ${c.interes?`<div><div class="dl">Área de interés</div><div class="dv">${c.interes}</div></div>`:''}
+      ${c.masterElegido?`<div style="grid-column:span 2"><div class="dl">Máster elegido</div><div class="dv ok">${c.masterElegido}</div></div>`:''}
+    </div></div>`;
+    h+=pagoHtml(c.pagos);
+    h+=becaHtml(c.beca);
+    h+=`<div class="section"><div class="stitle">Proceso</div><div class="steps">
+      <span class="step ${p.fichero?'sd':'sp'}">Fichero</span>
+      <span class="step ${c.notaMedia?'sd':'sp'}">Nota media</span>
+      <span class="step ${c.cvEuropass?'sd':'sp'}">CV Europass</span>
+      <span class="step ${p.informe?'sd':'sp'}">Informe búsqueda</span>
+      <span class="step ${p.escogio?'sd':'sp'}">Escogió máster</span>
+      <span class="step ${c.docCompletos?'sd':'sp'}">Docs completos</span>
+      <span class="step ${p.postulacion?'sd':'sp'}">Postulación completa</span>
+    </div></div>`;
+    if(c.portalLinked)h+=`<div class="portal-note">Vinculado al portal del cliente — universidades y máster se sincronizarán automáticamente cuando el cliente seleccione desde su portal post-informe.</div>`;
+    if(c.unis&&c.unis.length){
+      h+=`<div class="section"><div class="stitle">Postulaciones por universidad</div><div style="overflow-x:auto"><table class="utbl"><thead><tr><th style="width:16%">Universidad</th><th style="width:30%">Máster específico</th><th style="width:17%">F. postulación</th><th style="width:17%">F. resultados</th><th style="width:20%">Estado</th></tr></thead><tbody>`;
+      c.unis.forEach(u=>{h+=`<tr><td><b>${u.u}</b></td><td style="color:#888">${u.master||"—"}</td><td style="font-size:10px">${u.fPost||"—"}</td><td style="font-size:10px">${u.fResult||"—"}</td><td class="${uCl(u.est)}">${u.est}</td></tr>`});
+      h+=`</tbody></table></div></div>`;
+    }
+  } else if(sv==="visa"||sv==="ee"){
+    h+=`<div class="section"><div class="stitle">Fases del proceso</div>${fasesCheckHtml(c.fases||mkFases())}</div>`;
+    if(sv==="visa"){
+      h+=`<div class="section"><div class="stitle">Datos de visa</div><div class="dg">
+        <div><div class="dl">Fecha cita consulado</div><div class="dv ${miss(c.fechaCita)?'miss':''}">${fv(c.fechaCita)}</div></div>
+        <div><div class="dl">Carpeta</div>${carpetaHtml(c)}</div>
+        <div><div class="dl">Pasaporte</div><div class="dv ${miss(c.pasaporte)?'miss':''}">${fv(c.pasaporte)}</div></div>
+        <div><div class="dl">Fecha nacimiento</div><div class="dv ${miss(c.fNac)?'miss':''}">${fv(c.fNac)}</div></div>
+        <div><div class="dl">NIE</div><div class="dv ${miss(c.nie)?'miss':''}">${fv(c.nie)}</div></div>
+        <div><div class="dl">Nº expediente</div><div class="dv ${miss(c.expediente)?'miss':''}">${fv(c.expediente)}</div></div>
+        <div><div class="dl">Llegada a España</div><div class="dv ${miss(c.llegada)?'miss':''}">${fv(c.llegada)}</div></div>
+        <div><div class="dl">Plazo máximo</div><div class="dv ${miss(c.plazoMax)?'miss':''}">${fv(c.plazoMax)}</div></div>
+        <div><div class="dl">Plazo ideal</div><div class="dv ${miss(c.plazoIdeal)?'miss':''}">${fv(c.plazoIdeal)}</div></div>
+      </div></div>`;
+    } else {
+      h+=`<div class="section"><div class="stitle">Datos de estancia</div><div class="dg">
+        <div style="grid-column:span 2"><div class="dl">Detalle</div><div class="dv">${fv(c.detalle)}</div></div>
+        <div><div class="dl">Llegada a España</div><div class="dv ${miss(c.llegada)?'miss':''}">${fv(c.llegada)}</div></div>
+        <div><div class="dl">Plazo máximo</div><div class="dv ${miss(c.plazoMax)?'miss':''}">${fv(c.plazoMax)}</div></div>
+        <div><div class="dl">Plazo ideal</div><div class="dv ${miss(c.plazoIdeal)?'miss':''}">${fv(c.plazoIdeal)}</div></div>
+        <div><div class="dl">Pasaporte</div><div class="dv ${miss(c.pasaporte)?'miss':''}">${fv(c.pasaporte)}</div></div>
+        <div><div class="dl">Fecha nacimiento</div><div class="dv ${miss(c.fNac)?'miss':''}">${fv(c.fNac)}</div></div>
+        <div><div class="dl">NIE</div><div class="dv ${miss(c.nie)?'miss':''}">${fv(c.nie)}</div></div>
+        <div><div class="dl">Nº expediente</div><div class="dv ${miss(c.expediente)?'miss':''}">${fv(c.expediente)}</div></div>
+        <div><div class="dl">F. presentación</div><div class="dv ${miss(c.fPresentacion)?'miss':''}">${fv(c.fPresentacion)}</div></div>
+        <div><div class="dl">Carpeta</div>${carpetaHtml(c)}</div>
+      </div></div>`;
+    }
+    h+=pagoHtml(c.pagos);
+  } else if(sv==="fp"){
+    h+=`<div class="section"><div class="stitle">FP / Grado</div><div class="dg">
+      <div><div class="dl">Paquete</div><div class="dv">${fv(c.paquete)}</div></div>
+      <div><div class="dl">Carpeta</div>${carpetaHtml(c)}</div>
+      <div><div class="dl">Centro</div><div class="dv">${fv(c.centro)}</div></div>
+      <div><div class="dl">Estado admisión</div><div class="dv">${fv(c.estadoAdm)}</div></div>
+      <div><div class="dl">NIE</div><div class="dv ${miss(c.nie)?'miss':''}">${fv(c.nie)}</div></div>
+      <div><div class="dl">Nº expediente</div><div class="dv ${miss(c.expediente)?'miss':''}">${fv(c.expediente)}</div></div>
+    </div></div>`;
+    h+=pagoHtml(c.pagos);
+  } else if(sv==="legal"){
+    h+=`<div class="section"><div class="stitle">Legal / Extranjería</div><div class="dg">
+      <div><div class="dl">Tipo</div><div class="dv">${fv(c.tipo)}</div></div>
+      <div><div class="dl">Resultado</div><div class="dv ok">${fv(c.resultado)}</div></div>
+      <div><div class="dl">Asesor</div><div class="dv">${fv(c.asesor)}</div></div>
+      <div><div class="dl">Carpeta</div>${carpetaHtml(c)}</div>
+      <div><div class="dl">NIE</div><div class="dv ${miss(c.nie)?'miss':''}">${fv(c.nie)}</div></div>
+      <div><div class="dl">Nº expediente</div><div class="dv ${miss(c.expediente)?'miss':''}">${fv(c.expediente)}</div></div>
+      <div><div class="dl">Fecha resolución</div><div class="dv ${miss(c.resolucion)?'miss':''}">${fv(c.resolucion)}</div></div>
+      <div><div class="dl">Paquete</div><div class="dv">${fv(c.paquete)}</div></div>
+    </div></div>`;
+    h+=pagoHtml(c.pagos);
+  }
+  if(c.pending&&c.pending.length){
+    h+=`<div class="section"><div class="stitle">Pendientes generales</div><div class="plist">`;
+    c.pending.forEach(p=>{h+=`<div class="pi">${p}</div>`});
+    h+=`</div></div>`;
+  }
+  return h;
+}
+
+function pagoFields(p){p=p||mkP();return`
+  <div class="msec">Pagos</div>
+  <div class="fg3">
+    <div class="fg"><label>Tipo</label><select id="e_pago_tipo"><option value="">—</option><option ${p.tipo==='Completo'?'selected':''}>Completo</option><option ${p.tipo==='Fraccionado'?'selected':''}>Fraccionado</option></select></div>
+    <div class="fg"><label>Total (€)</label><input id="e_pago_total" value="${p.total||''}"></div>
+    <div class="fg"><label>Cuotas</label><input id="e_pago_cuotas" value="${p.cuotas||''}"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label>Pagado (€)</label><input id="e_pago_pagadas" value="${p.pagadas||''}"></div>
+    <div class="fg"><label>Pendiente (€)</label><input id="e_pago_pendiente" value="${p.pendiente||''}"></div>
+  </div>`}
+
+function carpetaFields(c){return`
+  <div class="msec">Carpeta y accesos</div>
+  <div class="fg3">
+    <div class="fg"><label>Código carpeta</label><input id="e_carpeta" value="${c.carpeta||''}"></div>
+    <div class="fg"><label>URL Drive</label><input id="e_driveUrl" value="${c.driveUrl||''}" placeholder="https://drive.google.com/..."></div>
+    <div class="fg"><label>URL Portal cliente</label><input id="e_portalUrl" value="${c.portalUrl||''}" placeholder="https://inspira-legal.cloud/..."></div>
+  </div>`}
+
+function fasesEditFields(fases){
+  fases=fases||mkFases();
+  let h=`<div class="msec">Fases del proceso</div><div class="fase-edit-box">`;
+  fases.forEach((f,i)=>{
+    h+=`<div class="fase-edit-row">
+      <input type="checkbox" id="e_fase_${i}" ${f.done?'checked':''}>
+      <span class="fase-edit-label">${f.label}</span>
+      <input class="fase-edit-pend" id="e_fasepend_${i}" value="${f.pendiente||''}" placeholder="pendiente específico...">
+    </div>`;
+  });
+  return h+`</div>`;
+}
+
+function becaFields(beca){beca=beca||mkBeca();return`
+  <div class="msec">Beca</div>
+  <div class="fg2">
+    <div class="fg"><label>¿Beca aprobable?</label><select id="e_beca_aprobable"><option value="0" ${!beca.aprobable?'selected':''}>No / Sin análisis</option><option value="1" ${beca.aprobable?'selected':''}>Sí — perfil aprobable</option></select></div>
+    <div class="fg"><label>Detalle del análisis</label><input id="e_beca_detalle" value="${beca.detalle||''}" placeholder="ej: Perfil AUIP, promedio >15, área STEM"></div>
+  </div>`}
+
+function estOpts(cur){return CL_EST.map(s=>`<option ${cur===s?'selected':''}>${s}</option>`).join("")}
+function uniRow(u,i){return`<tr><td><input value="${u.u||''}" data-i="${i}" data-f="u"></td><td><input value="${u.master||''}" data-i="${i}" data-f="master"></td><td><input value="${u.fPost||''}" data-i="${i}" data-f="fPost"></td><td><input value="${u.fResult||''}" data-i="${i}" data-f="fResult"></td><td><select data-i="${i}" data-f="est">${UNI_EST.map(e=>`<option ${u.est===e?'selected':''}>${e}</option>`).join("")}</select></td><td><button class="rembtn" onclick="remUni(${i})">x</button></td></tr>`}
+function addUni(){tmpUnis.push({u:"",master:"",fPost:"",fResult:"",est:"PENDIENTE"});const tb=document.getElementById("euni");if(tb)tb.innerHTML=tmpUnis.map((u,i)=>uniRow(u,i)).join("")}
+function remUni(i){tmpUnis.splice(i,1);const tb=document.getElementById("euni");if(tb)tb.innerHTML=tmpUnis.map((u,i)=>uniRow(u,i)).join("")}
+function syncTmpUnis(){document.querySelectorAll("#euni tr").forEach(tr=>{tr.querySelectorAll("input,select").forEach(el=>{const i=parseInt(el.dataset.i),f=el.dataset.f;if(!isNaN(i)&&f&&tmpUnis[i])tmpUnis[i][f]=el.value})})}
+function g(id){const el=document.getElementById(id);return el?el.value:""}
+function gc(id){const el=document.getElementById(id);return el?el.checked:false}
+function collectFases(){return FASES_VE.map((f,i)=>({label:f,done:gc("e_fase_"+i),pendiente:g("e_fasepend_"+i)}))}
+
+function buildForm(c,sv){
+  const base=`
+  <div class="fg2">
+    <div class="fg"><label>Nombre completo</label><input id="e_name" value="${c.name||''}"></div>
+    <div class="fg"><label>Estado</label><select id="e_estado">${estOpts(c.estado||'ACTIVO')}</select></div>
+  </div>
+  <div class="fg"><label>Paquete contratado</label><input id="e_paquete" value="${c.paquete||''}"></div>`;
+  const pendField=`<div class="fg" style="margin-top:6px"><label>Pendientes generales (uno por línea)</label><textarea id="e_pending">${(c.pending||[]).join('\n')}</textarea></div>`;
+  const cFields=carpetaFields(c);
+
+  if(sv==="master"){
+    return`${base}
+    <div class="fg"><label>Máster elegido</label><input id="e_masterElegido" value="${c.masterElegido||''}"></div>
+    <div class="fg3">
+      <div class="fg"><label>Área de interés</label><input id="e_interes" value="${c.interes||''}"></div>
+      <div class="fg"><label>Uni de origen</label><input id="e_uni_origen" value="${c.uni_origen||''}"></div>
+      <div class="fg"><label>Promedio ponderado</label><input id="e_promedio" value="${c.promedio||''}" placeholder="ej: 15.67"></div>
+    </div>
+    <div class="fg"><label>Vinculado al portal</label><select id="e_portalLinked"><option value="0" ${!c.portalLinked?'selected':''}>No</option><option value="1" ${c.portalLinked?'selected':''}>Sí</option></select></div>
+    <div class="msec">Documentos y proceso</div>
+    <div class="chkrow">
+      <label><input type="checkbox" id="e_fichero" ${c.pasos&&c.pasos.fichero?'checked':''}> Fichero</label>
+      <label><input type="checkbox" id="e_notaMedia" ${c.notaMedia?'checked':''}> Nota media</label>
+      <label><input type="checkbox" id="e_cvEuropass" ${c.cvEuropass?'checked':''}> CV Europass</label>
+      <label><input type="checkbox" id="e_informe" ${c.pasos&&c.pasos.informe?'checked':''}> Informe búsqueda</label>
+      <label><input type="checkbox" id="e_escogio" ${c.pasos&&c.pasos.escogio?'checked':''}> Escogió máster</label>
+      <label><input type="checkbox" id="e_docCompletos" ${c.docCompletos?'checked':''}> Docs completos</label>
+      <label><input type="checkbox" id="e_postulacion" ${c.pasos&&c.pasos.postulacion?'checked':''}> Postulación completa</label>
+    </div>
+    ${becaFields(c.beca)}${pagoFields(c.pagos)}${cFields}
+    <div class="msec">Universidades <span style="font-size:10px;color:#888;font-weight:400">(futuro: auto desde portal)</span></div>
+    <table class="etbl"><thead><tr><th>Universidad</th><th>Máster específico</th><th>F. postulación</th><th>F. resultados</th><th>Estado</th><th></th></tr></thead>
+    <tbody id="euni">${tmpUnis.map((u,i)=>uniRow(u,i)).join("")}</tbody></table>
+    <button class="addbtn" onclick="addUni()">+ universidad</button>
+    ${pendField}`;
+  }
+  if(sv==="visa") return`${base}
+    ${fasesEditFields(c.fases)}
+    <div class="fg"><label>Fecha cita consulado</label><input id="e_fechaCita" value="${c.fechaCita||''}" placeholder="ej: 15 mayo 2026 / 10:30h"></div>
+    <div class="fg2"><div class="fg"><label>Pasaporte</label><input id="e_pasaporte" value="${c.pasaporte||''}"></div><div class="fg"><label>Fecha nacimiento</label><input id="e_fNac" value="${c.fNac||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>NIE</label><input id="e_nie" value="${c.nie||''}"></div><div class="fg"><label>Nº expediente</label><input id="e_expediente" value="${c.expediente||''}"></div></div>
+    <div class="fg3"><div class="fg"><label>Llegada a España</label><input id="e_llegada" value="${c.llegada||''}"></div><div class="fg"><label>Plazo máximo</label><input id="e_plazoMax" value="${c.plazoMax||''}"></div><div class="fg"><label>Plazo ideal</label><input id="e_plazoIdeal" value="${c.plazoIdeal||''}"></div></div>
+    ${pagoFields(c.pagos)}${cFields}${pendField}`;
+  if(sv==="ee") return`${base}
+    ${fasesEditFields(c.fases)}
+    <div class="fg"><label>Detalle del caso</label><input id="e_detalle" value="${c.detalle||''}"></div>
+    <div class="fg3"><div class="fg"><label>Llegada a España</label><input id="e_llegada" value="${c.llegada||''}"></div><div class="fg"><label>Plazo máximo</label><input id="e_plazoMax" value="${c.plazoMax||''}"></div><div class="fg"><label>Plazo ideal</label><input id="e_plazoIdeal" value="${c.plazoIdeal||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>Pasaporte</label><input id="e_pasaporte" value="${c.pasaporte||''}"></div><div class="fg"><label>Fecha nacimiento</label><input id="e_fNac" value="${c.fNac||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>NIE</label><input id="e_nie" value="${c.nie||''}"></div><div class="fg"><label>Nº expediente</label><input id="e_expediente" value="${c.expediente||''}"></div></div>
+    <div class="fg"><label>Fecha de presentación</label><input id="e_fPresentacion" value="${c.fPresentacion||''}"></div>
+    ${pagoFields(c.pagos)}${cFields}${pendField}`;
+  if(sv==="fp") return`${base}
+    <div class="fg2"><div class="fg"><label>Centro</label><input id="e_centro" value="${c.centro||''}"></div><div class="fg"><label>Estado admisión</label><input id="e_estadoAdm" value="${c.estadoAdm||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>NIE</label><input id="e_nie" value="${c.nie||''}"></div><div class="fg"><label>Nº expediente</label><input id="e_expediente" value="${c.expediente||''}"></div></div>
+    ${pagoFields(c.pagos)}${cFields}${pendField}`;
+  if(sv==="legal") return`${base}
+    <div class="fg2"><div class="fg"><label>Tipo procedimiento</label><input id="e_tipo" value="${c.tipo||'Recurso Reposición'}"></div><div class="fg"><label>Resultado</label><input id="e_resultado" value="${c.resultado||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>Asesor</label><input id="e_asesor" value="${c.asesor||''}"></div><div class="fg"><label>Fecha resolución</label><input id="e_resolucion" value="${c.resolucion||''}"></div></div>
+    <div class="fg2"><div class="fg"><label>NIE</label><input id="e_nie" value="${c.nie||''}"></div><div class="fg"><label>Nº expediente</label><input id="e_expediente" value="${c.expediente||''}"></div></div>
+    ${pagoFields(c.pagos)}${cFields}${pendField}`;
+  return base+cFields+pendField;
+}
+
+function collectPagos(){return{tipo:g("e_pago_tipo"),total:g("e_pago_total"),cuotas:g("e_pago_cuotas"),pagadas:g("e_pago_pagadas"),pendiente:g("e_pago_pendiente")}}
+function collectPending(){const r=g("e_pending");return r?r.split("\n").map(s=>s.trim()).filter(Boolean):[]}
+
+function applyFields(c,sv){
+  c.name=g("e_name")||c.name;c.estado=g("e_estado");c.paquete=g("e_paquete");
+  c.carpeta=g("e_carpeta");c.driveUrl=g("e_driveUrl");c.portalUrl=g("e_portalUrl");
+  c.pagos=collectPagos();c.pending=collectPending();
+  if(sv==="master"){
+    c.masterElegido=g("e_masterElegido");c.interes=g("e_interes");c.uni_origen=g("e_uni_origen");c.promedio=g("e_promedio");
+    c.portalLinked=g("e_portalLinked")==="1";
+    c.notaMedia=gc("e_notaMedia");c.cvEuropass=gc("e_cvEuropass");c.docCompletos=gc("e_docCompletos");
+    c.pasos={fichero:gc("e_fichero"),informe:gc("e_informe"),escogio:gc("e_escogio"),postulacion:gc("e_postulacion")};
+    c.beca={aprobable:g("e_beca_aprobable")==="1",detalle:g("e_beca_detalle")};
+    c.unis=tmpUnis;
+  } else if(sv==="visa"){
+    c.fases=collectFases();c.fechaCita=g("e_fechaCita");c.pasaporte=g("e_pasaporte");c.fNac=g("e_fNac");
+    c.nie=g("e_nie");c.expediente=g("e_expediente");c.llegada=g("e_llegada");c.plazoMax=g("e_plazoMax");c.plazoIdeal=g("e_plazoIdeal");
+  } else if(sv==="ee"){
+    c.fases=collectFases();c.detalle=g("e_detalle");c.llegada=g("e_llegada");c.plazoMax=g("e_plazoMax");c.plazoIdeal=g("e_plazoIdeal");
+    c.pasaporte=g("e_pasaporte");c.fNac=g("e_fNac");c.nie=g("e_nie");c.expediente=g("e_expediente");c.fPresentacion=g("e_fPresentacion");
+  } else if(sv==="fp"){
+    c.centro=g("e_centro");c.estadoAdm=g("e_estadoAdm");c.nie=g("e_nie");c.expediente=g("e_expediente");
+  } else if(sv==="legal"){
+    c.tipo=g("e_tipo");c.resultado=g("e_resultado");c.asesor=g("e_asesor");c.resolucion=g("e_resolucion");c.nie=g("e_nie");c.expediente=g("e_expediente");
+  }
+}
+
+function saveEdit(name,svc){
+  syncTmpUnis();
+  const idx=DATA[svc].findIndex(x=>x.name===name);if(idx<0)return;
+  applyFields(DATA[svc][idx],svc);editKey=null;editSvc=null;saveData();render();
+}
+function saveNew(svc){
+  syncTmpUnis();
+  const name=g("e_name");if(!name.trim()){alert("El nombre es obligatorio");return}
+  let c={name,pagos:mkP(),pending:[],driveUrl:"",portalUrl:""};
+  if(svc==="master")Object.assign(c,{estado:"ACTIVO",paquete:"",carpeta:"",promedio:"",interes:"",uni_origen:"",masterElegido:"",notaMedia:false,cvEuropass:false,docCompletos:false,portalLinked:false,beca:mkBeca(),pasos:mkPS(),unis:[]});
+  else if(svc==="visa")Object.assign(c,{estado:"ACTIVO",paquete:"Visa de estudios",carpeta:"",fases:mkFases(),fechaCita:"",nie:"",expediente:"",llegada:"",fNac:"",pasaporte:"",plazoMax:"",plazoIdeal:""});
+  else if(svc==="ee")Object.assign(c,{estado:"ACTIVO",paquete:"Estancia por estudios",carpeta:"",fases:mkFases(),detalle:"",llegada:"",plazoMax:"",plazoIdeal:"",pasaporte:"",fNac:"",nie:"",expediente:"",fPresentacion:""});
+  else if(svc==="fp")Object.assign(c,{estado:"ACTIVO",paquete:"FP España",carpeta:"",centro:"",estadoAdm:"",nie:"",expediente:""});
+  else if(svc==="legal")Object.assign(c,{estado:"ACTIVO",paquete:"Legal Extranjería",carpeta:"",tipo:"Recurso Reposición",resultado:"",asesor:"",nie:"",expediente:"",resolucion:""});
+  applyFields(c,svc);DATA[svc].push(c);addMode=null;curTab=svc;saveData();render();
+}
+function confirmDel(name,svc){delKey=name;delSvc=svc;render()}
+function cancelDel(){delKey=null;delSvc=null;render()}
+function doDelete(){
+  if(!delKey||!delSvc)return;
+  DATA[delSvc]=DATA[delSvc].filter(x=>x.name!==delKey);
+  if(expKey===delKey+delSvc)expKey=null;
+  delKey=null;delSvc=null;saveData();render();
+}
+function exportJSON(){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"}));
+  a.download="inspira_clientes_"+new Date().toISOString().slice(0,10)+".json";a.click();
+}
+function getVisible(){
+  const q=document.getElementById("q")?document.getElementById("q").value.toLowerCase():"";
+  const fil=document.getElementById("fil")?document.getElementById("fil").value:"";
+  let list=curTab==="all"?SVC_KEYS.flatMap(s=>DATA[s].map(c=>({...c,_svc:s}))):DATA[curTab].map(c=>({...c,_svc:curTab}));
+  if(q)list=list.filter(c=>c.name.toLowerCase().includes(q));
+  if(fil)list=list.filter(c=>c.estado===fil);
+  return list;
+}
+
+function render(){
+  const list=getVisible();
+  const total=SVC_KEYS.reduce((a,s)=>a+DATA[s].length,0);
+  const counts={all:total,...Object.fromEntries(SVC_KEYS.map(s=>[s,DATA[s].length]))};
+  let h=`<div class="topbar">
+    <span class="topbar-title">Panel asesoras — Inspira Legal</span>
+    <div class="topbar-btns">
+      <button class="tbtn exp" onclick="exportJSON()">Exportar JSON</button>
+      <button class="tbtn add" onclick="openAdd()">+ Agregar cliente</button>
+    </div>
+  </div>`;
+  h+=`<div class="tabs">${TABS_LIST.map(t=>`<button class="tab${curTab===t.id?" on":""}" onclick="setTab('${t.id}')">${t.label} <span style="font-size:10px;opacity:.6">${counts[t.id]}</span></button>`).join("")}</div>`;
+  const act=list.filter(c=>c.estado==="ACTIVO").length;
+  const noact=list.filter(c=>c.estado==="NO ACTIVO").length;
+  const activar=list.filter(c=>c.estado==="ACTIVAR").length;
+  const pend=list.filter(c=>c.pending&&c.pending.length>0).length;
+  h+=`<div class="stats">
+    <div class="sc"><div class="sl">Total</div><div class="sn">${list.length}</div></div>
+    <div class="sc"><div class="sl">Activos</div><div class="sn">${act}</div></div>
+    <div class="sc"><div class="sl">No activos</div><div class="sn">${noact}</div></div>
+    <div class="sc"><div class="sl">Por activar</div><div class="sn">${activar}</div></div>
+    <div class="sc"><div class="sl">Con pendientes</div><div class="sn">${pend}</div></div>
+  </div>`;
+  const qval=document.getElementById("q")?document.getElementById("q").value:"";
+  const filval=document.getElementById("fil")?document.getElementById("fil").value:"";
+  h+=`<div class="tbar"><input type="text" id="q" placeholder="Buscar cliente..." oninput="render()" value="${qval}"><select id="fil" onchange="render()"><option value="">Todos los estados</option>${CL_EST.map(s=>`<option value="${s}" ${filval===s?'selected':''}>${s}</option>`).join("")}</select></div>`;
+
+  if(addMode){
+    h+=`<div class="modal-wrap"><div class="modal">
+      <div class="mhead"><h3>Nuevo cliente</h3><div class="mbtns"><button class="mcl" onclick="addMode=null;render()">Cancelar</button><button class="msv" onclick="saveNew('${addSvc}')">Guardar</button></div></div>
+      <div class="msec" style="margin-top:0;padding-top:0;border-top:none">Servicio</div>
+      <div class="svc-picker">${SVC_KEYS.map(s=>`<button class="svc-opt${addSvc===s?" sel":""}" onclick="addSvc='${s}';tmpUnis=[];renderAddForm()">${SVC_LABELS[s]}</button>`).join("")}</div>
+      <div id="add-form-body">${buildForm({},addSvc)}</div>
+    </div></div>`;
+  } else if(editKey){
+    const c={...DATA[editSvc].find(x=>x.name===editKey),_svc:editSvc};
+    h+=`<div class="modal-wrap"><div class="modal">
+      <div class="mhead"><h3>Editar: ${c.name}</h3><div class="mbtns"><button class="mcl" onclick="editKey=null;editSvc=null;render()">Cancelar</button><button class="msv" onclick="saveEdit('${c.name.replace(/'/g,"\\'")}','${editSvc}')">Guardar</button></div></div>
+      ${buildForm(c,editSvc)}
+    </div></div>`;
+  }
+
+  if(!addMode&&!editKey){
+    if(!list.length){
+      h+=`<div style="padding:2rem;text-align:center;color:#aaa;font-size:12px">Sin resultados</div>`;
+    } else {
+      h+=`<div class="grid">`;
+      list.forEach(c=>{
+        const key=c.name+c._svc,isExp=expKey===key;
+        const[bg,col]=AVG[c._svc]||["#F1EFE8","#5F5E5A"];
+        const hasPend=c.pending&&c.pending.length>0;
+        const svcL=SVC_LABELS[c._svc]||c._svc;
+        let faseLabel="";
+        if((c._svc==="visa"||c._svc==="ee")&&c.fases){
+          const done=c.fases.filter(f=>f.done);
+          faseLabel=done.length?` · ${done[done.length-1].label}`:" · Sin iniciar";
+        }
+        const isDelConfirm=delKey===c.name&&delSvc===c._svc;
+        const hasBeca=c.beca&&c.beca.aprobable;
+        h+=`<div class="card${isExp?" exp":""}${c.portalLinked?" portal-linked":""}">
+          <div class="ch" onclick="toggleExp('${key.replace(/'/g,"\\'")}')">
+            <div class="av" style="background:${bg};color:${col}">${ini(c.name)}</div>
+            <div class="cn">
+              <div class="nm">${c.name}${c.portalLinked?` <span class="portal-tag">portal</span>`:""}${hasBeca?` <span class="bdg-beca">✨ beca</span>`:""}</div>
+              <div class="sb">${svcL} · ${c.paquete||"Sin paquete"}${faseLabel}${c.promedio?` · <span style="color:#085041;font-weight:600">Prom: ${c.promedio}</span>`:""}</div>
+            </div>
+            <div class="cr">
+              <span class="bdg ${stC(c.estado)}">${c.estado}</span>
+              ${hasPend?`<span class="pc"><span class="pdot"></span>${c.pending.length}</span>`:""}
+              <button class="edbtn" onclick="event.stopPropagation();openEdit('${c.name.replace(/'/g,"\\'")}','${c._svc}')">Editar</button>
+              <button class="delbtn" onclick="event.stopPropagation();confirmDel('${c.name.replace(/'/g,"\\'")}','${c._svc}')">Eliminar</button>
+            </div>
+            <span class="chv">▼</span>
+          </div>
+          ${isDelConfirm?`<div class="del-confirm"><span>¿Eliminar a <b>${c.name}</b>?</span><button class="del-no" onclick="cancelDel()">Cancelar</button><button class="del-yes" onclick="doDelete()">Sí, eliminar</button></div>`:""}
+          <div class="det">${detHtml(c)}</div>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+  document.getElementById("app").innerHTML=h;
+}
+
+function renderAddForm(){
+  const fb=document.getElementById("add-form-body");
+  if(fb)fb.innerHTML=buildForm({},addSvc);
+  document.querySelectorAll(".svc-opt").forEach(b=>{b.classList.toggle("sel",b.textContent.trim()===SVC_LABELS[addSvc])});
+}
+function toggleExp(k){expKey=expKey===k?null:k;render()}
+function setTab(id){curTab=id;expKey=null;render()}
+function openEdit(name,svc){editKey=name;editSvc=svc;addMode=null;const c=DATA[svc].find(x=>x.name===name);tmpUnis=JSON.parse(JSON.stringify(c.unis||[]));render()}
+function openAdd(){addMode=true;addSvc=curTab==="all"?"master":curTab;editKey=null;tmpUnis=[];render();const mw=document.querySelector(".modal-wrap");if(mw)mw.scrollIntoView({behavior:"smooth",block:"start"})}
+
+render();
+</script>
+</body>
+</html>

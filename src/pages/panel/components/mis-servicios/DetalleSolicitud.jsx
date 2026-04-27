@@ -111,7 +111,24 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     }
   }
 
-  const hasFormData = Object.keys(formData || {}).length > 0;
+  const CAMPOS_REQUERIDOS_FORMULARIO = [
+    "promedio_peru",       // 3.1 perfil cuantitativo
+    "ubicacion_grupo",     // 3.1 tercio/quinto/décimo
+    "otra_maestria_tiene", // 3.1 otra maestría
+    "experiencia_anios",   // 3.2 años de experiencia
+    "experiencia_vinculada", // 3.2 vinculación
+    "ingles_situacion",    // 3.4 idiomas
+    "beca_desea",          // 3.5 becas
+    "duracion_preferida",  // 3.6 duración
+    "practicas_preferencia", // 3.6 prácticas
+    "presupuesto_hasta",   // 3.6 presupuesto
+  ];
+  const hasFormData = CAMPOS_REQUERIDOS_FORMULARIO.every(
+    (campo) =>
+      formData?.[campo] !== undefined &&
+      formData?.[campo] !== null &&
+      formData?.[campo] !== ""
+  );
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
 
