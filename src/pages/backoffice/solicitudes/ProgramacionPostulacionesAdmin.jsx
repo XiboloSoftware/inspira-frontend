@@ -10,25 +10,23 @@ export default function ProgramacionPostulacionesAdmin({ idSolicitud }) {
   } = useProgramacion(idSolicitud);
 
   return (
-    <section className="border border-neutral-200 rounded-lg p-3 mb-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-        <h3 className="text-sm font-semibold text-neutral-900">6. Programación de postulaciones</h3>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-neutral-600">
+          Gestiona las tareas por cada máster confirmado: fechas límite, estado y responsable.
+        </p>
         <button
           type="button"
           onClick={handleGenerar}
           disabled={saving}
-          className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60"
+          className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-60 transition font-medium whitespace-nowrap"
         >
           {saving ? "Procesando…" : "Generar tareas desde elección (Bloque 5)"}
         </button>
       </div>
 
-      <p className="text-xs text-neutral-600 mb-3">
-        Gestiona las tareas por cada máster confirmado: fechas límite, estado y responsable.
-      </p>
-
       {loading && <p className="text-xs text-neutral-500">Cargando programación…</p>}
-      {error && !loading && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      {error && !loading && <p className="text-xs text-red-600">{error}</p>}
       {!loading && !error && masters.length === 0 && (
         <p className="text-xs text-neutral-500">
           Aún no hay tareas configuradas. Puedes generarlas desde la elección de másteres con el botón de arriba.
@@ -51,6 +49,6 @@ export default function ProgramacionPostulacionesAdmin({ idSolicitud }) {
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }

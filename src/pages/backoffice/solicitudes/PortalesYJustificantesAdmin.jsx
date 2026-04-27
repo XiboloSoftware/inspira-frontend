@@ -27,15 +27,15 @@ export default function PortalesYJustificantesAdmin({ idSolicitud }) {
 
   if (loading) {
     return (
-      <section className="border border-neutral-200 rounded-lg p-3 mt-4 text-xs">
+      <div className="flex items-center gap-2 py-2 text-neutral-400 text-xs">
+        <div className="w-4 h-4 border-2 border-[#023A4B] border-t-transparent rounded-full animate-spin" />
         Cargando portales y justificantes…
-      </section>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4 mt-4">
-      <h2 className="text-sm font-semibold text-neutral-900">7. Portales, claves y justificantes</h2>
+    <div className="space-y-4">
       <SeccionPortales
         titulo="7.1 Ministerios (nota media y homologación)"
         tipoPortal="MINISTERIO"
