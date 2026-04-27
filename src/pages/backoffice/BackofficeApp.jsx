@@ -142,7 +142,7 @@ export default function BackofficeApp() {
               <Diagnosticos user={user} />
             )}
 
-            {path === "/backoffice/calculadora" && <LeadsCalculadora />}
+            {path === "/backoffice/calculadora" && <LeadsCalculadora user={user} />}
 
             {path === "/backoffice/panel-asesoras" && <PanelAsesoras />}
 
