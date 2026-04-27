@@ -673,7 +673,6 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
       name: form.name.trim(),
       ...(!isEdit && { email: form.email || undefined }),
       estado: form.estado, paquete: form.paquete,
-      driveUrl: form.driveUrl, portalUrl: form.portalUrl,
       pending: pendingStr.split("\n").map(s => s.trim()).filter(Boolean),
       promedio: form.promedio, interes: form.interes,
       uni_origen: form.uni_origen, masterElegido: form.masterElegido,
@@ -723,20 +722,22 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
         </label>
       </div>
 
-      {/* Carpeta + URLs */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Carpeta + Drive (solo lectura) */}
+      <div className="grid grid-cols-2 gap-3">
         <label>
           <span className={lab}>Código carpeta</span>
           <input className={inp} value={form.carpeta} onChange={e => set("carpeta", e.target.value)} />
         </label>
-        <label>
-          <span className={lab}>URL Drive</span>
-          <input className={inp} value={form.driveUrl} onChange={e => set("driveUrl", e.target.value)} placeholder="https://drive.google.com/…" />
-        </label>
-        <label>
-          <span className={lab}>URL Portal cliente</span>
-          <input className={inp} value={form.portalUrl} onChange={e => set("portalUrl", e.target.value)} placeholder="https://inspira-legal.cloud/…" />
-        </label>
+        <div>
+          <span className={lab}>Carpeta Drive</span>
+          {form.driveUrl
+            ? <a href={form.driveUrl} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline truncate max-w-full mt-0.5 block">
+                📁 Abrir carpeta Drive
+              </a>
+            : <span className="block mt-0.5 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
+          }
+        </div>
       </div>
 
       {/* ── MÁSTER ── */}

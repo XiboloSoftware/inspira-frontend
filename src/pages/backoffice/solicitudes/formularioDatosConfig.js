@@ -1,7 +1,12 @@
 // Configuración de campos del formulario de datos académicos
 export const FIELD_CONFIG = {
-  promedio_peru:               { label: "Promedio ponderado (escala 0–20, Perú)", section: "Perfil cuantitativo" },
-  ubicacion_grupo:             { label: "¿Estuvo en tercio/quinto/décimo superior?", section: "Perfil cuantitativo",
+  carrera_titulo:              { label: "Carrera o título universitario", section: "Perfil académico" },
+  area_carrera:                { label: "Área de la carrera", section: "Perfil académico" },
+  universidad_origen:          { label: "Universidad de origen", section: "Perfil académico" },
+  promedio_peru:               { label: "Promedio universitario", section: "Perfil académico" },
+  promedio_escala:             { label: "Escala del promedio", section: "Perfil académico",
+                                 format: (v) => ({ "20": "Escala /20 (Perú)", "10": "Escala /10", "5": "Escala /5 (Colombia)", "4": "GPA 0–4.0", "100": "Porcentaje %" }[v] || v) },
+  ubicacion_grupo:             { label: "¿Estuvo en tercio/quinto/décimo superior?", section: "Perfil académico",
                                  format: (v) => ({ tercio: "Tercio superior", quinto: "Quinto superior", decimo: "Décimo superior", ninguno: "No estuvo en ninguno" }[v] || v) },
 
   experiencia_anios:           { label: "Años de experiencia profesional", section: "Experiencia profesional y vinculación" },
@@ -36,12 +41,15 @@ export const FIELD_CONFIG = {
                                  format: (v) => ({ imprescindible: "Es imprescindible que el máster tenga prácticas", deseable: "Me gustaría que tenga prácticas, pero no es imprescindible", no_importante: "No es un criterio importante para mí" }[v] || v) },
   presupuesto_desde:           { label: "Presupuesto mínimo para la matrícula (solo estudios, €)", section: "Preferencias del máster" },
   presupuesto_hasta:           { label: "Presupuesto máximo para la matrícula (solo estudios, €)", section: "Preferencias del máster" },
+  area_interes_master:         { label: "Tipo de máster que le interesa estudiar", section: "Preferencias del máster" },
+  comunidades_preferidas:      { label: "Comunidades autónomas preferidas en España", section: "Preferencias del máster",
+                                 format: (v) => Array.isArray(v) ? v.join(", ") : v },
 
   comentario_especial:         { label: "Comentario especial para IA / asesores", section: "Comentario especial", fullWidth: true },
 };
 
 export const SECTIONS_ORDER = [
-  "Perfil cuantitativo",
+  "Perfil académico",
   "Experiencia profesional y vinculación",
   "Investigación y formación complementaria",
   "Idiomas y certificaciones",
