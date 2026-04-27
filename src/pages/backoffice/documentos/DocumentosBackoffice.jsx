@@ -37,6 +37,21 @@ function countByEstado(lista) {
   return counts;
 }
 
+function hasDocWithEstado(entry, filtro) {
+  for (const s of entry.solicitudes) {
+    for (const it of s.items) {
+      for (const doc of it.documentos) {
+        if (filtro === "SUBIDO") {
+          if (doc.estado_revision !== "APROBADO" && doc.estado_revision !== "OBSERVADO") return true;
+        } else {
+          if (doc.estado_revision === filtro) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 function filtrarLista(lista, q) {
   if (!q) return lista;
   return lista
@@ -59,7 +74,7 @@ function filtrarLista(lista, q) {
             }))
             .filter((it) => it.documentos.length > 0),
         }))
-        .filter((s) => s.items.length > 0),
+        .filter((s) => s.items.length > 0 || s.informe || (s.justificantes?.length ?? 0) > 0),
     }))
     .filter((c) => c.solicitudes.length > 0);
 }
@@ -77,7 +92,46 @@ function eliminarDocDeEstructura(lista, idDocumento) {
   }));
 }
 
-const POR_PAGINA = 15;
+const POR_PAGINA = 20;
+
+const FILTROS = [
+  {
+    key: "APROBADO",
+    label: "Aprobados",
+    icon: "✅",
+    bg: "bg-green-50",
+    border: "border-green-200",
+    text: "text-green-700",
+    subtext: "text-green-600",
+    activeBg: "bg-green-500",
+    activeBorder: "border-green-600",
+    activeText: "text-white",
+  },
+  {
+    key: "OBSERVADO",
+    label: "Observados",
+    icon: "⚠️",
+    bg: "bg-yellow-50",
+    border: "border-yellow-200",
+    text: "text-yellow-700",
+    subtext: "text-yellow-600",
+    activeBg: "bg-yellow-500",
+    activeBorder: "border-yellow-600",
+    activeText: "text-white",
+  },
+  {
+    key: "SUBIDO",
+    label: "Sin revisar",
+    icon: "📤",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    text: "text-blue-700",
+    subtext: "text-blue-600",
+    activeBg: "bg-blue-500",
+    activeBorder: "border-blue-600",
+    activeText: "text-white",
+  },
+];
 
 export default function DocumentosBackoffice() {
   const [clientes, setClientes] = useState([]);
@@ -86,8 +140,8 @@ export default function DocumentosBackoffice() {
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [expandedMap, setExpandedMap] = useState({});
-  const [tab, setTab] = useState("clientes");
   const [pagina, setPagina] = useState(0);
+  const [filtroEstado, setFiltroEstado] = useState(null);
 
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
@@ -116,21 +170,22 @@ export default function DocumentosBackoffice() {
     setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
+  const todos = [...clientes, ...internos].sort((a, b) =>
+    (a.nombre || "").localeCompare(b.nombre || "")
+  );
+
   const q = busqueda.toLowerCase().trim();
-  const clientesFiltrados = filtrarLista(clientes, q).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  const internosFiltrados = filtrarLista(internos, q).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  let listaFiltrada = filtrarLista(todos, q);
+  if (filtroEstado) {
+    listaFiltrada = listaFiltrada.filter((e) => hasDocWithEstado(e, filtroEstado));
+  }
 
-  // Resetear página al cambiar búsqueda o pestaña
-  useEffect(() => { setPagina(0); }, [busqueda, tab]);
+  useEffect(() => { setPagina(0); }, [busqueda, filtroEstado]);
 
-  const totalDocs = countDocs(clientes) + countDocs(internos);
-  const totalClienteDocs = countDocs(clientes);
-  const totalInternoDocs = countDocs(internos);
-
-  const estadoCounts = (() => {
-    const all = [...clientes, ...internos];
-    return countByEstado(all);
-  })();
+  const totalDocs = countDocs(todos);
+  const estadoCounts = countByEstado(todos);
+  const totalPaginas = Math.ceil(listaFiltrada.length / POR_PAGINA);
+  const listaVisible = listaFiltrada.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
 
   function ExpandBtn({ id }) {
     return (
@@ -148,22 +203,13 @@ export default function DocumentosBackoffice() {
     );
   }
 
-  const tabConfig = {
-    clientes: { color: "indigo", icon: "👥", label: "Clientes", lista: clientesFiltrados, count: countDocs(clientesFiltrados), total: totalClienteDocs, idKey: "id_cliente" },
-    equipo:   { color: "teal",   icon: "🏢", label: "Equipo",   lista: internosFiltrados, count: countDocs(internosFiltrados), total: totalInternoDocs, idKey: "id_usuario"  },
-  };
-
-  const activeTab = tabConfig[tab];
-  const totalPaginas = Math.ceil(activeTab.lista.length / POR_PAGINA);
-  const listaVisible = activeTab.lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
-
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-7xl mx-auto" style={{ height: "calc(100vh - 64px)", overflow: "hidden" }}>
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Documentos</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Gestión centralizada de archivos</p>
+          <h1 className="text-2xl font-bold text-neutral-900">Documentos</h1>
+          <p className="text-sm text-neutral-500">Gestión centralizada de archivos</p>
         </div>
         <div className="flex gap-2 items-center">
           <input
@@ -171,108 +217,98 @@ export default function DocumentosBackoffice() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, cliente, solicitud…"
-            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <button onClick={cargar} title="Recargar" className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base">↻</button>
+          <button onClick={cargar} title="Recargar" className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
+            ↻
+          </button>
         </div>
       </div>
 
-      {/* Stat cards — totales */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
-          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
-          <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
-        </div>
-        {Object.entries(tabConfig).map(([key, cfg]) => (
-          <div
-            key={key}
-            onClick={() => setTab(key)}
-            className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
-              tab === key
-                ? `bg-${cfg.color}-50 border-${cfg.color}-300 ring-1 ring-${cfg.color}-300`
-                : "bg-white border-neutral-200 hover:border-neutral-300"
-            }`}
-          >
-            <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">{cfg.label}</p>
-            <p className={`text-3xl font-bold ${tab === key ? `text-${cfg.color}-700` : "text-neutral-800"}`}>
-              {loading ? "…" : cfg.total}
+      {error && (
+        <div className="shrink-0 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+
+      {/* Layout: sidebar + panel */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Sidebar */}
+        <div className="w-48 shrink-0 flex flex-col gap-3 overflow-y-auto">
+          {/* Total */}
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+            <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
+            <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
+            <p className="text-[11px] text-neutral-400 mt-1">
+              {loading ? "" : `${listaFiltrada.length} clientes`}
             </p>
           </div>
-        ))}
-      </div>
 
-      {/* Stat cards — estados de revisión */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-green-50 rounded-xl border border-green-200 shadow-sm p-4 flex items-center gap-3">
-          <span className="text-2xl leading-none">✅</span>
-          <div>
-            <p className="text-[11px] text-green-600 font-semibold uppercase tracking-wider mb-0.5">Aprobados</p>
-            <p className="text-2xl font-bold text-green-700">{loading ? "…" : estadoCounts.APROBADO}</p>
+          {/* Stats clickables = filtros */}
+          {FILTROS.map((f) => {
+            const active = filtroEstado === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFiltroEstado(active ? null : f.key)}
+                className={`rounded-xl border shadow-sm p-4 text-left transition-all ${
+                  active
+                    ? `${f.activeBg} ${f.activeBorder} ring-2 ring-offset-1 ring-${f.key === "APROBADO" ? "green" : f.key === "OBSERVADO" ? "yellow" : "blue"}-400`
+                    : `${f.bg} ${f.border} hover:brightness-95`
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-sm leading-none">{f.icon}</span>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider ${active ? f.activeText : f.subtext}`}>
+                    {f.label}
+                  </p>
+                </div>
+                <p className={`text-2xl font-bold ${active ? f.activeText : f.text}`}>
+                  {loading ? "…" : estadoCounts[f.key]}
+                </p>
+                {active && (
+                  <p className="text-[10px] text-white/80 mt-0.5">Clic para quitar</p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Panel principal */}
+        <div className="flex-1 min-w-0 bg-white border border-neutral-200 rounded-xl shadow-sm flex flex-col min-h-0">
+          {/* Cabecera del panel */}
+          <div className="shrink-0 px-4 py-2.5 border-b border-neutral-200 bg-neutral-50 rounded-t-xl flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-neutral-500 font-medium">
+              {filtroEstado
+                ? `Mostrando clientes con documentos ${FILTROS.find((f) => f.key === filtroEstado)?.label.toLowerCase()}`
+                : `${listaFiltrada.length} clientes · ${countDocs(listaFiltrada)} archivos`}
+            </span>
+            {filtroEstado && (
+              <button
+                onClick={() => setFiltroEstado(null)}
+                className="text-[11px] px-2 py-0.5 rounded-full border border-neutral-300 text-neutral-500 hover:bg-neutral-100"
+              >
+                ✕ Quitar filtro
+              </button>
+            )}
           </div>
-        </div>
-        <div className="bg-yellow-50 rounded-xl border border-yellow-200 shadow-sm p-4 flex items-center gap-3">
-          <span className="text-2xl leading-none">⚠️</span>
-          <div>
-            <p className="text-[11px] text-yellow-600 font-semibold uppercase tracking-wider mb-0.5">Observados</p>
-            <p className="text-2xl font-bold text-yellow-700">{loading ? "…" : estadoCounts.OBSERVADO}</p>
-          </div>
-        </div>
-        <div className="bg-blue-50 rounded-xl border border-blue-200 shadow-sm p-4 flex items-center gap-3">
-          <span className="text-2xl leading-none">📤</span>
-          <div>
-            <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider mb-0.5">Sin revisar</p>
-            <p className="text-2xl font-bold text-blue-700">{loading ? "…" : estadoCounts.SUBIDO}</p>
-          </div>
-        </div>
-      </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-
-      {/* Tarjeta principal */}
-      <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-        {/* Pestañas */}
-        <div className="flex border-b border-neutral-200 bg-neutral-50 px-4 pt-2 gap-1">
-          {Object.entries(tabConfig).map(([key, cfg]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
-                tab === key
-                  ? `border-${cfg.color}-500 text-${cfg.color}-600 bg-white`
-                  : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
-              }`}
-            >
-              {cfg.icon} {cfg.label}
-              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
-                tab === key ? `bg-${cfg.color}-100 text-${cfg.color}-600` : "bg-neutral-200 text-neutral-500"
-              }`}>
-                {loading ? "…" : `${cfg.lista.length} · ${cfg.count} archivos`}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Contenido */}
-        <div className="p-4 min-h-[300px]">
-          {loading && (
-            <div className="py-20 text-center text-neutral-400 text-sm">
-              <div className="text-4xl mb-3">📂</div>
-              Cargando documentos…
-            </div>
-          )}
-
-          {!loading && activeTab.lista.length === 0 && (
-            <div className="py-16 text-center text-neutral-400 text-sm">
-              <div className="text-4xl mb-3">🔍</div>
-              {q ? "Sin resultados para esta búsqueda." : `No hay documentos de ${activeTab.label.toLowerCase()} aún.`}
-            </div>
-          )}
-
-          {!loading && activeTab.lista.length > 0 && (
-            <>
+          {/* Lista scrollable */}
+          <div className="flex-1 overflow-y-auto p-3 min-h-0">
+            {loading && (
+              <div className="py-20 text-center text-neutral-400 text-sm">
+                <div className="text-4xl mb-3">📂</div>
+                Cargando documentos…
+              </div>
+            )}
+            {!loading && listaFiltrada.length === 0 && (
+              <div className="py-16 text-center text-neutral-400 text-sm">
+                <div className="text-4xl mb-3">🔍</div>
+                {q || filtroEstado ? "Sin resultados para este filtro." : "No hay documentos aún."}
+              </div>
+            )}
+            {!loading && listaVisible.length > 0 && (
               <div className="space-y-0.5">
                 {listaVisible.map((entry) => {
-                  const id = entry[activeTab.idKey] ?? `null-${entry.nombre}`;
+                  const id = entry.id_cliente ?? entry.id_usuario ?? `null-${entry.nombre}`;
                   return (
                     <TreeNode
                       key={id}
@@ -296,31 +332,32 @@ export default function DocumentosBackoffice() {
                   );
                 })}
               </div>
+            )}
+          </div>
 
-              {totalPaginas > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-200">
-                  <span className="text-xs text-neutral-400">
-                    Página {pagina + 1} de {totalPaginas} · {activeTab.lista.length} {tab === "clientes" ? "clientes" : "usuarios"}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setPagina((p) => Math.max(0, p - 1))}
-                      disabled={pagina === 0}
-                      className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40"
-                    >
-                      ← Anterior
-                    </button>
-                    <button
-                      onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
-                      disabled={pagina >= totalPaginas - 1}
-                      className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40"
-                    >
-                      Siguiente →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
+          {/* Paginación fija al fondo */}
+          {!loading && totalPaginas > 1 && (
+            <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
+              <span className="text-xs text-neutral-400">
+                Página {pagina + 1} de {totalPaginas} · {listaFiltrada.length} clientes
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                  disabled={pagina === 0}
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-100 disabled:opacity-40"
+                >
+                  ← Anterior
+                </button>
+                <button
+                  onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+                  disabled={pagina >= totalPaginas - 1}
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 hover:bg-neutral-100 disabled:opacity-40"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
