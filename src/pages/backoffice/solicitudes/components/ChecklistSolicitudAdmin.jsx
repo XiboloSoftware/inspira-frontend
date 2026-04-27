@@ -142,7 +142,7 @@ export default function ChecklistSolicitudAdmin({
               return (
                 <div
                   key={it.id_solicitud_item}
-                  className={`border rounded-xl p-3 transition-all min-h-[88px] ${borderColor}`}
+                  className={`border rounded-xl p-3 transition-all ${borderColor}`}
                 >
                   {/* Header del item */}
                   <div className="flex justify-between items-start gap-2 mb-1.5">
