@@ -63,7 +63,6 @@ export default function PanelAsesoras() {
   const [filterEstado, setFilterEstado] = useState("");
   const [saving, setSaving]           = useState(false);
   const [delTarget, setDelTarget]     = useState(null);
-  const [driveUrlMap, setDriveUrlMap] = useState({});   // { _clienteId: url }
   const [panelPage, setPanelPage]     = useState(1);
   const PAGE_SIZE = 15;
 
@@ -78,17 +77,6 @@ export default function PanelAsesoras() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  // Resuelve Drive URLs en background al nivel de solicitud (Clientes → cliente → paquete)
-  useEffect(() => {
-    const allClients = SVC_KEYS.flatMap(s => data[s] || []);
-    const toResolve = allClients.filter(c => c._id && !driveUrlMap[c._id]);
-    toResolve.forEach(c => {
-      boGET(`/backoffice/panel-asesoras/${c._id}/drive-folder-url`)
-        .then(r => { if (r.ok && r.url) setDriveUrlMap(prev => ({ ...prev, [c._id]: r.url })); })
-        .catch(() => {});
-    });
-  }, [data]);
 
   /* ── Lista visible ── */
   const allItems = curTab === "all"
@@ -272,11 +260,10 @@ export default function PanelAsesoras() {
           <div className="flex flex-col gap-2">
             {pageVisible.map(c => {
               const key = keyFor(c);
-              const enriched = { ...c, driveUrl: driveUrlMap[c._id] || "" };
               return (
                 <ClienteCard
                   key={key}
-                  c={enriched}
+                  c={c}
                   isExp={expandedKey === key}
                   onToggle={() => setExpandedKey(expandedKey === key ? null : key)}
                   onEdit={(item) => { setEditTarget({ item, svc: item._svc }); setAddMode(false); }}
@@ -473,24 +460,32 @@ function DriveIcon({ size = 14 }) {
 }
 
 function CarpetaLinks({ c }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const r = await boGET(`/backoffice/panel-asesoras/${c._id}/drive-folder-url`);
+      if (r.ok && r.url) window.open(r.url, "_blank");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex gap-2 flex-wrap mt-2">
-      {c.driveUrl ? (
-        <a
-          href={c.driveUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-sm active:scale-95 transition-all duration-150 text-[11px] font-medium text-neutral-600 group-hover:text-neutral-900"
-        >
-          <DriveIcon size={13} />
-          <span className="group-hover:text-neutral-900 transition-colors">Drive ↗</span>
-        </a>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-100 bg-neutral-50 text-[11px] text-neutral-300 cursor-default select-none">
-          <DriveIcon size={13} />
-          <span>Drive</span>
+      <button
+        title="Abrir carpeta en Drive"
+        onClick={handleClick}
+        disabled={loading}
+        className="group flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-md active:scale-95 transition-all duration-150 shrink-0 disabled:opacity-50"
+      >
+        <DriveIcon size={12} />
+        <span className="text-neutral-500 group-hover:text-neutral-800 transition-colors font-medium">
+          {loading ? "…" : "Drive"}
         </span>
-      )}
+      </button>
     </div>
   );
 }
@@ -741,7 +736,18 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
   const [unis, setUnis]         = useState(() => item?.unis ? JSON.parse(JSON.stringify(item.unis)) : []);
   const [fases, setFases]       = useState(() => item?.fases ? JSON.parse(JSON.stringify(item.fases)) : mkFases());
   const [pendingStr, setPendingStr] = useState(() => (item?.pending || []).join("\n"));
-  const resolvedDriveUrl = item?.driveUrl || "";
+  const [driveLoading, setDriveLoading] = useState(false);
+
+  async function handleDriveOpen() {
+    if (driveLoading || !item?._id) return;
+    setDriveLoading(true);
+    try {
+      const r = await boGET(`/backoffice/panel-asesoras/${item._id}/drive-folder-url`);
+      if (r.ok && r.url) window.open(r.url, "_blank");
+    } finally {
+      setDriveLoading(false);
+    }
+  }
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
   function setFase(i, field, val) { setFases(f => f.map((x, idx) => idx === i ? { ...x, [field]: val } : x)); }
@@ -814,7 +820,7 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
         </label>
       </div>
 
-      {/* Carpeta + Drive (solo lectura) */}
+      {/* Carpeta + Drive */}
       <div className="grid grid-cols-2 gap-3">
         <label>
           <span className={lab}>Código carpeta</span>
@@ -822,14 +828,18 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
         </label>
         <div>
           <span className={lab}>Carpeta Drive</span>
-          {resolvedDriveUrl ? (
-            <a href={resolvedDriveUrl} target="_blank" rel="noreferrer"
-              className="group inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-sm active:scale-95 transition-all duration-150 text-[11px] font-medium text-neutral-600">
+          {isEdit ? (
+            <button
+              type="button"
+              onClick={handleDriveOpen}
+              disabled={driveLoading}
+              className="group inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-sm active:scale-95 transition-all duration-150 text-[11px] font-medium text-neutral-600 disabled:opacity-50"
+            >
               <DriveIcon size={13} />
-              <span>Abrir en Drive ↗</span>
-            </a>
+              <span>{driveLoading ? "Abriendo…" : "Abrir en Drive ↗"}</span>
+            </button>
           ) : (
-            <span className="block mt-1 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
+            <span className="block mt-1 text-xs text-neutral-400 italic">Guardar primero</span>
           )}
         </div>
       </div>
