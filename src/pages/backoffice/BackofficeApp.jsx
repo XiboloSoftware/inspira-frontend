@@ -19,7 +19,10 @@ import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("bo_sidebar_pinned_v2");
+    return saved === "true";
+  });
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     const saved = localStorage.getItem("bo_sidebar_pinned_v2");
     return saved === "true";
