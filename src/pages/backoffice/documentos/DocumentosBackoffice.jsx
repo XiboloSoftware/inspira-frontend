@@ -1,58 +1,10 @@
 // src/pages/backoffice/documentos/DocumentosBackoffice.jsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
 import { getUser, descargarZipCliente } from "./documentosUtils";
-import { TreeNode, SolicitudNode, DriveIcon } from "./DocumentosTree";
+import { TreeNode, SolicitudNode } from "./DocumentosTree";
 import { API_URL } from "./documentosUtils";
-
-function DriveToast({ state }) {
-  const visible = state !== "hidden";
-  const isError = state === "error";
-  return (
-    <div
-      className={`fixed top-5 left-1/2 z-[300] flex items-center gap-3 bg-white border shadow-2xl rounded-2xl px-5 py-3.5 transition-all duration-300 select-none pointer-events-none
-        ${visible ? "opacity-100 -translate-x-1/2 translate-y-0" : "opacity-0 -translate-x-1/2 -translate-y-3"}
-        ${isError ? "border-red-200" : "border-neutral-200"}`}
-    >
-      <DriveIcon size={22} />
-      <div>
-        <p className={`text-sm font-semibold ${isError ? "text-red-700" : "text-neutral-800"}`}>
-          {isError ? "No disponible en Drive" : "Abriendo en Drive…"}
-        </p>
-        <p className="text-xs text-neutral-400">
-          {isError ? "El archivo puede no estar sincronizado aún" : "Se abrirá en una nueva pestaña"}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function useDriveToast() {
-  const [toastState, setToastState] = useState("hidden");
-
-  useEffect(() => {
-    let timer;
-    const onOpen = () => {
-      clearTimeout(timer);
-      setToastState("opening");
-      timer = setTimeout(() => setToastState("hidden"), 3000);
-    };
-    const onError = () => {
-      clearTimeout(timer);
-      setToastState("error");
-      timer = setTimeout(() => setToastState("hidden"), 3000);
-    };
-    window.addEventListener("drive-opening", onOpen);
-    window.addEventListener("drive-error", onError);
-    return () => {
-      window.removeEventListener("drive-opening", onOpen);
-      window.removeEventListener("drive-error", onError);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  return toastState;
-}
+import { DriveToast, useDriveToast } from "../driveToast";
 
 async function abrirCarpetaCliente(idCliente) {
   window.dispatchEvent(new CustomEvent("drive-opening"));
