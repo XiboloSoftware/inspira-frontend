@@ -21,8 +21,8 @@ export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(() => {
-    const saved = localStorage.getItem("bo_sidebar_pinned");
-    return saved === null ? true : saved === "true";
+    const saved = localStorage.getItem("bo_sidebar_pinned_v2");
+    return saved === "true"; // default: false (overlay, sin espacio reservado)
   });
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem("bo_user");
@@ -46,7 +46,7 @@ export default function BackofficeApp() {
   function toggleSidebarPin() {
     setSidebarPinned((prev) => {
       const next = !prev;
-      localStorage.setItem("bo_sidebar_pinned", String(next));
+      localStorage.setItem("bo_sidebar_pinned_v2", String(next));
       if (!next) setSidebarOpen(false);
       return next;
     });

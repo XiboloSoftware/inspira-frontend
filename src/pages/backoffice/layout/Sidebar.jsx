@@ -71,21 +71,25 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
           {/* Botón pin — siempre visible cuando el sidebar está abierto */}
           <button
             onClick={onTogglePin}
-            title={pinned ? "Desanclar sidebar" : "Anclar sidebar aquí"}
-            className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-white/10 transition"
+            title={pinned ? "Desanclar sidebar" : "Fijar sidebar siempre visible"}
+            className={`flex items-center gap-1.5 px-2 h-7 rounded-lg hover:bg-white/10 transition text-[11px] font-medium ${pinned ? "text-white" : "text-white/60"}`}
           >
             {pinned ? (
-              /* Anclado: icono "desanclar" — panel con flecha izquierda */
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeLinejoin="round" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v18M13 9l-3 3 3 3" />
-              </svg>
+              <>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v18M13 9l-3 3 3 3" />
+                </svg>
+                <span className="hidden sm:inline">Fijo</span>
+              </>
             ) : (
-              /* No anclado: icono "anclar" — panel con flecha derecha */
-              <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeLinejoin="round" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v18M11 9l3 3-3 3" />
-              </svg>
+              <>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v18M11 9l3 3-3 3" />
+                </svg>
+                <span className="hidden sm:inline">Fijar</span>
+              </>
             )}
           </button>
 
