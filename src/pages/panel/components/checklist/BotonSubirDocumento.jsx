@@ -33,16 +33,25 @@ export default function BotonSubirDocumento({ solicitudId, item, onUploaded }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1 shrink-0">
-      <label className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border border-neutral-300 bg-white cursor-pointer hover:bg-neutral-50 hover:border-neutral-400 transition text-neutral-700 whitespace-nowrap">
+    <div className="flex flex-col items-end gap-1.5 shrink-0">
+      <label
+        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border-2 cursor-pointer transition-all whitespace-nowrap select-none ${
+          subiendo
+            ? "border-neutral-200 bg-neutral-50 text-neutral-400 cursor-wait"
+            : "border-[#023A4B] bg-[#023A4B] text-white hover:bg-[#035670] hover:border-[#035670] active:scale-95"
+        }`}
+      >
         {subiendo ? (
           <>
-            <span className="w-2.5 h-2.5 border border-neutral-400 border-t-transparent rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-neutral-300 border-t-transparent rounded-full animate-spin" />
             Subiendo…
           </>
         ) : (
           <>
-            ↑ Subir
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 12l-4-4-4 4M12 8v8" />
+            </svg>
+            Subir archivo
           </>
         )}
         <input
@@ -55,7 +64,7 @@ export default function BotonSubirDocumento({ solicitudId, item, onUploaded }) {
       </label>
 
       {error && (
-        <span className="text-[10px] text-red-500 text-right max-w-[180px]">{error}</span>
+        <span className="text-xs text-red-500 text-right max-w-[200px] leading-snug">{error}</span>
       )}
     </div>
   );

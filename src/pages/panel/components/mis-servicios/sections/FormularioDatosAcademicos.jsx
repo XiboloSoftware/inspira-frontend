@@ -16,54 +16,72 @@ export default function FormularioDatosAcademicos({
   onToggle,
   hasData,
 }) {
-  const labelBotonToggle = collapsed
-    ? hasData
-      ? "Modificar datos"
-      : "Ingresar datos"
-    : "Ocultar formulario";
-
   const estadoLabel = hasData ? "Datos guardados" : "Pendiente de completar";
   const estadoColor = hasData
-    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-    : "bg-amber-50 text-amber-700 border-amber-100";
+    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+    : "bg-amber-50 text-amber-700 border-amber-200";
+  const estadoDot = hasData ? "bg-emerald-500" : "bg-amber-400";
 
   return (
-    <section className="border border-neutral-200 rounded-lg p-3 h-full flex flex-col">
-      {/* HEADER FIJO */}
-      <div className="shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-          <h3 className="text-sm font-semibold text-neutral-900">
-            3. Formulario de datos académicos
-          </h3>
+    <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+      {/* HEADER */}
+      <div className="px-6 pt-5 pb-4 border-b border-neutral-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-7 h-7 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
+                <span className="text-white text-sm font-bold">3</span>
+              </div>
+              <h3 className="text-base font-bold text-neutral-900">
+                Formulario de datos académicos
+              </h3>
+            </div>
+            <p className="text-sm text-neutral-500 ml-9">
+              {collapsed && hasData
+                ? "Haz clic en "Modificar datos" para actualizar la información enviada."
+                : collapsed
+                ? "Completa este formulario para personalizar tu informe de búsqueda."
+                : "Completa todos los campos y guarda los cambios."}
+            </p>
+          </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${estadoColor}`}>
+          <div className="flex items-center gap-3 ml-9 sm:ml-0">
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${estadoColor}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${estadoDot}`} />
               {estadoLabel}
             </span>
 
             <button
               type="button"
               onClick={onToggle}
-              className="text-[11px] px-3 py-1.5 rounded-md border border-[#023A4B] text-[#023A4B] hover:bg-[#023A4B] hover:text-white transition"
+              className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border-2 border-[#023A4B] text-[#023A4B] hover:bg-[#023A4B] hover:text-white transition-all active:scale-95"
             >
-              {labelBotonToggle}
+              {collapsed ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                  </svg>
+                  {hasData ? "Modificar datos" : "Ingresar datos"}
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                  </svg>
+                  Ocultar formulario
+                </>
+              )}
             </button>
           </div>
         </div>
-
-        {collapsed && (
-          <p className="text-xs text-neutral-500 mt-1">
-            {hasData
-              ? "Haz clic en “Modificar datos” para revisar o actualizar la información que ya enviaste."
-              : "Haz clic en “Ingresar datos” para completar este formulario. Esto ayudará a personalizar tu informe."}
-          </p>
-        )}
       </div>
 
-      {/* CUERPO (SCROLL INTERNO CUANDO ESTÁ ABIERTO) */}
+      {/* CUERPO DEL FORMULARIO */}
       {!collapsed && (
-        <div className="flex-1 min-h-0 overflow-auto pr-1">
-          <form className="space-y-6 mt-3" onSubmit={handleSubmitFormulario}>
+        <div className="px-6 py-5">
+          <form className="space-y-6" onSubmit={handleSubmitFormulario}>
             <SeccionPerfilCuantitativo formData={formData} setFormData={setFormData} />
             <SeccionExperiencia formData={formData} setFormData={setFormData} />
             <SeccionInvestigacion formData={formData} setFormData={setFormData} />
@@ -72,13 +90,25 @@ export default function FormularioDatosAcademicos({
             <SeccionPreferenciasMaster formData={formData} setFormData={setFormData} />
             <SeccionComentarioEspecial formData={formData} setFormData={setFormData} />
 
-            <div className="flex justify-end pt-1">
+            <div className="flex justify-end pt-2 border-t border-neutral-100">
               <button
                 type="submit"
                 disabled={savingForm}
-                className="text-xs px-3 py-1.5 rounded-md bg-[#023A4B] text-white hover:bg-[#054256] disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
-                {savingForm ? "Guardando..." : "Guardar formulario"}
+                {savingForm ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Guardando…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Guardar formulario
+                  </>
+                )}
               </button>
             </div>
           </form>

@@ -134,27 +134,43 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   }
 
   const hasFormData = Object.keys(formData || {}).length > 0;
-
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
+      {/* Botón volver */}
       <button
         onClick={onVolver}
-        className="text-xs text-[#023A4B] hover:underline font-medium"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-[#023A4B] hover:text-[#046C8C] transition-colors group"
       >
-        ← Volver a mis servicios
+        <svg
+          className="w-4 h-4 transition-transform group-hover:-translate-x-0.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Volver a mis servicios
       </button>
 
-      <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4">
+      {/* Tarjeta principal */}
+      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6 sm:p-8">
         {loading && (
-          <div className="flex items-center gap-2 py-6 justify-center text-neutral-400">
-            <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Cargando…</span>
+          <div className="flex flex-col items-center gap-3 py-16 text-neutral-400">
+            <div className="w-8 h-8 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Cargando tu solicitud…</span>
           </div>
         )}
-        {error && <p className="text-red-600 text-sm py-4">{error}</p>}
+
+        {error && (
+          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+            <span className="text-red-500 text-lg">⚠</span>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
 
         {!loading && !error && detalle && (
           <>
@@ -164,42 +180,34 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            {/* VISADO: 3 bloques */}
+            {/* VISADO: bloques apilados */}
             {esVisado ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                <div className="xl:h-[480px]">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                <div className="xl:col-span-2">
                   <ChecklistDocumentos
                     checklist={checklist}
                     cargarTodo={cargarTodo}
                     idSolicitud={idSolicitud}
                   />
                 </div>
-                <div className="xl:h-[480px]">
+                <div>
                   <InstructivosPlantillas instructivos={instructivos} />
                 </div>
-                <div className="col-span-full">
+                <div className="xl:col-span-2">
                   <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
                 </div>
               </div>
             ) : (
               /* MASTER: flujo completo */
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                {/* Checklist: ancho completo */}
-                <div className="xl:col-span-2 xl:h-[460px]">
-                  <ChecklistDocumentos
-                    checklist={checklist}
-                    cargarTodo={cargarTodo}
-                    idSolicitud={idSolicitud}
-                  />
-                </div>
+              <div className="space-y-5">
+                <ChecklistDocumentos
+                  checklist={checklist}
+                  cargarTodo={cargarTodo}
+                  idSolicitud={idSolicitud}
+                />
 
-                {/* Instructivos */}
-                <div className="xl:h-[400px]">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                   <InstructivosPlantillas instructivos={instructivos} />
-                </div>
-
-                {/* Formulario académico */}
-                <div className="xl:h-[400px]">
                   <FormularioDatosAcademicos
                     formData={formData}
                     setFormData={setFormData}
@@ -211,37 +219,26 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   />
                 </div>
 
-                {/* Informe de búsqueda */}
-                <div className="xl:col-span-2 xl:h-[360px]">
-                  <InformeBusqueda
-                    idSolicitud={idSolicitud}
-                    informe={{
-                      informe_nombre_original: detalle.informe_nombre_original,
-                      informe_fecha_subida: detalle.informe_fecha_subida,
-                    }}
-                  />
-                </div>
+                <InformeBusqueda
+                  idSolicitud={idSolicitud}
+                  informe={{
+                    informe_nombre_original: detalle.informe_nombre_original,
+                    informe_fecha_subida: detalle.informe_fecha_subida,
+                  }}
+                />
 
-                <div className="col-span-full">
-                  <EleccionMastersCliente
-                    elecciones={elecciones}
-                    setElecciones={setElecciones}
-                    onGuardar={handleGuardarElecciones}
-                    saving={savingElecciones}
-                  />
-                </div>
+                <EleccionMastersCliente
+                  elecciones={elecciones}
+                  setElecciones={setElecciones}
+                  onGuardar={handleGuardarElecciones}
+                  saving={savingElecciones}
+                />
 
-                <div className="col-span-full">
-                  <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
-                </div>
+                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
 
-                <div className="col-span-full">
-                  <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-                </div>
+                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
 
-                <div className="col-span-full">
-                  <CierreServicioMasterCliente idSolicitud={idSolicitud} />
-                </div>
+                <CierreServicioMasterCliente idSolicitud={idSolicitud} />
               </div>
             )}
           </>
