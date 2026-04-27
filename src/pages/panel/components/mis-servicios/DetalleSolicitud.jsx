@@ -135,15 +135,17 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     // Ocupa toda la altura disponible, sin scroll externo
     <div className="flex flex-col h-full min-h-0">
 
-      {/* Botón volver — no crece */}
+      {/* Botón volver — primario, compacto, no se estira */}
       <button
         onClick={onVolver}
-        className="shrink-0 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-[#023A4B] px-3.5 py-2 rounded-xl border border-neutral-200 hover:border-[#023A4B]/30 bg-white hover:bg-[#023A4B]/5 shadow-sm transition-all group mb-3"
+        className="shrink-0 self-start inline-flex items-center gap-2.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm mb-3 group"
       >
-        <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-        </svg>
-        Volver a mis servicios
+        <span className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
+          <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+        </span>
+        Mis servicios
       </button>
 
       {/* Encabezado — se oculta cuando hay una sección abierta */}
@@ -171,15 +173,16 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       {!loading && !error && detalle && (
         <AccordionContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
           {accordionOpenId !== null && (
+            {/* Botón secundario — claramente diferente del primario */}
             <button
               type="button"
               onClick={() => setAccordionOpenId(null)}
-              className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-[#023A4B] px-2.5 py-1.5 rounded-lg border border-neutral-200 hover:border-[#023A4B]/30 bg-white hover:bg-[#023A4B]/5 shadow-sm transition-all group mb-1"
+              className="shrink-0 self-start inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all mb-2 group"
             >
-              <svg className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
               </svg>
-              Todas las secciones
+              Ver todas las secciones
             </button>
           )}
           <div className={accordionOpenId !== null ? "flex-1 min-h-0 flex flex-col" : "flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1"}>
