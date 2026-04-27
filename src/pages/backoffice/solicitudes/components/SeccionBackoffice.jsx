@@ -79,7 +79,7 @@ export default function SeccionBackoffice({
       </button>
 
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4">
+        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100vh-220px)]">
           {children}
         </div>
       )}
