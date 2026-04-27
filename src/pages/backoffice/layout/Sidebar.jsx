@@ -50,7 +50,7 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;
     e.preventDefault();
     navigate(href);
-    if (!pinned) onClose?.();
+    // El cierre lo gestiona onPop en BackofficeApp según el estado pin
   }
 
   return (
@@ -81,8 +81,8 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
             {/* Pin/Unpin */}
             <button
               onClick={onTogglePin}
-              title={pinned ? "Desanclar (se cierra al navegar)" : "Fijar (no se cierra al navegar)"}
-              className={`flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-white/10 transition text-[11px] font-medium ${pinned ? "text-white" : "text-white/50"}`}
+              title={pinned ? "Desanclar — se cerrará al navegar" : "Fijar — no se cerrará al navegar"}
+              className={`flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-white/10 transition text-[11px] font-medium ${pinned ? "text-emerald-300" : "text-white/50"}`}
             >
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -92,6 +92,17 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
                 }
               </svg>
               <span>{pinned ? "Fijo" : "Fijar"}</span>
+            </button>
+
+            {/* Cerrar sidebar */}
+            <button
+              onClick={onClose}
+              aria-label="Cerrar menú"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>

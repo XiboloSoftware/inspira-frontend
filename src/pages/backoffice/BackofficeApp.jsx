@@ -1,5 +1,5 @@
 // src/pages/backoffice/BackofficeApp.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sidebar from "./layout/Sidebar";
 import Topbar from "./layout/Topbar";
 import ProtectedRoute from "./layout/ProtectedRoute";
@@ -22,8 +22,12 @@ export default function BackofficeApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     const saved = localStorage.getItem("bo_sidebar_pinned_v2");
-    return saved === "true"; // default: false (overlay, sin espacio reservado)
+    return saved === "true";
   });
+  // Ref siempre actualizado para leerlo dentro del listener sin stale closure
+  const sidebarPinnedRef = useRef(false);
+  sidebarPinnedRef.current = sidebarPinned;
+
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem("bo_user");
     return u ? JSON.parse(u) : null;
@@ -32,7 +36,8 @@ export default function BackofficeApp() {
   useEffect(() => {
     const onPop = () => {
       setPath(window.location.pathname);
-      setSidebarOpen(false);
+      // Solo cierra el sidebar al navegar si NO está fijado
+      if (!sidebarPinnedRef.current) setSidebarOpen(false);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -86,12 +91,7 @@ export default function BackofficeApp() {
 
         {/* Panel derecho: header fijo y contenido scrollable */}
         <div className="flex-1 flex flex-col h-full bg-white min-w-0">
-          <Topbar
-            user={user}
-            onLogout={logout}
-            sidebarOpen={sidebarOpen}
-            onMenuToggle={() => setSidebarOpen(o => !o)}
-          />
+          <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} />
 
           <main className="flex-1 flex flex-col overflow-y-auto">
             {/* Rutas internas */}
