@@ -83,22 +83,18 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     return Math.round((done * 100) / checklist.length);
   }, [checklist]);
 
-  async function guardarFormulario(conAlerta = true) {
+  async function handleSubmitFormulario(e) {
+    e.preventDefault();
     setSavingForm(true);
     try {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
-      if (!r.ok) { if (conAlerta) window.alert("No se pudo guardar."); return; }
-      if (conAlerta) window.alert("Datos guardados.");
+      if (!r.ok) { window.alert("No se pudo guardar."); return; }
+      window.alert("Datos guardados.");
     } catch {
-      if (conAlerta) window.alert("Error al guardar.");
+      window.alert("Error al guardar.");
     } finally {
       setSavingForm(false);
     }
-  }
-
-  async function handleSubmitFormulario(e) {
-    e.preventDefault();
-    await guardarFormulario(true);
   }
 
   async function handleGuardarElecciones() {
@@ -195,7 +191,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               formData={formData}
               setFormData={setFormData}
               handleSubmitFormulario={handleSubmitFormulario}
-              onGuardarSilencioso={() => guardarFormulario(false)}
               savingForm={savingForm}
               hasData={hasFormData}
             />

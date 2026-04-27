@@ -174,7 +174,7 @@ function Input({ value, onChange, placeholder, type = "text", ...rest }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function FormularioDatosAcademicos({
-  formData, setFormData, handleSubmitFormulario, onGuardarSilencioso,
+  formData, setFormData, handleSubmitFormulario,
   savingForm, hasData,
 }) {
   const [step, setStep] = useState(0);
@@ -814,19 +814,9 @@ export default function FormularioDatosAcademicos({
 
           {/* Card del paso */}
           <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm">
-            <div className="px-4 sm:px-5 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="text-xl flex-shrink-0">{STEPS[step].icon}</span>
-                <h3 className="text-sm font-bold text-[#023A4B] truncate">{STEPS[step].title}</h3>
-              </div>
-              <button type="button" onClick={onGuardarSilencioso} disabled={savingForm}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-[#023A4B] hover:bg-neutral-50 rounded-lg disabled:opacity-40 transition border border-transparent hover:border-neutral-200 flex-shrink-0">
-                {savingForm
-                  ? <span className="w-3 h-3 border-2 border-neutral-300 border-t-[#023A4B] rounded-full animate-spin" />
-                  : <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                }
-                <span className="hidden sm:inline">{savingForm ? "Guardando…" : "Guardar"}</span>
-              </button>
+            <div className="px-4 sm:px-5 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center gap-2.5 min-w-0">
+              <span className="text-xl flex-shrink-0">{STEPS[step].icon}</span>
+              <h3 className="text-sm font-bold text-[#023A4B] truncate">{STEPS[step].title}</h3>
             </div>
             <div className="px-4 sm:px-5 py-5">
               {renderStep()}
