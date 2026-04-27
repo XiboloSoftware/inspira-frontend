@@ -42,25 +42,27 @@ export default function ChecklistSolicitudAdmin({
   }
 
   async function cambiarRevision(doc, nuevoEstado) {
-    if (!doc) return;
+    if (!doc) return false;
     let comentario = "";
     if (nuevoEstado === "OBSERVADO") {
       comentario = window.prompt(
         "Comentario para el cliente (por qué se observa el documento):",
         doc.comentario_revision || ""
       );
-      if (comentario === null) return;
+      if (comentario === null) return false;
     }
     try {
       const r = await boPATCH(`/api/admin/documentos/${doc.id_documento}/revision`, {
         estado_revision: nuevoEstado,
         comentario_revision: comentario || null,
       });
-      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo actualizar el estado del documento."); return; }
+      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo actualizar el estado del documento."); return false; }
       await recargar();
+      return true;
     } catch (e) {
       console.error(e);
       window.alert("Error al actualizar el documento.");
+      return false;
     }
   }
 
@@ -258,7 +260,14 @@ export default function ChecklistSolicitudAdmin({
         </div>
       ))}
     </div>
-    {viewingDoc && <DocViewer doc={viewingDoc} onClose={() => setViewingDoc(null)} />}
+    {viewingDoc && (
+      <DocViewer
+        doc={viewingDoc}
+        onClose={() => setViewingDoc(null)}
+        onAprobar={async () => { const ok = await cambiarRevision(viewingDoc, "APROBADO"); if (ok) setViewingDoc(null); }}
+        onObservar={async () => { const ok = await cambiarRevision(viewingDoc, "OBSERVADO"); if (ok) setViewingDoc(null); }}
+      />
+    )}
     </>
   );
 }

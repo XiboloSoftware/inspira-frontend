@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento } from "./documentosUtils";
 
 // fetchUrl opcional: sobreescribe la URL de descarga (para informes, justificantes, etc.)
-export default function DocViewer({ doc, onClose, fetchUrl }) {
+export default function DocViewer({ doc, onClose, fetchUrl, onAprobar, onObservar }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [blobUrl, setBlobUrl] = useState(null);
@@ -129,6 +129,16 @@ export default function DocViewer({ doc, onClose, fetchUrl }) {
           <button onClick={() => descargarDocumento(doc)} className="text-[11px] px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0">
             Descargar
           </button>
+          {onAprobar && (
+            <button onClick={onAprobar} className="text-[11px] px-2 py-1 rounded border border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition shrink-0">
+              Aprobar
+            </button>
+          )}
+          {onObservar && (
+            <button onClick={onObservar} className="text-[11px] px-2 py-1 rounded border border-amber-400 text-amber-700 hover:bg-amber-50 transition shrink-0">
+              Observar
+            </button>
+          )}
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700 text-xl leading-none w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-100 shrink-0" aria-label="Cerrar">
             ×
           </button>
