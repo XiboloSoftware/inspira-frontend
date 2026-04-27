@@ -49,7 +49,7 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
       titulo="Documentos requeridos"
       subtitulo={subtitulo}
       estado={estadoGlobal}
-      defaultOpen={false}
+      sectionId="1"
     >
       {Object.keys(grupos).length === 0 && (
         <p className="text-sm text-neutral-400 py-4 text-center">

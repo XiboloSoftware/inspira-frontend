@@ -9,6 +9,7 @@ export default function InstructivosPlantillas({ instructivos }) {
       numero="2"
       titulo="Instructivos y plantillas"
       subtitulo="Descarga la guía paso a paso de tu servicio."
+      sectionId="2"
     >
       {lista.length === 0 ? (
         <div className="py-6 text-center">

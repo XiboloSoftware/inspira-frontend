@@ -1,6 +1,7 @@
 // inspira-frontend/src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
+import { AccordionContext } from "./sections/AccordionContext";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
@@ -21,7 +22,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
-  const [formCollapsed, setFormCollapsed] = useState(true);
+  const [accordionOpenId, setAccordionOpenId] = useState(null);
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
 
@@ -47,7 +48,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       } else {
         setFormData({});
       }
-      setFormCollapsed(true);
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
       if (rInst.ok) {
@@ -90,7 +90,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
-      setFormCollapsed(true);
+      setAccordionOpenId(null);
     } catch {
       window.alert("Error al guardar.");
     } finally {
@@ -168,45 +168,45 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
       {/* Lista de secciones — crece y scrollea internamente */}
       {!loading && !error && detalle && (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
-          <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
+        <AccordionContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
+            <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
-          <InstructivosPlantillas instructivos={instructivos} />
+            <InstructivosPlantillas instructivos={instructivos} />
 
-          <FormularioDatosAcademicos
-            formData={formData}
-            setFormData={setFormData}
-            handleSubmitFormulario={handleSubmitFormulario}
-            savingForm={savingForm}
-            collapsed={formCollapsed}
-            onToggle={() => setFormCollapsed((v) => !v)}
-            hasData={hasFormData}
-          />
+            <FormularioDatosAcademicos
+              formData={formData}
+              setFormData={setFormData}
+              handleSubmitFormulario={handleSubmitFormulario}
+              savingForm={savingForm}
+              hasData={hasFormData}
+            />
 
-          <InformeBusqueda
-            idSolicitud={idSolicitud}
-            informe={{
-              informe_nombre_original: detalle.informe_nombre_original,
-              informe_fecha_subida: detalle.informe_fecha_subida,
-            }}
-          />
+            <InformeBusqueda
+              idSolicitud={idSolicitud}
+              informe={{
+                informe_nombre_original: detalle.informe_nombre_original,
+                informe_fecha_subida: detalle.informe_fecha_subida,
+              }}
+            />
 
-          {!esVisado && (
-            <>
-              <EleccionMastersCliente
-                elecciones={elecciones}
-                setElecciones={setElecciones}
-                onGuardar={handleGuardarElecciones}
-                saving={savingElecciones}
-              />
-              <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
-            </>
-          )}
+            {!esVisado && (
+              <>
+                <EleccionMastersCliente
+                  elecciones={elecciones}
+                  setElecciones={setElecciones}
+                  onGuardar={handleGuardarElecciones}
+                  saving={savingElecciones}
+                />
+                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+              </>
+            )}
 
-          <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+            <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
 
-          {!esVisado && <CierreServicioMasterCliente idSolicitud={idSolicitud} />}
-        </div>
+            {!esVisado && <CierreServicioMasterCliente idSolicitud={idSolicitud} />}
+          </div>
+        </AccordionContext.Provider>
       )}
     </div>
   );

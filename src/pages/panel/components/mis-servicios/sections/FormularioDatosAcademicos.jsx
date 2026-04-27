@@ -175,7 +175,7 @@ function Input({ value, onChange, placeholder, type = "text", ...rest }) {
 
 export default function FormularioDatosAcademicos({
   formData, setFormData, handleSubmitFormulario,
-  savingForm, collapsed, onToggle, hasData,
+  savingForm, hasData,
 }) {
   const [step, setStep] = useState(0);
 
@@ -768,8 +768,7 @@ export default function FormularioDatosAcademicos({
       titulo="Formulario de datos académicos"
       subtitulo={subtitulo}
       estado={estado}
-      open={!collapsed}
-      onToggle={onToggle}
+      sectionId="3"
     >
       <form onSubmit={handleSubmitFormulario}>
 

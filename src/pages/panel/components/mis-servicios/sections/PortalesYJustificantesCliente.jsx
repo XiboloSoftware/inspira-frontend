@@ -118,6 +118,7 @@ export default function PortalesYJustificantesCliente({ idSolicitud }) {
       numero="7"
       titulo="Portales, claves y justificantes"
       subtitulo={subtitulo}
+      sectionId="7"
     >
       {loading && (
         <div className="flex items-center gap-2 text-neutral-400 py-2">

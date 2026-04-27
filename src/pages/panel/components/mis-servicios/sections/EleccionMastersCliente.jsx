@@ -34,6 +34,7 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
       titulo="Elección de másteres"
       subtitulo={subtitulo}
       estado={estado}
+      sectionId="5"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">

@@ -45,6 +45,7 @@ export default function CierreServicioMasterCliente({ idSolicitud }) {
       numero="8"
       titulo="Cierre de servicio y siguientes pasos"
       subtitulo={subtitulo}
+      sectionId="8"
     >
       {loading && (
         <div className="flex items-center gap-2 text-neutral-400 py-2">

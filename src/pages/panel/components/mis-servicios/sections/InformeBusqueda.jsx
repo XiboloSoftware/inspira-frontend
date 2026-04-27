@@ -47,6 +47,7 @@ export default function InformeBusqueda({ idSolicitud, informe }) {
       titulo="Informe de búsqueda de másteres"
       subtitulo={subtitulo}
       estado={estado}
+      sectionId="4"
     >
       {!disponible ? (
         <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">

@@ -51,6 +51,7 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
       numero="6"
       titulo="Programación de postulaciones"
       subtitulo={subtitulo}
+      sectionId="6"
     >
       {loading && (
         <div className="flex items-center gap-2 text-neutral-400 py-2">

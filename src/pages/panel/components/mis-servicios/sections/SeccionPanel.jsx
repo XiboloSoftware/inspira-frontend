@@ -1,5 +1,6 @@
 // src/pages/panel/components/mis-servicios/sections/SeccionPanel.jsx
 import { useState } from "react";
+import { useAccordion } from "./AccordionContext";
 
 const ESTADO_CFG = {
   pendiente:  { label: "Pendiente",  bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
@@ -14,15 +15,25 @@ export default function SeccionPanel({
   estado,
   children,
   defaultOpen = false,
+  sectionId,
   // modo controlado opcional
   open: openProp,
   onToggle: onToggleProp,
 }) {
   const [openInternal, setOpenInternal] = useState(defaultOpen);
+  const accordion = useAccordion();
 
-  const controlled = openProp !== undefined;
-  const open = controlled ? openProp : openInternal;
-  const toggle = controlled ? onToggleProp : () => setOpenInternal((v) => !v);
+  let open, toggle;
+  if (sectionId && accordion) {
+    open = accordion.openId === sectionId;
+    toggle = () => accordion.setOpenId(open ? null : sectionId);
+  } else if (openProp !== undefined) {
+    open = openProp;
+    toggle = onToggleProp;
+  } else {
+    open = openInternal;
+    toggle = () => setOpenInternal((v) => !v);
+  }
 
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
@@ -66,7 +77,7 @@ export default function SeccionPanel({
       </button>
 
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4">
+        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[55vh]">
           {children}
         </div>
       )}
