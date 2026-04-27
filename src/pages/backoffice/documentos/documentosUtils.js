@@ -56,4 +56,44 @@ export async function descargarDocumento(doc) {
   }
 }
 
+export async function descargarInforme(informe) {
+  const token = localStorage.getItem("bo_token");
+  try {
+    const r = await fetch(
+      `${API_URL}/api/admin/solicitudes/${informe.id_solicitud}/informe`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) { alert("No se pudo descargar el informe"); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = informe.nombre_original || "informe";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert("Error al descargar el informe");
+  }
+}
+
+export async function descargarJustificante(j) {
+  const token = localStorage.getItem("bo_token");
+  try {
+    const r = await fetch(
+      `${API_URL}/api/portales/justificantes/${j.id_justificante}/descargar`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) { alert("No se pudo descargar el justificante"); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = j.nombre_original || "justificante";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert("Error al descargar el justificante");
+  }
+}
+
 export { API_URL };

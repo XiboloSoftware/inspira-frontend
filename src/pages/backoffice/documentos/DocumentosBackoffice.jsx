@@ -6,7 +6,16 @@ import { TreeNode, SolicitudNode } from "./DocumentosTree";
 
 function countDocs(lista) {
   return lista.reduce(
-    (a, c) => a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
+    (a, c) =>
+      a +
+      c.solicitudes.reduce(
+        (b, s) =>
+          b +
+          s.items.reduce((c2, it) => c2 + it.documentos.length, 0) +
+          (s.informe ? 1 : 0) +
+          (s.justificantes?.length || 0),
+        0
+      ),
     0
   );
 }
