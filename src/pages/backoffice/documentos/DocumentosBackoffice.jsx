@@ -37,22 +37,8 @@ function countByEstado(lista) {
   return counts;
 }
 
-function hasDocWithEstado(entry, filtro) {
-  for (const s of entry.solicitudes) {
-    for (const it of s.items) {
-      for (const doc of it.documentos) {
-        if (filtro === "SUBIDO") {
-          if (doc.estado_revision !== "APROBADO" && doc.estado_revision !== "OBSERVADO") return true;
-        } else {
-          if (doc.estado_revision === filtro) return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-function filtrarLista(lista, q) {
+// Filtro por texto: busca en nombre de doc, item, solicitud, cliente
+function filtrarPorTexto(lista, q) {
   if (!q) return lista;
   return lista
     .map((c) => ({
@@ -79,6 +65,34 @@ function filtrarLista(lista, q) {
     .filter((c) => c.solicitudes.length > 0);
 }
 
+// Filtro profundo por estado: muestra solo los documentos con ese estado
+function filtrarPorEstado(lista, filtro) {
+  if (!filtro) return lista;
+  return lista
+    .map((c) => ({
+      ...c,
+      solicitudes: c.solicitudes
+        .map((s) => ({
+          ...s,
+          informe: undefined,
+          justificantes: undefined,
+          items: s.items
+            .map((it) => ({
+              ...it,
+              documentos: it.documentos.filter((doc) => {
+                if (filtro === "SUBIDO") {
+                  return doc.estado_revision !== "APROBADO" && doc.estado_revision !== "OBSERVADO";
+                }
+                return doc.estado_revision === filtro;
+              }),
+            }))
+            .filter((it) => it.documentos.length > 0),
+        }))
+        .filter((s) => s.items.length > 0),
+    }))
+    .filter((c) => c.solicitudes.length > 0);
+}
+
 function eliminarDocDeEstructura(lista, idDocumento) {
   return lista.map((entry) => ({
     ...entry,
@@ -92,46 +106,23 @@ function eliminarDocDeEstructura(lista, idDocumento) {
   }));
 }
 
+function entryId(entry) {
+  return entry.id_cliente ?? entry.id_usuario ?? `null-${entry.nombre}`;
+}
+
 const POR_PAGINA = 20;
 
 const FILTROS = [
-  {
-    key: "APROBADO",
-    label: "Aprobados",
-    icon: "✅",
-    bg: "bg-green-50",
-    border: "border-green-200",
-    text: "text-green-700",
-    subtext: "text-green-600",
-    activeBg: "bg-green-500",
-    activeBorder: "border-green-600",
-    activeText: "text-white",
-  },
-  {
-    key: "OBSERVADO",
-    label: "Observados",
-    icon: "⚠️",
-    bg: "bg-yellow-50",
-    border: "border-yellow-200",
-    text: "text-yellow-700",
-    subtext: "text-yellow-600",
-    activeBg: "bg-yellow-500",
-    activeBorder: "border-yellow-600",
-    activeText: "text-white",
-  },
-  {
-    key: "SUBIDO",
-    label: "Sin revisar",
-    icon: "📤",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    text: "text-blue-700",
-    subtext: "text-blue-600",
-    activeBg: "bg-blue-500",
-    activeBorder: "border-blue-600",
-    activeText: "text-white",
-  },
+  { key: "APROBADO", label: "Aprobados", icon: "✅", color: "green" },
+  { key: "OBSERVADO", label: "Observados", icon: "⚠️", color: "yellow" },
+  { key: "SUBIDO",    label: "Sin revisar", icon: "📤", color: "blue" },
 ];
+
+const COLOR = {
+  green:  { card: "bg-green-50 border-green-200",  text: "text-green-700",  sub: "text-green-600",  active: "bg-green-500 border-green-600 text-white ring-green-400" },
+  yellow: { card: "bg-yellow-50 border-yellow-200", text: "text-yellow-700", sub: "text-yellow-600", active: "bg-yellow-500 border-yellow-600 text-white ring-yellow-400" },
+  blue:   { card: "bg-blue-50 border-blue-200",    text: "text-blue-700",   sub: "text-blue-600",   active: "bg-blue-500 border-blue-600 text-white ring-blue-400" },
+};
 
 export default function DocumentosBackoffice() {
   const [clientes, setClientes] = useState([]);
@@ -166,19 +157,12 @@ export default function DocumentosBackoffice() {
     setInternos((prev) => eliminarDocDeEstructura(prev, idDocumento));
   }
 
-  function toggleExpand(id) {
-    setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
   const todos = [...clientes, ...internos].sort((a, b) =>
     (a.nombre || "").localeCompare(b.nombre || "")
   );
 
   const q = busqueda.toLowerCase().trim();
-  let listaFiltrada = filtrarLista(todos, q);
-  if (filtroEstado) {
-    listaFiltrada = listaFiltrada.filter((e) => hasDocWithEstado(e, filtroEstado));
-  }
+  const listaFiltrada = filtrarPorEstado(filtrarPorTexto(todos, q), filtroEstado);
 
   useEffect(() => { setPagina(0); }, [busqueda, filtroEstado]);
 
@@ -187,12 +171,27 @@ export default function DocumentosBackoffice() {
   const totalPaginas = Math.ceil(listaFiltrada.length / POR_PAGINA);
   const listaVisible = listaFiltrada.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
 
+  // Expandir / contraer todo
+  const allExpanded =
+    listaVisible.length > 0 &&
+    listaVisible.every((e) => expandedMap[entryId(e)]);
+
+  function toggleExpandAll() {
+    if (allExpanded) {
+      setExpandedMap({});
+    } else {
+      const map = {};
+      listaFiltrada.forEach((e) => { map[entryId(e)] = true; });
+      setExpandedMap(map);
+    }
+  }
+
   function ExpandBtn({ id }) {
     return (
       <button
-        onClick={() => toggleExpand(id)}
-        title={expandedMap[id] ? "Contraer todo" : "Expandir todo"}
-        className={`w-5 h-5 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors shrink-0 leading-none ${
+        onClick={() => setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }))}
+        title={expandedMap[id] ? "Contraer" : "Expandir"}
+        className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors shrink-0 leading-none ${
           expandedMap[id]
             ? "border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100"
             : "border-indigo-400 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
@@ -203,13 +202,17 @@ export default function DocumentosBackoffice() {
     );
   }
 
+  const filtroActivo = FILTROS.find((f) => f.key === filtroEstado);
+
   return (
-    <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-7xl mx-auto" style={{ height: "calc(100vh - 64px)", overflow: "hidden" }}>
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+    // h-full ocupa exactamente el <main flex-1 overflow-y-auto> sin añadir scroll extra
+    <div className="h-full overflow-hidden flex flex-col p-4 sm:p-5 gap-3">
+
+      {/* ── Cabecera ────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Documentos</h1>
-          <p className="text-sm text-neutral-500">Gestión centralizada de archivos</p>
+          <h1 className="text-2xl font-bold text-neutral-900 leading-tight">Documentos</h1>
+          <p className="text-xs text-neutral-400">Gestión centralizada de archivos</p>
         </div>
         <div className="flex gap-2 items-center">
           <input
@@ -217,56 +220,62 @@ export default function DocumentosBackoffice() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, cliente, solicitud…"
-            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="border border-neutral-300 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <button onClick={cargar} title="Recargar" className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
+          <button
+            onClick={cargar}
+            title="Recargar"
+            className="p-1.5 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base"
+          >
             ↻
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="shrink-0 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        <div className="shrink-0 p-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      {/* Layout: sidebar + panel */}
+      {/* ── Layout: sidebar + panel ──────────────────────────────── */}
       <div className="flex gap-4 flex-1 min-h-0">
+
         {/* Sidebar */}
-        <div className="w-48 shrink-0 flex flex-col gap-3 overflow-y-auto">
+        <div className="w-44 shrink-0 flex flex-col gap-2.5 overflow-y-auto">
+
           {/* Total */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
-            <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
-            <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
-            <p className="text-[11px] text-neutral-400 mt-1">
-              {loading ? "" : `${listaFiltrada.length} clientes`}
-            </p>
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-3.5">
+            <p className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider mb-0.5">Total</p>
+            <p className="text-3xl font-bold text-neutral-800 leading-none">{loading ? "…" : totalDocs}</p>
+            <p className="text-[11px] text-neutral-400 mt-1">{loading ? "" : `${listaFiltrada.length} clientes`}</p>
           </div>
 
-          {/* Stats clickables = filtros */}
+          {/* Tarjetas de estado = filtros */}
           {FILTROS.map((f) => {
             const active = filtroEstado === f.key;
+            const c = COLOR[f.color];
             return (
               <button
                 key={f.key}
                 onClick={() => setFiltroEstado(active ? null : f.key)}
-                className={`rounded-xl border shadow-sm p-4 text-left transition-all ${
+                title={active ? "Quitar filtro" : `Filtrar por ${f.label.toLowerCase()}`}
+                className={`rounded-xl border shadow-sm p-3.5 text-left transition-all select-none ${
                   active
-                    ? `${f.activeBg} ${f.activeBorder} ring-2 ring-offset-1 ring-${f.key === "APROBADO" ? "green" : f.key === "OBSERVADO" ? "yellow" : "blue"}-400`
-                    : `${f.bg} ${f.border} hover:brightness-95`
+                    ? `${c.active} ring-2 ring-offset-1`
+                    : `${c.card} hover:brightness-[0.97]`
                 }`}
               >
-                <div className="flex items-center gap-1.5 mb-1">
+                <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="text-sm leading-none">{f.icon}</span>
-                  <p className={`text-[10px] font-semibold uppercase tracking-wider ${active ? f.activeText : f.subtext}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider ${active ? "text-white/90" : c.sub}`}>
                     {f.label}
                   </p>
                 </div>
-                <p className={`text-2xl font-bold ${active ? f.activeText : f.text}`}>
+                <p className={`text-2xl font-bold leading-none ${active ? "text-white" : c.text}`}>
                   {loading ? "…" : estadoCounts[f.key]}
                 </p>
-                {active && (
-                  <p className="text-[10px] text-white/80 mt-0.5">Clic para quitar</p>
-                )}
+                <p className={`text-[10px] mt-1 ${active ? "text-white/70" : "text-neutral-400"}`}>
+                  {active ? "Activo · clic para quitar" : "Clic para filtrar"}
+                </p>
               </button>
             );
           })}
@@ -274,19 +283,45 @@ export default function DocumentosBackoffice() {
 
         {/* Panel principal */}
         <div className="flex-1 min-w-0 bg-white border border-neutral-200 rounded-xl shadow-sm flex flex-col min-h-0">
-          {/* Cabecera del panel */}
-          <div className="shrink-0 px-4 py-2.5 border-b border-neutral-200 bg-neutral-50 rounded-t-xl flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-neutral-500 font-medium">
-              {filtroEstado
-                ? `Mostrando clientes con documentos ${FILTROS.find((f) => f.key === filtroEstado)?.label.toLowerCase()}`
-                : `${listaFiltrada.length} clientes · ${countDocs(listaFiltrada)} archivos`}
-            </span>
-            {filtroEstado && (
+
+          {/* Barra de herramientas */}
+          <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-b border-neutral-200 bg-neutral-50 rounded-t-xl">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              {filtroActivo ? (
+                <>
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${COLOR[filtroActivo.color].card} ${COLOR[filtroActivo.color].text}`}>
+                    {filtroActivo.icon} {filtroActivo.label}
+                  </span>
+                  <span className="text-xs text-neutral-500">
+                    {listaFiltrada.length} clientes · {countDocs(listaFiltrada)} archivos
+                  </span>
+                  <button
+                    onClick={() => setFiltroEstado(null)}
+                    className="text-[11px] px-2 py-0.5 rounded-full border border-neutral-300 text-neutral-500 hover:bg-neutral-100"
+                  >
+                    ✕ Quitar
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs text-neutral-500">
+                  {loading ? "Cargando…" : `${listaFiltrada.length} clientes · ${countDocs(listaFiltrada)} archivos`}
+                </span>
+              )}
+            </div>
+
+            {/* Expandir / contraer todo */}
+            {!loading && listaFiltrada.length > 0 && (
               <button
-                onClick={() => setFiltroEstado(null)}
-                className="text-[11px] px-2 py-0.5 rounded-full border border-neutral-300 text-neutral-500 hover:bg-neutral-100"
+                onClick={toggleExpandAll}
+                title={allExpanded ? "Contraer todo" : "Expandir todo"}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg border font-medium transition-colors shrink-0 ${
+                  allExpanded
+                    ? "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                    : "border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               >
-                ✕ Quitar filtro
+                <span>{allExpanded ? "▴" : "▾"}</span>
+                {allExpanded ? "Contraer todo" : "Expandir todo"}
               </button>
             )}
           </div>
@@ -295,20 +330,20 @@ export default function DocumentosBackoffice() {
           <div className="flex-1 overflow-y-auto p-3 min-h-0">
             {loading && (
               <div className="py-20 text-center text-neutral-400 text-sm">
-                <div className="text-4xl mb-3">📂</div>
+                <div className="text-3xl mb-3">📂</div>
                 Cargando documentos…
               </div>
             )}
             {!loading && listaFiltrada.length === 0 && (
               <div className="py-16 text-center text-neutral-400 text-sm">
-                <div className="text-4xl mb-3">🔍</div>
+                <div className="text-3xl mb-3">🔍</div>
                 {q || filtroEstado ? "Sin resultados para este filtro." : "No hay documentos aún."}
               </div>
             )}
             {!loading && listaVisible.length > 0 && (
               <div className="space-y-0.5">
                 {listaVisible.map((entry) => {
-                  const id = entry.id_cliente ?? entry.id_usuario ?? `null-${entry.nombre}`;
+                  const id = entryId(entry);
                   return (
                     <TreeNode
                       key={id}
@@ -337,9 +372,9 @@ export default function DocumentosBackoffice() {
 
           {/* Paginación fija al fondo */}
           {!loading && totalPaginas > 1 && (
-            <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
+            <div className="shrink-0 flex items-center justify-between px-4 py-2 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
               <span className="text-xs text-neutral-400">
-                Página {pagina + 1} de {totalPaginas} · {listaFiltrada.length} clientes
+                Página {pagina + 1} / {totalPaginas} · {listaFiltrada.length} clientes
               </span>
               <div className="flex gap-1">
                 <button
