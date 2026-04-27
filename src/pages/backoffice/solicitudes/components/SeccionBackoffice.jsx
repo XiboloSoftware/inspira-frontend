@@ -79,7 +79,10 @@ export default function SeccionBackoffice({
       </button>
 
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100vh-220px)]">
+        <div
+          className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100dvh-220px)] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
           {children}
         </div>
       )}

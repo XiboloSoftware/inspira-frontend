@@ -1,5 +1,5 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
@@ -23,6 +23,14 @@ const CAMPOS_REQUERIDOS_FORMULARIO = [
 
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const [accordionOpenId, setAccordionOpenId] = useState(null);
+
+  // Bloquear scroll del <main> cuando una sección está abierta
+  useEffect(() => {
+    const mainEl = document.querySelector("main");
+    if (!mainEl) return;
+    mainEl.style.overflowY = accordionOpenId !== null ? "hidden" : "";
+    return () => { mainEl.style.overflowY = ""; };
+  }, [accordionOpenId]);
 
   const {
     detalle, setDetalle,
