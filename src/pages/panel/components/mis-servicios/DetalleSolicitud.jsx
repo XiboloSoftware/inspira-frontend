@@ -90,7 +90,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
-      setAccordionOpenId(null);
     } catch {
       window.alert("Error al guardar.");
     } finally {

@@ -832,8 +832,8 @@ export default function FormularioDatosAcademicos({
           </div>
         </div>
 
-        {/* ── Navegación ── */}
-        <div className="flex items-center justify-between mt-4 px-0.5">
+        {/* ── Navegación — sticky al fondo del scroll ── */}
+        <div className="sticky bottom-0 bg-white border-t border-neutral-100 flex items-center justify-between pt-3 pb-1 mt-4 px-0.5">
           <button type="button"
             onClick={() => setStep(p => Math.max(0, p - 1))}
             disabled={step === 0}
