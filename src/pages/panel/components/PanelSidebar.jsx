@@ -3,7 +3,7 @@ import SidebarItem from "./SidebarItem";
 import { useAuth } from "../../../context/AuthContext";
 import { navigate } from "../../../services/navigate";
 
-export default function PanelSidebar({ user, activeTab, onChangeTab }) {
+export default function PanelSidebar({ user, activeTab, onChangeTab, isOpen, onClose }) {
   const { logout } = useAuth();
 
   const inicial = user?.nombre?.[0] || user?.email_contacto?.[0] || "U";
@@ -12,36 +12,44 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
 
   return (
     <aside
-      className="
-        bg-gradient-to-b from-[#023A4B] to-[#046C8C]
-        text-white
-        flex flex-col
-        h-dvh md:h-screen
-        sticky top-0
-        overflow-hidden
-        flex-none
-        w-full
-        md:basis-1/5
-        md:w-auto
-        md:min-w-[240px]
-        md:max-w-[340px]
-      "
+      className={[
+        "bg-gradient-to-b from-[#023A4B] to-[#046C8C] text-white flex flex-col overflow-hidden flex-none",
+        // Móvil: overlay fijo, slide in/out
+        "fixed inset-y-0 left-0 z-30 w-64 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+        // Desktop: en flujo normal, siempre visible
+        "md:relative md:z-auto md:translate-x-0 md:w-auto md:min-w-[210px] md:max-w-[250px] md:h-screen",
+      ].join(" ")}
     >
+      {/* Botón cerrar en móvil */}
+      <div className="md:hidden flex justify-end px-3 pt-3 shrink-0">
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-white text-sm leading-none"
+          aria-label="Cerrar menú"
+        >
+          ✕
+        </button>
+      </div>
+
       {/* Header usuario */}
-      <div className="px-6 pt-6 pb-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-sm font-semibold">
+      <div className="px-4 pt-4 pb-3 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold shrink-0 uppercase">
             {inicial}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold truncate">{nombre}</span>
-            <span className="text-xs text-white/70 truncate">{correo}</span>
+            <span className="text-sm font-semibold truncate leading-tight">{nombre}</span>
+            <span className="text-[11px] text-white/60 truncate leading-tight">{correo}</span>
           </div>
         </div>
       </div>
 
-      {/* Menú principal (scroll propio) */}
-      <div className="flex-1 px-4 py-4 overflow-y-auto min-h-0">
+      {/* Menú */}
+      <div className="flex-1 px-2 py-3 overflow-y-auto min-h-0">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 px-3 mb-1.5">
+          Navegación
+        </p>
         <SidebarItem
           label="Mis citas"
           active={activeTab === "citas"}
@@ -59,25 +67,23 @@ export default function PanelSidebar({ user, activeTab, onChangeTab }) {
         />
       </div>
 
-      {/* Acciones inferiores fijas */}
-      <div className="px-6 py-4 border-t border-white/10 space-y-2 shrink-0">
+      {/* Acciones inferiores */}
+      <div className="px-3 py-3 border-t border-white/10 space-y-1 shrink-0">
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="w-full text-left text-sm px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
+          className="w-full text-left text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
         >
-          Volver al inicio
+          ← Volver al inicio
         </button>
-
         <button
           type="button"
           onClick={logout}
-          className="w-full text-left text-sm px-3 py-2 rounded-lg bg-white/5 hover:bg-red-500/80 hover:text-white transition"
+          className="w-full text-left text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-red-500/70 transition"
         >
           Cerrar sesión
         </button>
-
-        <p className="text-xs text-white/60 mt-1">Inspira | Panel de cliente</p>
+        <p className="text-[10px] text-white/30 px-1 pt-1">Inspira | Panel de cliente</p>
       </div>
     </aside>
   );

@@ -16,6 +16,7 @@ export default function PanelCliente() {
   });
 
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,27 +50,60 @@ export default function PanelCliente() {
     }
   }
 
+  function handleChangeTab(newTab) {
+    setTab(newTab);
+    setSidebarOpen(false);
+  }
+
   return (
-  <div className="h-screen overflow-hidden flex bg-neutral-50">
-    <PanelSidebar user={user} activeTab={tab} onChangeTab={setTab} />
+    <div className="h-screen overflow-hidden flex bg-neutral-50 relative">
+      {/* Overlay oscuro para móvil */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-    {/* 👇 la derecha scrollea, la izquierda NO crece */}
-    <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
-      <header className="mb-6">
-        <p className="text-xs font-medium text-primary uppercase tracking-wide">
-          Panel de cliente
-        </p>
-        <h1 className="text-2xl font-bold text-neutral-900">Mi panel</h1>
-      </header>
+      <PanelSidebar
+        user={user}
+        activeTab={tab}
+        onChangeTab={handleChangeTab}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-      <div className={tab === "servicios" ? "w-full max-w-7xl mx-auto" : "max-w-4xl"}>
-        {tab === "perfil" && (
-          <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
-        )}
-        {tab === "citas" && <MisCitas />}
-        {tab === "servicios" && <MisServicios />}
-      </div>
-    </main>
-  </div>
-);
+      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
+        {/* Topbar sticky */}
+        <div className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm border-b border-neutral-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
+          <button
+            className="md:hidden flex flex-col justify-center gap-[5px] w-8 h-8 p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm shrink-0"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <span className="block w-full h-[2px] bg-neutral-600 rounded" />
+            <span className="block w-full h-[2px] bg-neutral-600 rounded" />
+            <span className="block w-full h-[2px] bg-neutral-600 rounded" />
+          </button>
+          <div>
+            <p className="text-[10px] font-bold text-[#046C8C] uppercase tracking-widest leading-none">
+              Panel de cliente
+            </p>
+            <h1 className="text-base font-bold text-neutral-900 leading-tight">Mi panel</h1>
+          </div>
+        </div>
+
+        {/* Contenido */}
+        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-5 overflow-auto">
+          <div className={tab === "servicios" ? "w-full max-w-7xl mx-auto" : "max-w-4xl"}>
+            {tab === "perfil" && (
+              <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
+            )}
+            {tab === "citas" && <MisCitas />}
+            {tab === "servicios" && <MisServicios />}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

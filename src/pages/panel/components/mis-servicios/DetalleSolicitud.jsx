@@ -135,19 +135,26 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
   const hasFormData = Object.keys(formData || {}).length > 0;
 
-  // ✅ Detecta si esta solicitud es tipo VISADO (no por id_servicio)
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
 
   return (
-    <div className="space-y-4">
-      <button onClick={onVolver} className="text-xs text-[#023A4B] hover:underline">
+    <div className="space-y-3">
+      <button
+        onClick={onVolver}
+        className="text-xs text-[#023A4B] hover:underline font-medium"
+      >
         ← Volver a mis servicios
       </button>
 
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4">
-        {loading && <p>Cargando…</p>}
-        {error && <p className="text-red-600">{error}</p>}
+        {loading && (
+          <div className="flex items-center gap-2 py-6 justify-center text-neutral-400">
+            <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Cargando…</span>
+          </div>
+        )}
+        {error && <p className="text-red-600 text-sm py-4">{error}</p>}
 
         {!loading && !error && detalle && (
           <>
@@ -157,36 +164,28 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            {/* =========================
-                VISADO: SOLO 3 BLOQUES
-               ========================= */}
+            {/* VISADO: 3 bloques */}
             {esVisado ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
-                {/* 1 y 2 en la misma fila en XL */}
-                <div className="h-[520px]">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                <div className="xl:h-[480px]">
                   <ChecklistDocumentos
                     checklist={checklist}
                     cargarTodo={cargarTodo}
                     idSolicitud={idSolicitud}
                   />
                 </div>
-
-                <div className="h-[520px]">
+                <div className="xl:h-[480px]">
                   <InstructivosPlantillas instructivos={instructivos} />
                 </div>
-
-                {/* 3 full width */}
                 <div className="col-span-full">
                   <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
                 </div>
               </div>
             ) : (
-              /* =========================
-                 MASTER (flujo completo)
-                 ========================= */
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
-                {/* FILA 1 */}
-                <div className="xl:col-span-2 h-[520px]">
+              /* MASTER: flujo completo */
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {/* Checklist: ancho completo */}
+                <div className="xl:col-span-2 xl:h-[460px]">
                   <ChecklistDocumentos
                     checklist={checklist}
                     cargarTodo={cargarTodo}
@@ -194,12 +193,13 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   />
                 </div>
 
-                <div className="xl:col-span-1 h-[520px]">
+                {/* Instructivos */}
+                <div className="xl:h-[400px]">
                   <InstructivosPlantillas instructivos={instructivos} />
                 </div>
 
-                {/* FILA 2 */}
-                <div className="h-[420px]">
+                {/* Formulario académico */}
+                <div className="xl:h-[400px]">
                   <FormularioDatosAcademicos
                     formData={formData}
                     setFormData={setFormData}
@@ -211,7 +211,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   />
                 </div>
 
-                <div className="xl:col-span-2 h-[420px]">
+                {/* Informe de búsqueda */}
+                <div className="xl:col-span-2 xl:h-[360px]">
                   <InformeBusqueda
                     idSolicitud={idSolicitud}
                     informe={{
