@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { boDELETE } from "../../../services/backofficeApi";
 import DocViewer from "./DocViewer";
-import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, abrirInforme, descargarInforme, abrirJustificante, descargarJustificante } from "./documentosUtils";
+import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
 
 export function EstadoBadge({ estado }) {
   const map = {
@@ -79,6 +79,44 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
   );
 }
 
+function InformeRow({ informe }) {
+  const [verDoc, setVerDoc] = useState(false);
+  const fetchUrl = `${API_URL}/api/admin/solicitudes/${informe.id_solicitud}/informe`;
+  const doc = { id_documento: null, mime_type: informe.mime_type || "application/pdf", nombre_original: informe.nombre_original || "Informe", tamano_bytes: informe.tamano_bytes, fecha_subida: informe.fecha_subida };
+  return (
+    <>
+      <div className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg">
+        <span className="text-base leading-none">📑</span>
+        <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{informe.nombre_original || "Informe"}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">INFORME</span>
+        <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(informe.tamano_bytes)}</span>
+        <button onClick={() => setVerDoc(true)} className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0">Abrir</button>
+        <button onClick={() => descargarInforme(informe)} className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0">Descargar</button>
+      </div>
+      {verDoc && <DocViewer doc={doc} fetchUrl={fetchUrl} onClose={() => setVerDoc(false)} />}
+    </>
+  );
+}
+
+function JustificanteRow({ j }) {
+  const [verDoc, setVerDoc] = useState(false);
+  const fetchUrl = `${API_URL}/api/portales/justificantes/${j.id_justificante}/descargar`;
+  const doc = { id_documento: null, mime_type: j.mime_type || "application/octet-stream", nombre_original: j.nombre_original || "Justificante", tamano_bytes: j.tamano_bytes, fecha_subida: j.fecha_subida };
+  return (
+    <>
+      <div className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg">
+        <span className="text-base leading-none">{fileIcon(j.mime_type)}</span>
+        <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{j.nombre_original || "Justificante"}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700">PORTAL</span>
+        <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(j.tamano_bytes)}</span>
+        <button onClick={() => setVerDoc(true)} className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0">Abrir</button>
+        <button onClick={() => descargarJustificante(j)} className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0">Descargar</button>
+      </div>
+      {verDoc && <DocViewer doc={doc} fetchUrl={fetchUrl} onClose={() => setVerDoc(false)} />}
+    </>
+  );
+}
+
 export function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen, headerExtra, children }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -137,45 +175,9 @@ export function SolicitudNode({ solicitud, isAdmin, onEliminar, forceOpen }) {
       {solicitud.items.map((item, i) => (
         <ItemNode key={i} item={item} isAdmin={isAdmin} onEliminar={onEliminar} forceOpen={forceOpen} />
       ))}
-      {solicitud.informe && (
-        <div className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg">
-          <span className="text-base leading-none">📑</span>
-          <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{solicitud.informe.nombre_original || "Informe"}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">INFORME</span>
-          <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(solicitud.informe.tamano_bytes)}</span>
-          <button
-            onClick={() => abrirInforme(solicitud.informe)}
-            className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0"
-          >
-            Abrir
-          </button>
-          <button
-            onClick={() => descargarInforme(solicitud.informe)}
-            className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
-          >
-            Descargar
-          </button>
-        </div>
-      )}
+      {solicitud.informe && <InformeRow informe={solicitud.informe} />}
       {solicitud.justificantes?.map((j) => (
-        <div key={j.id_justificante} className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg">
-          <span className="text-base leading-none">{fileIcon(j.mime_type)}</span>
-          <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">{j.nombre_original || "Justificante"}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-teal-100 text-teal-700">PORTAL</span>
-          <span className="text-[11px] text-neutral-400 shrink-0">{formatBytes(j.tamano_bytes)}</span>
-          <button
-            onClick={() => abrirJustificante(j)}
-            className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0"
-          >
-            Abrir
-          </button>
-          <button
-            onClick={() => descargarJustificante(j)}
-            className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
-          >
-            Descargar
-          </button>
-        </div>
+        <JustificanteRow key={j.id_justificante} j={j} />
       ))}
     </TreeNode>
   );

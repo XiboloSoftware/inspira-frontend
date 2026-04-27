@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento } from "./documentosUtils";
 
-export default function DocViewer({ doc, onClose }) {
+// fetchUrl opcional: sobreescribe la URL de descarga (para informes, justificantes, etc.)
+export default function DocViewer({ doc, onClose, fetchUrl }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [blobUrl, setBlobUrl] = useState(null);
@@ -21,11 +22,9 @@ export default function DocViewer({ doc, onClose }) {
 
     async function load() {
       const token = localStorage.getItem("bo_token");
+      const url = fetchUrl || `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`;
       try {
-        const r = await fetch(
-          `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (cancelled) return;
         if (!r.ok) { setError("No se pudo cargar el archivo."); setLoading(false); return; }
         const blob = await r.blob();
@@ -43,7 +42,7 @@ export default function DocViewer({ doc, onClose }) {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [doc.id_documento, canPreview]);
+  }, [doc.id_documento, canPreview, fetchUrl]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
