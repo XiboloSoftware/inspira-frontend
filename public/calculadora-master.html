@@ -502,7 +502,7 @@ function calcular(){
   // Guardar en base de datos del backoffice
   try {
     const becasCalificadas=becas.filter(b=>b.e==='si'||b.e==='posible').map(b=>({nombre:b.n,estado:b.e}));
-    fetch('https://api.inspira-legal.cloud/api/calculadora/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,pais,nota_espana:nota,area,presupuesto:pres,vida,auip,funcionario:func_,ods,cyl:comunidadesPref,universidad:universidad||null,ranking,becas_califica:becasCalificadas})}).catch(()=>{});
+    fetch('https://api.inspira-legal.cloud/api/calculadora/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,pais,email,whatsapp:wpp,nota_espana:nota,area,presupuesto:pres,vida,auip,funcionario:func_,ods,cyl:comunidadesPref,universidad:universidad||null,ranking,becas_califica:becasCalificadas})}).catch(()=>{});
   } catch(e) {}
 
   const dWpp={nombre,pais,carrera,area,masterInteres,promedioES,presupuesto:pres+' €',vida:vida==='economico'?'Económico':vida==='equilibrado'?'Equilibrado':'Ambicioso',auip:auip==='si'?'Sí':'No'};

@@ -87,20 +87,22 @@ export default function LeadsCalculadora() {
               <th className="px-4 py-3 font-semibold">Perfil</th>
               <th className="px-4 py-3 font-semibold">AUIP</th>
               <th className="px-4 py-3 font-semibold">Universidad</th>
+              <th className="px-4 py-3 font-semibold">Email</th>
+              <th className="px-4 py-3 font-semibold">WhatsApp</th>
               <th className="px-4 py-3 font-semibold">Becas</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-neutral-400">
+                <td colSpan={12} className="px-4 py-8 text-center text-neutral-400">
                   Cargando...
                 </td>
               </tr>
             )}
             {!loading && leads.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-neutral-400">
+                <td colSpan={12} className="px-4 py-8 text-center text-neutral-400">
                   Sin leads todavía.
                 </td>
               </tr>
@@ -120,6 +122,16 @@ export default function LeadsCalculadora() {
                 <td className="px-4 py-3 text-center">{AUIP_LABEL[l.auip] ?? l.auip}</td>
                 <td className="px-4 py-3 max-w-[180px] truncate text-neutral-600" title={l.universidad ?? ""}>
                   {l.universidad || <span className="text-neutral-300">—</span>}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {l.email
+                    ? <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline text-xs">{l.email}</a>
+                    : <span className="text-neutral-300">—</span>}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {l.whatsapp
+                    ? <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline text-xs">{l.whatsapp}</a>
+                    : <span className="text-neutral-300">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   <BecasPills becas={l.becas_califica} />
