@@ -27,21 +27,40 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
     return isNaN(n) ? DEFAULT_W : Math.max(MIN_W, Math.min(MAX_W, n));
   });
   const curW = useRef(width);
+  const asideRef = useRef(null);
+  const innerRef = useRef(null);
 
   function startResize(e) {
     e.preventDefault();
     const startX = e.clientX;
     const startW = curW.current;
+
+    // Desactivar transición y selección de texto durante el drag
+    if (asideRef.current) asideRef.current.style.transition = "none";
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+
     function onMove(ev) {
       const next = Math.max(MIN_W, Math.min(MAX_W, startW + ev.clientX - startX));
       curW.current = next;
-      setWidth(next);
+      // Manipulación directa del DOM — sin re-render de React
+      if (asideRef.current) asideRef.current.style.width = `${next}px`;
+      if (innerRef.current) innerRef.current.style.minWidth = `${next}px`;
     }
+
     function onUp() {
-      localStorage.setItem("bo_sidebar_w", String(curW.current));
+      const finalW = curW.current;
+      // Restaurar transición y cursor
+      if (asideRef.current) asideRef.current.style.transition = "";
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      // Sincronizar estado React y guardar solo al soltar
+      setWidth(finalW);
+      localStorage.setItem("bo_sidebar_w", String(finalW));
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     }
+
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   }
@@ -58,14 +77,15 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
        Cuando open=false → width=0, overflow-hidden lo oculta.
        El contenido interior mantiene minWidth para no recolapsar durante la animación. */
     <aside
+      ref={asideRef}
       className="shrink-0 flex flex-col bg-primary text-white h-full overflow-hidden relative"
       style={{
         width: open ? `${width}px` : "0px",
-        transition: "width 280ms ease-in-out",
+        transition: "width 260ms ease-in-out",
       }}
     >
       {/* Contenedor interior con ancho fijo — se clipea por el aside durante animación */}
-      <div className="flex flex-col h-full" style={{ minWidth: `${width}px` }}>
+      <div ref={innerRef} className="flex flex-col h-full" style={{ minWidth: `${width}px` }}>
 
         {/* Cabecera */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0 gap-2">
