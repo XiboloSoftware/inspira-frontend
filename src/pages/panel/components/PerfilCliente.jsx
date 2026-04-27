@@ -301,6 +301,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
       prefijo_whatsapp:       wp.prefijo,
       whatsapp_numero:        wp.numero,
       dni:                    user.dni           || "",
+      dni_emision:            de.dni_emision     || "",
+      dni_vencimiento:        de.dni_vencimiento || "",
       pasaporte:              user.pasaporte     || "",
       ciudad:                 de.ciudad          || "",
       fecha_nacimiento:       de.fecha_nacimiento || "",
@@ -352,6 +354,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           ciudad:                form.ciudad             || null,
           fecha_nacimiento:      form.fecha_nacimiento   || null,
           nacionalidad:          form.nacionalidad       || null,
+          dni_emision:           form.dni_emision        || null,
+          dni_vencimiento:       form.dni_vencimiento    || null,
           pasaporte_emision:     form.pasaporte_emision  || null,
           pasaporte_vencimiento: form.pasaporte_vencimiento || null,
           carrera_titulo:        form.carrera_titulo     || null,
@@ -377,7 +381,6 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     const de = user.datos_extra || {};
     const tp = parseTelefono(user.telefono);
     const paisObj = PAISES.find(p => p.nombre === user.pais_origen);
-    const hasDocExtra = de.pasaporte_emision || de.pasaporte_vencimiento || de.nacionalidad;
     const hasAcad = de.carrera_titulo || de.universidad_origen || de.area_carrera;
 
     return (
@@ -434,14 +437,12 @@ export default function PerfilCliente({ user, onUserUpdated }) {
             {/* Columna derecha: documentos y académico */}
             <div className="pt-4 sm:pt-0 sm:pl-8">
               <SectionLabel>Documentos de identidad</SectionLabel>
-              <InfoFila icono="🪪" etiqueta="DNI / Documento" valor={user.dni} />
-              <InfoFila icono="📘" etiqueta="Pasaporte" valor={user.pasaporte} />
-              {hasDocExtra && (
-                <>
-                  <InfoFila icono="📅" etiqueta="Emisión del pasaporte"    valor={fmtFecha(de.pasaporte_emision)} />
-                  <InfoFila icono="⏳" etiqueta="Vencimiento del pasaporte" valor={fmtFecha(de.pasaporte_vencimiento)} />
-                </>
-              )}
+              <InfoFila icono="🪪" etiqueta="DNI / Documento"    valor={user.dni} />
+              <InfoFila icono="📅" etiqueta="DNI — Emisión"      valor={fmtFecha(de.dni_emision)} />
+              <InfoFila icono="⏳" etiqueta="DNI — Vencimiento"  valor={fmtFecha(de.dni_vencimiento)} />
+              <InfoFila icono="📘" etiqueta="Pasaporte"           valor={user.pasaporte} />
+              <InfoFila icono="📅" etiqueta="Pasaporte — Emisión"      valor={fmtFecha(de.pasaporte_emision)} />
+              <InfoFila icono="⏳" etiqueta="Pasaporte — Vencimiento"  valor={fmtFecha(de.pasaporte_vencimiento)} />
               {hasAcad && (
                 <>
                   <div className="mt-4 mb-3">
@@ -609,27 +610,46 @@ export default function PerfilCliente({ user, onUserUpdated }) {
             {/* DOCUMENTOS DE IDENTIDAD */}
             <div>
               <SectionLabel>Documentos de identidad</SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-4">
+
+                {/* DNI */}
                 <div>
                   <FieldLabel hint="(opcional)">DNI / NIE / Cédula</FieldLabel>
                   <TextInput name="dni" value={form.dni} onChange={handleChange}
                     placeholder="12345678" />
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <FieldLabel hint="(opcional)">Emisión</FieldLabel>
+                      <TextInput name="dni_emision" value={form.dni_emision} onChange={handleChange}
+                        type="date" />
+                    </div>
+                    <div>
+                      <FieldLabel hint="(opcional)">Vencimiento</FieldLabel>
+                      <TextInput name="dni_vencimiento" value={form.dni_vencimiento} onChange={handleChange}
+                        type="date" />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Pasaporte */}
                 <div>
                   <FieldLabel hint="(opcional)">Número de pasaporte</FieldLabel>
                   <TextInput name="pasaporte" value={form.pasaporte} onChange={handleChange}
                     placeholder="AB123456" />
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <FieldLabel hint="(opcional)">Emisión</FieldLabel>
+                      <TextInput name="pasaporte_emision" value={form.pasaporte_emision} onChange={handleChange}
+                        type="date" />
+                    </div>
+                    <div>
+                      <FieldLabel hint="(opcional)">Vencimiento</FieldLabel>
+                      <TextInput name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange}
+                        type="date" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <FieldLabel hint="(opcional)">Emisión del pasaporte</FieldLabel>
-                  <TextInput name="pasaporte_emision" value={form.pasaporte_emision} onChange={handleChange}
-                    type="date" />
-                </div>
-                <div>
-                  <FieldLabel hint="(opcional)">Vencimiento del pasaporte</FieldLabel>
-                  <TextInput name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange}
-                    type="date" />
-                </div>
+
               </div>
             </div>
 
