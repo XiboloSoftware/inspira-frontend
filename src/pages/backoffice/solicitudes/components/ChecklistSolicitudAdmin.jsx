@@ -128,7 +128,7 @@ export default function ChecklistSolicitudAdmin({
               {nombreEtapa}
             </p>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 items-start">
             {items.map((it) => {
               const docs = Array.isArray(it.documentos)
                 ? it.documentos
@@ -142,7 +142,7 @@ export default function ChecklistSolicitudAdmin({
               return (
                 <div
                   key={it.id_solicitud_item}
-                  className={`border rounded-xl p-3 transition-all ${borderColor}`}
+                  className={`border rounded-xl p-3 transition-all min-h-[88px] ${borderColor}`}
                 >
                   {/* Header del item */}
                   <div className="flex justify-between items-start gap-2 mb-1.5">

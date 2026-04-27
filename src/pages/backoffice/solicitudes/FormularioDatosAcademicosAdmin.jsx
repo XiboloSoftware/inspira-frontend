@@ -128,7 +128,7 @@ export default function FormularioDatosAcademicosAdmin({ datos }) {
   const sections = SECTIONS_ORDER.filter((s) => grouped[s]);
 
   return (
-    <div className="space-y-3">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
       {sections.map((nombre) => (
         <SeccionCard key={nombre} nombre={nombre} fields={grouped[nombre]} />
       ))}
