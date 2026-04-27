@@ -162,7 +162,7 @@ function JustificanteRow({ j }) {
   );
 }
 
-export function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen, headerExtra, children }) {
+export function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen, headerExtra, rightExtra, children }) {
   const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
@@ -177,6 +177,7 @@ export function TreeNode({ icon, label, sublabel, count, defaultOpen = false, fo
         {headerExtra && <span className="shrink-0" onClick={(e) => e.stopPropagation()}>{headerExtra}</span>}
         <span className="text-sm font-medium text-neutral-800 flex-1 truncate min-w-0">{label}</span>
         {sublabel && <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0">{sublabel}</span>}
+        {rightExtra && <span className="shrink-0" onClick={(e) => e.stopPropagation()}>{rightExtra}</span>}
         {count !== undefined && (
           <span className="text-[10px] bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full shrink-0">{count}</span>
         )}

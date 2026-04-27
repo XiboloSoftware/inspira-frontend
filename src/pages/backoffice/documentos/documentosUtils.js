@@ -126,4 +126,24 @@ export async function descargarJustificante(j) {
   }
 }
 
+export async function descargarZipCliente(idCliente, nombreCliente) {
+  const token = localStorage.getItem("bo_token");
+  try {
+    const r = await fetch(
+      `${API_URL}/api/admin/clientes/${idCliente}/documentos/zip`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) { alert("No se pudo generar el ZIP de documentos"); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${nombreCliente}_documentos.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert("Error al descargar los documentos");
+  }
+}
+
 export { API_URL };

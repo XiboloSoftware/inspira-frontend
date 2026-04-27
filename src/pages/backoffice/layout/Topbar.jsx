@@ -1,28 +1,34 @@
 export default function Topbar({ user, onLogout, onMenuToggle }) {
   return (
-    <header className="w-full bg-white border-b border-neutral-200 px-4 py-3 flex justify-between items-center">
+    // z-50 para que el topbar SIEMPRE esté por encima del drawer (z-40)
+    <header
+      style={{ zIndex: 50 }}
+      className="relative w-full bg-white border-b border-neutral-200 px-4 py-3 flex justify-between items-center shrink-0"
+    >
       <div className="flex items-center gap-3">
-        {/* Botón hamburguesa solo en móvil */}
+        {/* Botón hamburguesa — solo en móvil */}
         <button
           onClick={onMenuToggle}
-          className="md:hidden p-1.5 rounded-lg text-primary hover:bg-neutral-200 transition"
           aria-label="Abrir menú"
+          className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-primary hover:bg-neutral-100 transition"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <div className="text-primary font-semibold">Panel interno</div>
+
+        <span className="text-primary font-semibold text-sm">Panel interno</span>
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="text-sm text-neutral-700 hidden sm:block">
+        <span className="text-xs text-neutral-500 hidden sm:block">
           {user?.email} · <b>{user?.rol}</b>
-        </div>
+        </span>
+        <span className="text-xs text-neutral-500 sm:hidden font-medium">{user?.rol}</span>
 
         <button
           onClick={onLogout}
-          className="px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent-dark transition text-sm"
+          className="px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent-dark transition text-sm font-medium"
         >
           Salir
         </button>

@@ -1,7 +1,7 @@
 // src/pages/backoffice/documentos/DocumentosBackoffice.jsx
 import { useEffect, useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
-import { getUser } from "./documentosUtils";
+import { getUser, descargarZipCliente } from "./documentosUtils";
 import { TreeNode, SolicitudNode, DriveIcon } from "./DocumentosTree";
 import { API_URL } from "./documentosUtils";
 
@@ -278,6 +278,26 @@ export default function DocumentosBackoffice() {
     );
   }
 
+  function ZipBtn({ idCliente, nombre }) {
+    const [descargando, setDescargando] = useState(false);
+    async function handleClick(e) {
+      e.stopPropagation();
+      setDescargando(true);
+      await descargarZipCliente(idCliente, nombre);
+      setDescargando(false);
+    }
+    return (
+      <button
+        onClick={handleClick}
+        disabled={descargando}
+        title="Descargar todos los documentos en ZIP"
+        className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md border border-neutral-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 active:scale-95 transition-all duration-150 shrink-0 disabled:opacity-50"
+      >
+        {descargando ? "⏳" : "⬇"} <span className="hidden sm:inline">{descargando ? "Descargando…" : "ZIP"}</span>
+      </button>
+    );
+  }
+
   const filtroActivo = FILTROS.find((f) => f.key === filtroEstado);
 
   return (
@@ -470,6 +490,11 @@ export default function DocumentosBackoffice() {
                             </button>
                           )}
                         </span>
+                      }
+                      rightExtra={
+                        entry.id_cliente && countDocs([entry]) > 0
+                          ? <ZipBtn idCliente={entry.id_cliente} nombre={entry.nombre} />
+                          : undefined
                       }
                     >
                       {entry.solicitudes.map((sol) => (
