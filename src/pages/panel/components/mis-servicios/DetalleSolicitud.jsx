@@ -169,6 +169,18 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       {/* Lista de secciones — crece y scrollea internamente */}
       {!loading && !error && detalle && (
         <AccordionContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
+          {accordionOpenId !== null && (
+            <button
+              type="button"
+              onClick={() => setAccordionOpenId(null)}
+              className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-[#046C8C] hover:text-[#023A4B] transition-colors mb-1"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              Todas las secciones
+            </button>
+          )}
           <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
             <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
