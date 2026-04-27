@@ -59,7 +59,6 @@ export default function BotonSubirDocumento({ solicitudId, item, onUploaded }) {
           className="hidden"
           onChange={handleFileChange}
           multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
         />
       </label>
 
