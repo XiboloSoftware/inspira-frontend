@@ -19,13 +19,17 @@ import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem("bo_user");
     return u ? JSON.parse(u) : null;
   });
 
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
+    const onPop = () => {
+      setPath(window.location.pathname);
+      setSidebarOpen(false);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -59,11 +63,11 @@ export default function BackofficeApp() {
     <ProtectedRoute onLogout={logout}>
       {/* Layout de altura fija, con sidebar izquierdo + panel derecho con scroll */}
       <div className="flex w-full h-dvh overflow-hidden">
-        <Sidebar path={path} />
+        <Sidebar path={path} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         {/* Panel derecho: header fijo y contenido scrollable */}
-        <div className="flex-1 flex flex-col h-full bg-white">
-          <Topbar user={user} onLogout={logout} />
+        <div className="flex-1 flex flex-col h-full bg-white min-w-0">
+          <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} />
 
           <main className="flex-1 overflow-y-auto">
             {/* Rutas internas */}
