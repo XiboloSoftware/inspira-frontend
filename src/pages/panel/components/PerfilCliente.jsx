@@ -95,8 +95,9 @@ function parseTelefono(tel) {
   return { prefijo: "+51", numero: tel };
 }
 
-function paisDePrefijo(prefijo) {
-  return PAISES.find(p => p.nombre === prefijo) || null;
+function fmtFecha(iso) {
+  if (!iso) return null;
+  return new Date(iso + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 // ── Combobox reutilizable ─────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
   const [open, setOpen]       = useState(false);
   const [display, setDisplay] = useState("");
   const wrapRef  = useRef(null);
-  const queryRef = useRef("");  // ref para leer en el handler sin re-registrar
+  const queryRef = useRef("");
 
   useEffect(() => { queryRef.current = query; }, [query]);
 
@@ -116,7 +117,6 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
   useEffect(() => {
     const h = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-        // Si allowCustom y el usuario escribió algo, guárdalo sin necesidad de seleccionar
         if (allowCustom && queryRef.current.trim()) {
           const custom = queryRef.current.trim();
           onChange(custom);
@@ -293,27 +293,29 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     const mismoWA = !de.whatsapp || de.whatsapp === user.telefono;
 
     setForm({
-      nombre:            user.nombre        || "",
-      pais_origen:       user.pais_origen   || "",
-      prefijo_telefono:  tp.prefijo,
-      telefono_numero:   tp.numero,
-      mismo_whatsapp:    mismoWA,
-      prefijo_whatsapp:  wp.prefijo,
-      whatsapp_numero:   wp.numero,
-      dni:               user.dni           || "",
-      pasaporte:         user.pasaporte     || "",
-      ciudad:            de.ciudad          || "",
-      fecha_nacimiento:  de.fecha_nacimiento || "",
-      carrera_titulo:    de.carrera_titulo  || "",
-      area_carrera:      de.area_carrera    || "",
-      universidad_origen: de.universidad_origen || "",
+      nombre:                 user.nombre        || "",
+      pais_origen:            user.pais_origen   || "",
+      prefijo_telefono:       tp.prefijo,
+      telefono_numero:        tp.numero,
+      mismo_whatsapp:         mismoWA,
+      prefijo_whatsapp:       wp.prefijo,
+      whatsapp_numero:        wp.numero,
+      dni:                    user.dni           || "",
+      pasaporte:              user.pasaporte     || "",
+      ciudad:                 de.ciudad          || "",
+      fecha_nacimiento:       de.fecha_nacimiento || "",
+      nacionalidad:           de.nacionalidad    || "",
+      pasaporte_emision:      de.pasaporte_emision    || "",
+      pasaporte_vencimiento:  de.pasaporte_vencimiento || "",
+      carrera_titulo:         de.carrera_titulo  || "",
+      area_carrera:           de.area_carrera    || "",
+      universidad_origen:     de.universidad_origen || "",
     });
   }, [user]);
 
   if (!user) return <p className="text-sm text-neutral-400 p-4">Cargando datos…</p>;
 
   function set(key, val) { setForm(p => ({ ...p, [key]: val })); }
-
   function handleChange(e) { set(e.target.name, e.target.value); }
 
   function handlePaisChange(nombre) {
@@ -347,11 +349,14 @@ export default function PerfilCliente({ user, onUserUpdated }) {
         pais_origen: form.pais_origen || null,
         datos_extra: {
           whatsapp,
-          ciudad:             form.ciudad             || null,
-          fecha_nacimiento:   form.fecha_nacimiento   || null,
-          carrera_titulo:     form.carrera_titulo     || null,
-          area_carrera:       form.area_carrera       || null,
-          universidad_origen: form.universidad_origen || null,
+          ciudad:                form.ciudad             || null,
+          fecha_nacimiento:      form.fecha_nacimiento   || null,
+          nacionalidad:          form.nacionalidad       || null,
+          pasaporte_emision:     form.pasaporte_emision  || null,
+          pasaporte_vencimiento: form.pasaporte_vencimiento || null,
+          carrera_titulo:        form.carrera_titulo     || null,
+          area_carrera:          form.area_carrera       || null,
+          universidad_origen:    form.universidad_origen || null,
         },
       };
 
@@ -372,10 +377,11 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     const de = user.datos_extra || {};
     const tp = parseTelefono(user.telefono);
     const paisObj = PAISES.find(p => p.nombre === user.pais_origen);
+    const hasDocExtra = de.pasaporte_emision || de.pasaporte_vencimiento || de.nacionalidad;
+    const hasAcad = de.carrera_titulo || de.universidad_origen || de.area_carrera;
 
     return (
       <div className="space-y-3">
-        {/* Tarjeta principal */}
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#023A4B] to-[#046C8C] px-5 py-5 flex items-center justify-between gap-4">
@@ -409,44 +415,52 @@ export default function PerfilCliente({ user, onUserUpdated }) {
 
           {/* Contenido info */}
           <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100">
-            {/* Columna izquierda */}
+            {/* Columna izquierda: contacto y persona */}
             <div className="pb-4 sm:pb-0 sm:pr-8">
-              <SectionLabel>Contacto</SectionLabel>
+              <SectionLabel>Contacto y datos personales</SectionLabel>
               <InfoFila icono="📞" etiqueta="Teléfono"
                 valor={user.telefono ? `${tp.prefijo} ${tp.numero}` : null} />
               <InfoFila icono="💬" etiqueta="WhatsApp"
-                valor={de.whatsapp && de.whatsapp !== user.telefono ? (() => { const wp = parseTelefono(de.whatsapp); return `${wp.prefijo} ${wp.numero}`; })() : (user.telefono ? "Mismo que teléfono" : null)} />
+                valor={de.whatsapp && de.whatsapp !== user.telefono
+                  ? (() => { const wp = parseTelefono(de.whatsapp); return `${wp.prefijo} ${wp.numero}`; })()
+                  : (user.telefono ? "Mismo que teléfono" : null)} />
               <InfoFila icono="🏙️" etiqueta="Ciudad" valor={de.ciudad} />
               <InfoFila icono="🌍" etiqueta="País de origen"
                 valor={paisObj ? `${paisObj.emoji} ${user.pais_origen}` : user.pais_origen} />
-              <InfoFila icono="🎂" etiqueta="Fecha de nacimiento"
-                valor={de.fecha_nacimiento ? new Date(de.fecha_nacimiento + "T00:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }) : null} />
+              <InfoFila icono="🏳️" etiqueta="Nacionalidad" valor={de.nacionalidad} />
+              <InfoFila icono="🎂" etiqueta="Fecha de nacimiento" valor={fmtFecha(de.fecha_nacimiento)} />
             </div>
 
-            {/* Columna derecha */}
+            {/* Columna derecha: documentos y académico */}
             <div className="pt-4 sm:pt-0 sm:pl-8">
-              <SectionLabel>Documentos e historial</SectionLabel>
+              <SectionLabel>Documentos de identidad</SectionLabel>
               <InfoFila icono="🪪" etiqueta="DNI / Documento" valor={user.dni} />
               <InfoFila icono="📘" etiqueta="Pasaporte" valor={user.pasaporte} />
-              {(de.carrera_titulo || de.universidad_origen || de.area_carrera) && (
+              {hasDocExtra && (
+                <>
+                  <InfoFila icono="📅" etiqueta="Emisión del pasaporte"    valor={fmtFecha(de.pasaporte_emision)} />
+                  <InfoFila icono="⏳" etiqueta="Vencimiento del pasaporte" valor={fmtFecha(de.pasaporte_vencimiento)} />
+                </>
+              )}
+              {hasAcad && (
                 <>
                   <div className="mt-4 mb-3">
                     <SectionLabel>Datos académicos</SectionLabel>
                   </div>
-                  <InfoFila icono="🎓" etiqueta="Carrera / Título" valor={de.carrera_titulo} />
-                  <InfoFila icono="🏛️" etiqueta="Universidad" valor={de.universidad_origen} />
-                  <InfoFila icono="📚" etiqueta="Área de estudio" valor={de.area_carrera} />
+                  <InfoFila icono="🎓" etiqueta="Carrera / Título"  valor={de.carrera_titulo} />
+                  <InfoFila icono="🏛️" etiqueta="Universidad"       valor={de.universidad_origen} />
+                  <InfoFila icono="📚" etiqueta="Área de estudio"   valor={de.area_carrera} />
                 </>
               )}
             </div>
           </div>
 
-          {/* Tip de datos académicos si no están */}
-          {!de.carrera_titulo && !de.universidad_origen && (
+          {/* Tip si faltan datos académicos */}
+          {!hasAcad && (
             <div className="mx-5 mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5">
               <span className="text-blue-500 text-lg shrink-0 leading-none mt-0.5">💡</span>
               <p className="text-xs text-blue-700">
-                <strong>Tip:</strong> Completa los datos académicos en "Editar" para que se pre-rellenen automáticamente en el formulario de tu solicitud.
+                <strong>Tip:</strong> Completa los datos académicos y de documentos en "Editar" para que se pre-rellenen automáticamente en el formulario de tu solicitud.
               </p>
             </div>
           )}
@@ -466,11 +480,9 @@ export default function PerfilCliente({ user, onUserUpdated }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm">
       {/* Header formulario */}
-      <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
-        <div>
-          <p className="text-base font-bold text-neutral-900">Editar mi perfil</p>
-          <p className="text-xs text-neutral-400 mt-0.5">Los datos académicos se comparten con tus solicitudes</p>
-        </div>
+      <div className="px-5 py-4 border-b border-neutral-100">
+        <p className="text-base font-bold text-neutral-900">Editar mi perfil</p>
+        <p className="text-xs text-neutral-400 mt-0.5">Los datos académicos se comparten con tus solicitudes</p>
       </div>
 
       <form id="perfil-edit-form" onSubmit={handleSubmit} className="px-5 py-5 space-y-6">
@@ -482,140 +494,159 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           </div>
         )}
 
-        {/* ── Identidad ── */}
-        <div>
-          <SectionLabel>Identidad</SectionLabel>
-          <div className="space-y-3">
-            <div>
-              <FieldLabel>Nombre completo</FieldLabel>
-              <TextInput name="nombre" value={form.nombre} onChange={handleChange}
-                placeholder="Ej: María García López" />
-            </div>
-            <div>
-              <FieldLabel hint="(no editable desde el panel)">Email</FieldLabel>
-              <TextInput name="email_contacto" value={user.email_contacto || ""} disabled />
-            </div>
-          </div>
-        </div>
+        {/* ── Grid principal: 2 columnas en pantallas grandes ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
 
-        {/* ── Origen y ubicación ── */}
-        <div>
-          <SectionLabel>Origen y ubicación</SectionLabel>
-          <div className="space-y-3">
-            <div>
-              <FieldLabel>País de origen</FieldLabel>
-              <Combobox
-                value={form.pais_origen}
-                onChange={paisObj => handlePaisChange(paisObj.nombre)}
-                options={PAISES}
-                placeholder="Busca tu país…"
-                getLabel={p => {
-                  if (typeof p === "string") {
-                    const found = PAISES.find(x => x.nombre === p);
-                    return found ? `${found.emoji} ${found.nombre}` : p;
-                  }
-                  return `${p.emoji} ${p.nombre}`;
-                }}
-                renderOption={p => (
-                  <span className="flex items-center gap-2">
-                    <span>{p.emoji}</span>
-                    <span>{p.nombre}</span>
-                    <span className="ml-auto text-neutral-400 text-xs">{p.prefijo}</span>
-                  </span>
-                )}
-              />
-            </div>
-            <div>
-              <FieldLabel hint="(opcional)">Ciudad de residencia</FieldLabel>
-              <TextInput name="ciudad" value={form.ciudad} onChange={handleChange}
-                placeholder="Ej: Lima, Madrid, Bogotá…" />
-            </div>
-            <div>
-              <FieldLabel hint="(opcional)">Fecha de nacimiento</FieldLabel>
-              <TextInput name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange}
-                type="date" />
-            </div>
-          </div>
-        </div>
+          {/* ── Columna izquierda ── */}
+          <div className="space-y-6">
 
-        {/* ── Contacto ── */}
-        <div>
-          <SectionLabel>Contacto</SectionLabel>
-          <div className="space-y-3">
-            <TelefonoInput
-              label="Teléfono"
-              prefijo={form.prefijo_telefono}
-              numero={form.telefono_numero}
-              onPrefijo={v => set("prefijo_telefono", v)}
-              onNumero={v => set("telefono_numero", v)}
-            />
+            {/* IDENTIDAD */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-xs font-semibold text-neutral-700">WhatsApp</label>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer ml-auto">
-                  <input
-                    type="checkbox"
-                    checked={form.mismo_whatsapp}
-                    onChange={e => set("mismo_whatsapp", e.target.checked)}
-                    className="w-3.5 h-3.5 rounded accent-[#023A4B]"
-                  />
-                  <span className="text-xs text-neutral-500">Mismo que teléfono</span>
-                </label>
+              <SectionLabel>Identidad</SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <FieldLabel>Nombre completo</FieldLabel>
+                  <TextInput name="nombre" value={form.nombre} onChange={handleChange}
+                    placeholder="Ej: María García López" />
+                </div>
+                <div>
+                  <FieldLabel hint="(no editable)">Email</FieldLabel>
+                  <TextInput name="email_contacto" value={user.email_contacto || ""} disabled />
+                </div>
+                <div>
+                  <FieldLabel hint="(opcional)">Fecha de nacimiento</FieldLabel>
+                  <TextInput name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange}
+                    type="date" />
+                </div>
+                <div>
+                  <FieldLabel hint="(opcional)">Nacionalidad</FieldLabel>
+                  <TextInput name="nacionalidad" value={form.nacionalidad} onChange={handleChange}
+                    placeholder="Ej: Peruana, Colombiana, Española…" />
+                </div>
               </div>
-              {!form.mismo_whatsapp && (
+            </div>
+
+            {/* CONTACTO */}
+            <div>
+              <SectionLabel>Contacto</SectionLabel>
+              <div className="space-y-3">
                 <TelefonoInput
-                  label=""
-                  prefijo={form.prefijo_whatsapp}
-                  numero={form.whatsapp_numero}
-                  onPrefijo={v => set("prefijo_whatsapp", v)}
-                  onNumero={v => set("whatsapp_numero", v)}
+                  label="Teléfono"
+                  prefijo={form.prefijo_telefono}
+                  numero={form.telefono_numero}
+                  onPrefijo={v => set("prefijo_telefono", v)}
+                  onNumero={v => set("telefono_numero", v)}
                 />
-              )}
-              {form.mismo_whatsapp && (
-                <p className="text-xs text-neutral-400 italic">Se usará el mismo número que el teléfono</p>
-              )}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className="text-xs font-semibold text-neutral-700">WhatsApp</label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer ml-auto">
+                      <input
+                        type="checkbox"
+                        checked={form.mismo_whatsapp}
+                        onChange={e => set("mismo_whatsapp", e.target.checked)}
+                        className="w-3.5 h-3.5 rounded accent-[#023A4B]"
+                      />
+                      <span className="text-xs text-neutral-500">Mismo que teléfono</span>
+                    </label>
+                  </div>
+                  {!form.mismo_whatsapp && (
+                    <TelefonoInput
+                      label=""
+                      prefijo={form.prefijo_whatsapp}
+                      numero={form.whatsapp_numero}
+                      onPrefijo={v => set("prefijo_whatsapp", v)}
+                      onNumero={v => set("whatsapp_numero", v)}
+                    />
+                  )}
+                  {form.mismo_whatsapp && (
+                    <p className="text-xs text-neutral-400 italic">Se usará el mismo número que el teléfono</p>
+                  )}
+                </div>
+              </div>
             </div>
+
+          </div>
+
+          {/* ── Columna derecha ── */}
+          <div className="space-y-6">
+
+            {/* ORIGEN Y UBICACIÓN */}
+            <div>
+              <SectionLabel>Origen y ubicación</SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <FieldLabel>País de origen</FieldLabel>
+                  <Combobox
+                    value={form.pais_origen}
+                    onChange={paisObj => handlePaisChange(paisObj.nombre)}
+                    options={PAISES}
+                    placeholder="Busca tu país…"
+                    getLabel={p => {
+                      if (typeof p === "string") {
+                        const found = PAISES.find(x => x.nombre === p);
+                        return found ? `${found.emoji} ${found.nombre}` : p;
+                      }
+                      return `${p.emoji} ${p.nombre}`;
+                    }}
+                    renderOption={p => (
+                      <span className="flex items-center gap-2">
+                        <span>{p.emoji}</span>
+                        <span>{p.nombre}</span>
+                        <span className="ml-auto text-neutral-400 text-xs">{p.prefijo}</span>
+                      </span>
+                    )}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <FieldLabel hint="(opcional)">Ciudad de residencia</FieldLabel>
+                  <TextInput name="ciudad" value={form.ciudad} onChange={handleChange}
+                    placeholder="Ej: Lima, Madrid, Bogotá…" />
+                </div>
+              </div>
+            </div>
+
+            {/* DOCUMENTOS DE IDENTIDAD */}
+            <div>
+              <SectionLabel>Documentos de identidad</SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <FieldLabel hint="(opcional)">DNI / NIE / Cédula</FieldLabel>
+                  <TextInput name="dni" value={form.dni} onChange={handleChange}
+                    placeholder="12345678" />
+                </div>
+                <div>
+                  <FieldLabel hint="(opcional)">Número de pasaporte</FieldLabel>
+                  <TextInput name="pasaporte" value={form.pasaporte} onChange={handleChange}
+                    placeholder="AB123456" />
+                </div>
+                <div>
+                  <FieldLabel hint="(opcional)">Emisión del pasaporte</FieldLabel>
+                  <TextInput name="pasaporte_emision" value={form.pasaporte_emision} onChange={handleChange}
+                    type="date" />
+                </div>
+                <div>
+                  <FieldLabel hint="(opcional)">Vencimiento del pasaporte</FieldLabel>
+                  <TextInput name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange}
+                    type="date" />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* ── Documentos ── */}
-        <div>
-          <SectionLabel>Documentos de identidad</SectionLabel>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <FieldLabel hint="(opcional)">DNI / NIE / Cédula</FieldLabel>
-              <TextInput name="dni" value={form.dni} onChange={handleChange}
-                placeholder="12345678" />
-            </div>
-            <div>
-              <FieldLabel hint="(opcional)">Número de pasaporte</FieldLabel>
-              <TextInput name="pasaporte" value={form.pasaporte} onChange={handleChange}
-                placeholder="AB123456" />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Datos académicos ── */}
+        {/* ── Datos académicos — ancho completo ── */}
         <div>
           <SectionLabel>Datos académicos</SectionLabel>
           <p className="text-xs text-neutral-400 mb-3 -mt-1">
             Se pre-rellenarán automáticamente en el formulario de tus solicitudes.
           </p>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <FieldLabel hint="(opcional)">Carrera universitaria o título</FieldLabel>
               <TextInput name="carrera_titulo" value={form.carrera_titulo} onChange={handleChange}
                 placeholder="Ej: Ingeniería Industrial, Derecho, Psicología…" />
-            </div>
-            <div>
-              <FieldLabel hint="(opcional)">Universidad de origen</FieldLabel>
-              <Combobox
-                value={form.universidad_origen}
-                onChange={v => set("universidad_origen", v)}
-                options={UNIS}
-                placeholder="Busca tu universidad o escribe el nombre…"
-                allowCustom
-              />
             </div>
             <div>
               <FieldLabel hint="(opcional)">Área de estudio</FieldLabel>
@@ -629,11 +660,21 @@ export default function PerfilCliente({ user, onUserUpdated }) {
               </select>
             </div>
           </div>
+          <div>
+            <FieldLabel hint="(opcional)">Universidad de origen</FieldLabel>
+            <Combobox
+              value={form.universidad_origen}
+              onChange={v => set("universidad_origen", v)}
+              options={UNIS}
+              placeholder="Busca tu universidad o escribe el nombre…"
+              allowCustom
+            />
+          </div>
         </div>
 
       </form>
 
-      {/* Pie fijo — sticky respecto al contenedor de scroll del panel */}
+      {/* Pie fijo */}
       <div className="sticky bottom-0 z-10 bg-white border-t border-neutral-100 px-5 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
         <button type="button"
           onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
