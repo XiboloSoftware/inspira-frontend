@@ -37,7 +37,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   async function cargarTodo() {
     setLoading(true);
     setError("");
-
     try {
       const rDetalle = await apiGET(`/solicitudes/${idSolicitud}`);
       if (rDetalle.ok) setDetalle(rDetalle.solicitud);
@@ -48,8 +47,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const rForm = await apiGET(`/solicitudes/${idSolicitud}/formulario`);
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
-        const tiene = Object.keys(rForm.datos || {}).length > 0;
-        setFormCollapsed(tiene);
+        setFormCollapsed(Object.keys(rForm.datos || {}).length > 0);
       } else {
         setFormData({});
         setFormCollapsed(false);
@@ -62,8 +60,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
           const rawUrl = i.url || i.archivo_url || "";
           const isAbsolute = /^https?:\/\//i.test(rawUrl);
           if (isAbsolute) return { label: i.label, url: rawUrl };
-          const path = rawUrl.replace(/^\/+/, "");
-          return { label: i.label, url: `${base}/${path}` };
+          return { label: i.label, url: `${base}/${rawUrl.replace(/^\/+/, "")}` };
         });
         setInstructivos(lista);
       } else {
@@ -72,17 +69,14 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
       const rElec = await apiGET(`/solicitudes/${idSolicitud}/eleccion-masters`);
       const base5 = Array.from({ length: 5 }, (_, idx) => ({
-        prioridad: idx + 1,
-        programa: "",
-        comentario: "",
+        prioridad: idx + 1, programa: "", comentario: "",
       }));
-
       if (rElec.ok && Array.isArray(rElec.elecciones)) {
         setElecciones(rElec.elecciones.length > 0 ? rElec.elecciones : base5);
       } else {
         setElecciones(base5);
       }
-    } catch (e) {
+    } catch {
       setError("Error al cargar información.");
     } finally {
       setLoading(false);
@@ -102,10 +96,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     setSavingForm(true);
     try {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
-      if (!r.ok) {
-        window.alert("No se pudo guardar.");
-        return;
-      }
+      if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
       setFormCollapsed(true);
     } catch {
@@ -118,15 +109,10 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   async function handleGuardarElecciones() {
     setSavingElecciones(true);
     try {
-      const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, {
-        elecciones,
-      });
-      if (!r.ok) {
-        window.alert("No se pudo guardar la elección de másteres.");
-        return;
-      }
+      const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones });
+      if (!r.ok) { window.alert("No se pudo guardar la elección de másteres."); return; }
       window.alert("Elección de másteres guardada.");
-    } catch (e) {
+    } catch {
       window.alert("Error al guardar elección de másteres.");
     } finally {
       setSavingElecciones(false);
@@ -144,13 +130,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         onClick={onVolver}
         className="inline-flex items-center gap-2 text-sm font-semibold text-[#023A4B] hover:text-[#046C8C] transition-colors group"
       >
-        <svg
-          className="w-4 h-4 transition-transform group-hover:-translate-x-0.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
         </svg>
         Volver a mis servicios
@@ -180,33 +160,38 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               progresoChecklist={progresoChecklist}
             />
 
-            {/* VISADO: bloques apilados */}
+            {/* ───── VISADO ───── */}
             {esVisado ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                <div className="xl:col-span-2">
-                  <ChecklistDocumentos
-                    checklist={checklist}
-                    cargarTodo={cargarTodo}
-                    idSolicitud={idSolicitud}
-                  />
+                {/* Checklist ocupa toda la altura izquierda */}
+                <div className="xl:row-span-2">
+                  <div className="xl:sticky xl:top-4 max-h-[80vh] overflow-y-auto">
+                    <ChecklistDocumentos
+                      checklist={checklist}
+                      cargarTodo={cargarTodo}
+                      idSolicitud={idSolicitud}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <InstructivosPlantillas instructivos={instructivos} />
-                </div>
-                <div className="xl:col-span-2">
-                  <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-                </div>
+                <InstructivosPlantillas instructivos={instructivos} />
+                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
               </div>
             ) : (
-              /* MASTER: flujo completo */
-              <div className="space-y-5">
-                <ChecklistDocumentos
-                  checklist={checklist}
-                  cargarTodo={cargarTodo}
-                  idSolicitud={idSolicitud}
-                />
+              /* ───── MASTER: grid 2 columnas ───── */
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* Fila 1: Checklist (izq, sticky con scroll) | Instructivos + Formulario (der, apilados) */}
+                <div className="xl:row-span-2">
+                  <div className="xl:sticky xl:top-4 max-h-[80vh] overflow-y-auto rounded-2xl">
+                    <ChecklistDocumentos
+                      checklist={checklist}
+                      cargarTodo={cargarTodo}
+                      idSolicitud={idSolicitud}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-5">
                   <InstructivosPlantillas instructivos={instructivos} />
                   <FormularioDatosAcademicos
                     formData={formData}
@@ -219,6 +204,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   />
                 </div>
 
+                {/* Fila 2: Informe | Elección Másteres */}
                 <InformeBusqueda
                   idSolicitud={idSolicitud}
                   informe={{
@@ -234,11 +220,14 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   saving={savingElecciones}
                 />
 
+                {/* Fila 3: Programación | Portales */}
                 <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
-
                 <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
 
-                <CierreServicioMasterCliente idSolicitud={idSolicitud} />
+                {/* Fila 4: Cierre (full width) */}
+                <div className="xl:col-span-2">
+                  <CierreServicioMasterCliente idSolicitud={idSolicitud} />
+                </div>
               </div>
             )}
           </>

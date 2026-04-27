@@ -1,40 +1,20 @@
 // src/pages/panel/components/mis-servicios/sections/EleccionMastersCliente.jsx
 
-export default function EleccionMastersCliente({
-  elecciones,
-  setElecciones,
-  onGuardar,
-  saving,
-}) {
+export default function EleccionMastersCliente({ elecciones, setElecciones, onGuardar, saving }) {
   const lista = Array.isArray(elecciones) ? elecciones : [];
 
   const handleChange = (index, field, value) => {
-    const next = lista.map((el, i) =>
-      i === index ? { ...el, [field]: value } : el
-    );
+    const next = lista.map((el, i) => i === index ? { ...el, [field]: value } : el);
     setElecciones(next);
   };
 
   const handleAdd = () => {
-    const next = [
-      ...lista,
-      {
-        prioridad: lista.length + 1,
-        programa: "",
-        comentario: "",
-      },
-    ];
-    setElecciones(next);
+    setElecciones([...lista, { prioridad: lista.length + 1, programa: "", comentario: "" }]);
   };
 
-  // Solo se puede quitar la última prioridad y nunca dejar menos de 1
   const handleRemove = (index) => {
-    const isLast = index === lista.length - 1;
-    if (!isLast) return;
-    if (lista.length <= 1) return;
-
-    const next = lista.slice(0, -1);
-    setElecciones(next);
+    if (index !== lista.length - 1 || lista.length <= 1) return;
+    setElecciones(lista.slice(0, -1));
   };
 
   const handleSubmit = (e) => {
@@ -43,101 +23,117 @@ export default function EleccionMastersCliente({
   };
 
   return (
-    <section className="md:col-span-2 border border-neutral-200 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-neutral-900 mb-1">
-        5. Elección de másteres
-      </h3>
-      <p className="text-xs text-neutral-600 mb-2">
-        Revisa el informe del bloque 4 y escribe aquí a qué másteres te
-        gustaría postular, ordenados por prioridad. Puedes poner el nombre de
-        la universidad y del máster tal como aparecen en el informe.
-      </p>
+    <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 border-b border-neutral-100">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-7 h-7 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
+            <span className="text-white text-sm font-bold">5</span>
+          </div>
+          <h3 className="text-base font-bold text-neutral-900">Elección de másteres</h3>
+        </div>
+        <p className="text-sm text-neutral-500 ml-9">
+          Revisa el informe del bloque 4 e indica a qué másteres te gustaría postular, por orden de prioridad.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {/* LISTA CON SCROLL */}
-        <div className="border border-neutral-200 rounded-md max-h-72 overflow-y-auto pr-1">
-          <div className="divide-y divide-neutral-100">
+      {/* Formulario */}
+      <div className="px-6 py-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-3">
             {lista.map((row, index) => (
-              <div key={row.prioridad ?? index} className="p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium text-neutral-800">
-                    Prioridad {index + 1}
-                  </p>
-
-                  {/* Quitar solo si es la última y hay más de una */}
+              <div
+                key={row.prioridad ?? index}
+                className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50"
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-[#023A4B] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm font-semibold text-neutral-800">Prioridad {index + 1}</p>
+                  </div>
                   {lista.length > 1 && index === lista.length - 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemove(index)}
-                      className="text-[11px] px-2 py-1 rounded-md border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-white hover:bg-red-50 transition"
                     >
                       Quitar
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-[11px] text-neutral-600">
-                    Universidad y máster
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#023A4B]"
-                    placeholder="Ej: Universidad X – Máster en Y"
-                    value={row.programa || ""}
-                    onChange={(e) =>
-                      handleChange(index, "programa", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] text-neutral-600">
-                    Comentario (opcional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs resize-y focus:outline-none focus:ring-1 focus:ring-[#023A4B]"
-                    placeholder="Motivo por el que te interesa este programa, dudas, etc."
-                    value={row.comentario || ""}
-                    onChange={(e) =>
-                      handleChange(index, "comentario", e.target.value)
-                    }
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                      Universidad y máster
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/30 focus:border-[#023A4B] bg-white"
+                      placeholder="Ej: Universidad X — Máster en Y"
+                      value={row.programa || ""}
+                      onChange={(e) => handleChange(index, "programa", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                      Comentario <span className="font-normal text-neutral-400">(opcional)</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#023A4B]/30 focus:border-[#023A4B] bg-white"
+                      placeholder="Motivo por el que te interesa este programa, dudas, etc."
+                      value={row.comentario || ""}
+                      onChange={(e) => handleChange(index, "comentario", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
 
             {lista.length === 0 && (
-              <div className="p-3">
-                <p className="text-xs text-neutral-500">
-                  El cliente aún no ha registrado másteres preferidos en este
-                  bloque.
-                </p>
-              </div>
+              <p className="text-sm text-neutral-400 py-4 text-center">
+                Aún no hay másteres registrados.
+              </p>
             )}
           </div>
-        </div>
 
-        {/* BOTONES ABAJO */}
-        <div className="flex flex-col sm:flex-row justify-between gap-2 pt-1">
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="text-[11px] px-3 py-1.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 self-start"
-          >
-            Añadir otro máster
-          </button>
+          <div className="flex items-center justify-between gap-3 pt-1 border-t border-neutral-100">
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border-2 border-neutral-300 text-neutral-700 bg-white hover:border-neutral-400 hover:bg-neutral-50 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Añadir máster
+            </button>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="text-[11px] px-3 py-1.5 rounded-md bg-[#023A4B] text-white hover:bg-[#054256] disabled:opacity-60 self-end"
-          >
-            {saving ? "Guardando…" : "Guardar elección de másteres"}
-          </button>
-        </div>
-      </form>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95"
+            >
+              {saving ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Guardando…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  Guardar elección
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }

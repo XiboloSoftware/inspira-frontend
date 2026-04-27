@@ -75,9 +75,9 @@ export default function PanelCliente() {
 
       <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
         {/* Topbar sticky */}
-        <div className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm border-b border-neutral-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
+        <div className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm border-b border-neutral-200 px-5 sm:px-8 py-4 flex items-center gap-4 shrink-0">
           <button
-            className="md:hidden flex flex-col justify-center gap-[5px] w-8 h-8 p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm shrink-0"
+            className="md:hidden flex flex-col justify-center gap-[6px] w-10 h-10 p-2 rounded-lg bg-white border border-neutral-200 shadow-sm shrink-0"
             onClick={() => setSidebarOpen(true)}
             aria-label="Abrir menú"
           >
@@ -86,10 +86,10 @@ export default function PanelCliente() {
             <span className="block w-full h-[2px] bg-neutral-600 rounded" />
           </button>
           <div>
-            <p className="text-[10px] font-bold text-[#046C8C] uppercase tracking-widest leading-none">
+            <p className="text-xs font-bold text-[#046C8C] uppercase tracking-widest leading-none mb-0.5">
               Panel de cliente
             </p>
-            <h1 className="text-base font-bold text-neutral-900 leading-tight">Mi panel</h1>
+            <h1 className="text-xl font-bold text-neutral-900 leading-tight">Mi panel</h1>
           </div>
         </div>
 

@@ -4,9 +4,9 @@ export default function SidebarItem({ label, active, onClick }) {
     <button
       onClick={onClick}
       className={
-        "w-full text-left px-3 py-2 text-sm rounded-lg mb-0.5 transition " +
+        "w-full text-left px-4 py-3 text-sm font-medium rounded-lg mb-1 transition " +
         (active
-          ? "bg-white/15 text-white font-semibold"
+          ? "bg-white/20 text-white font-semibold"
           : "text-white/75 hover:bg-white/10 hover:text-white")
       }
     >
