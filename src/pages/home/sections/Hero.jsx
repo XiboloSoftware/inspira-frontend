@@ -1,95 +1,127 @@
-import { useState } from "react";
-import { apiPOST } from "../../../services/api";
-import { useAuth } from "../../../context/AuthContext";
+import { navigate } from "../../../services/navigate";
 
-// Cambia esto por el id_servicio REAL de tu servicio 002 en la BD
-const SERVICIO_MASTER_ID = "002";
-
-// URL del backend para login con Google
-const API_URL =
-  import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
+const go = (e, href) => {
+  e.preventDefault();
+  navigate(href);
+};
 
 export default function Hero() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-
-  async function manejarPago() {
-  if (loading) return;
-
-  // 1) Si NO está logueado, configuramos el destino post-login
-if (!user) {
-  localStorage.setItem("post_login_redirect", "/master"); // o donde quieras
-  window.location.href = `${API_URL}/auth/google`;
-  return;
-}
-
-
-  // 2) Si ya está logueado, flujo normal de pago
-  setLoading(true);
-
-  try {
-    const r = await apiPOST("/mercadopago/servicio/preferencia", {
-      id_servicio: SERVICIO_MASTER_ID,
-    });
-
-    if (r?.ok && r.preferencia?.init_point) {
-      window.location.href = r.preferencia.init_point;
-      return;
-    }
-
-    const msg =
-      r?.msg ||
-      r?.message ||
-      "No se pudo iniciar el pago. Inténtalo de nuevo.";
-    alert(msg);
-  } catch (e) {
-    console.error(e);
-    alert("Ocurrió un error al iniciar el pago.");
-  } finally {
-    setLoading(false);
-  }
-}
-
   return (
-    <section className="w-full bg-secondary-light py-20 px-6">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <h1 className="text-4xl font-bold text-primary mb-4">
-            Tu camino a estudiar o vivir en España empieza aquí.
-          </h1>
+    <section
+      className="w-full relative overflow-hidden py-28 px-6"
+      style={{
+        background: "linear-gradient(135deg, #023A4B 0%, #054A5E 65%, #023A4B 100%)",
+      }}
+    >
+      {/* Decorative blobs */}
+      <div
+        className="absolute top-0 right-0 rounded-full pointer-events-none"
+        style={{
+          width: "700px",
+          height: "700px",
+          background: "radial-gradient(circle, #9ACEFF 0%, transparent 70%)",
+          opacity: 0.08,
+          transform: "translate(30%, -30%)",
+        }}
+      />
+      <div
+        className="absolute bottom-0 left-0 rounded-full pointer-events-none"
+        style={{
+          width: "500px",
+          height: "500px",
+          background: "radial-gradient(circle, #F49E4B 0%, transparent 70%)",
+          opacity: 0.08,
+          transform: "translate(-35%, 35%)",
+        }}
+      />
 
-          <p className="text-neutral-700 text-lg mb-6">
-            Programa Máster 360°: te acompañamos desde la elección del máster
-            hasta la matrícula en universidades españolas de primer nivel.
-          </p>
-
-{/*
-          <button
-            type="button"
-            onClick={manejarPago}
-            disabled={loading}
-            className="inline-block bg-accent text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-accent-dark transition disabled:opacity-60"
-          >
-            {loading
-              ? "Redirigiendo a Mercado Pago..."
-              : "Contratar Programa Máster 360°"}
-          </button>
-
-*/
-
-}
-          <p className="text-neutral-500 text-sm mt-2">
-            El pago se realiza en soles (PEN) vía Mercado Pago. Es necesario
-            iniciar sesión para contratar el servicio.
-          </p>
+      <div className="max-w-5xl mx-auto text-center relative z-10">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 border border-white/20 bg-white/10 text-white/80 text-sm px-4 py-1.5 rounded-full mb-8">
+          <span
+            className="w-2 h-2 rounded-full animate-pulse"
+            style={{ background: "#F49E4B" }}
+          />
+          Programa 360° · Másteres en España 2026/2027
         </div>
 
-        <div className="hidden md:flex justify-center">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/201/201623.png"
-            alt="Estudiar en España"
-            className="w-72 opacity-90"
-          />
+        {/* Headline */}
+        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 tracking-tight">
+          Tu camino a estudiar
+          <br />
+          <span style={{ color: "#F49E4B" }}>en España</span> empieza aquí
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-white/65 text-xl md:text-2xl max-w-2xl mx-auto mb-12 leading-relaxed">
+          Te acompañamos desde la elección del máster hasta la matrícula en
+          universidades españolas de primer nivel.
+        </p>
+
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
+          <a
+            href="/diagnostico"
+            onClick={(e) => go(e, "/diagnostico")}
+            className="inline-flex items-center justify-center gap-2 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 hover:shadow-2xl"
+            style={{ background: "#F49E4B" }}
+          >
+            Reserva tu Diagnóstico · 25€
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path
+                d="M5 12L12 5M12 5H6M12 5v6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+          <a
+            href="/calculadora-master"
+            onClick={(e) => go(e, "/calculadora-master")}
+            className="inline-flex items-center justify-center gap-2 border-2 border-white/30 hover:border-white/60 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:bg-white/10"
+          >
+            Calculadora Gratuita
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path
+                d="M5 12l7-7 7 7"
+                transform="rotate(90, 9, 9)"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+        </div>
+
+        {/* Stats */}
+        <div className="flex flex-wrap justify-center gap-10 md:gap-20">
+          {[
+            { n: "98%", label: "Tasa de admisión" },
+            { n: "+80", label: "Universidades" },
+            { n: "3+", label: "Becas logradas" },
+            { n: "360°", label: "Servicio completo" },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <div
+                className="text-4xl font-bold mb-1"
+                style={{ color: "#F49E4B" }}
+              >
+                {s.n}
+              </div>
+              <div className="text-white/45 text-sm">{s.label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

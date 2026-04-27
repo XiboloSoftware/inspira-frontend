@@ -1,87 +1,108 @@
-import { useState } from "react";
-import { apiPOST } from "../../../../services/api";
 import { useAuth } from "../../../../context/AuthContext";
-
-
-// Mismo servicio 002 u otro, según el plan que quieras vender aquí
-const SERVICIO_MASTER_ID = 2;
+import { navigate } from "../../../../services/navigate";
 
 export default function HeroMaster() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
 
-  async function manejarPago() {
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      const r = await apiPOST("/mercadopago/servicio/preferencia", {
-        id_servicio: SERVICIO_MASTER_ID,
-      });
-
-      if (r.ok && r.preferencia?.init_point) {
-        window.location.href = r.preferencia.init_point;
-        return;
-      }
-
-      const msg =
-        r.msg ||
-        r.message ||
-        (!user
-          ? "Debes iniciar sesión con tu cuenta de Google (arriba) antes de contratar el programa."
-          : "No se pudo iniciar el pago. Inténtalo de nuevo.");
-      alert(msg);
-    } catch (e) {
-      console.error(e);
-      alert("Ocurrió un error al iniciar el pago.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const go = (e, href) => {
+    e.preventDefault();
+    navigate(href);
+  };
 
   return (
-    <section className="w-full bg-secondary-light py-16 px-6">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <span className="inline-block bg-secondary px-3 py-1 rounded-full text-primary text-sm font-semibold">
-            Máster en España 2026/2027
-          </span>
+    <section
+      className="w-full py-20 px-6 relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #023A4B 0%, #054A5E 100%)",
+      }}
+    >
+      {/* Decorative blob */}
+      <div
+        className="absolute top-0 right-0 rounded-full pointer-events-none"
+        style={{
+          width: "600px",
+          height: "600px",
+          background: "radial-gradient(circle, #9ACEFF 0%, transparent 70%)",
+          opacity: 0.07,
+          transform: "translate(30%, -30%)",
+        }}
+      />
 
-          <h1 className="text-4xl font-bold text-primary mt-3">
-            Programa Máster 360°
-          </h1>
+      <div className="max-w-6xl mx-auto relative z-10">
+        <span className="inline-block bg-white/10 border border-white/20 text-white/75 text-sm px-4 py-1.5 rounded-full mb-6">
+          Máster en España 2026/2027
+        </span>
 
-          <p className="text-neutral-700 text-lg mt-4">
-            Te acompañamos desde la búsqueda del máster hasta la matrícula,
-            con asesoría educativa, admisión universitaria, postulación y
-            seguimiento integral.
-          </p>
+        <div className="grid md:grid-cols-2 gap-14 items-center">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-5">
+              Programa Máster
+              <br />
+              <span style={{ color: "#F49E4B" }}>360°</span>
+            </h1>
+            <p className="text-white/65 text-lg mb-8 leading-relaxed">
+              Te acompañamos desde la búsqueda del máster hasta la matrícula,
+              con asesoría educativa, admisión universitaria, postulación y
+              seguimiento integral.
+            </p>
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-3">
-              <div className="text-sm text-neutral-500">Admisiones logradas</div>
-              <div className="text-2xl font-bold text-primary">98%</div>
+            {/* Mini stats */}
+            <div className="flex gap-4 mb-8">
+              {[
+                { n: "98%", l: "Admisión" },
+                { n: "+80", l: "Universidades" },
+                { n: "4", l: "Etapas" },
+              ].map((s) => (
+                <div
+                  key={s.l}
+                  className="bg-white/10 border border-white/15 rounded-xl px-4 py-3 text-center flex-1"
+                >
+                  <div className="text-2xl font-bold" style={{ color: "#F49E4B" }}>
+                    {s.n}
+                  </div>
+                  <div className="text-white/50 text-xs mt-0.5">{s.l}</div>
+                </div>
+              ))}
             </div>
-            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-3">
-              <div className="text-sm text-neutral-500">Becas obtenidas</div>
-              <div className="text-primary font-semibold">
-                Bicentenario, U. Jaén, Fundación Carolina
-              </div>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/diagnostico"
+                onClick={(e) => go(e, "/diagnostico")}
+                className="inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105 hover:shadow-xl"
+                style={{ background: "#F49E4B" }}
+              >
+                Reserva Diagnóstico · 25€
+              </a>
+              <a
+                href="/calculadora-master"
+                onClick={(e) => go(e, "/calculadora-master")}
+                className="inline-flex items-center gap-2 border-2 border-white/25 hover:border-white/50 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:bg-white/10"
+              >
+                Calculadora Gratuita
+              </a>
             </div>
           </div>
 
-          <p className="text-neutral-500 text-sm mt-2">
-            Pago en soles (PEN) vía Mercado Pago. Debes iniciar sesión con tu
-            cuenta de Google para completar la contratación.
-          </p>
-        </div>
-
-        <div className="hidden md:flex justify-center">
-          <img
-            src="/servicios/master-hero.png"
-            alt="Máster en España"
-            className="w-[420px] rounded-2xl shadow"
-          />
+          {/* Feature pills */}
+          <div className="hidden md:grid grid-cols-2 gap-3">
+            {[
+              "✓ Búsqueda personalizada de másteres",
+              "✓ Beca Generación Bicentenario",
+              "✓ Beca Fundación Carolina",
+              "✓ +80 universidades públicas",
+              "✓ Revisión documentaria completa",
+              "✓ Seguimiento hasta la matrícula",
+            ].map((b) => (
+              <div
+                key={b}
+                className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4 text-white/75 text-sm font-medium"
+              >
+                {b}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
