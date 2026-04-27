@@ -89,15 +89,8 @@ export default function BackofficeApp() {
           <Topbar
             user={user}
             onLogout={logout}
-            sidebarPinned={sidebarPinned}
-            onMenuToggle={() => {
-              if (sidebarPinned) {
-                // Si está fijo, desanclarlo (el sidebar desaparece del layout)
-                toggleSidebarPin();
-              } else {
-                setSidebarOpen(o => !o);
-              }
-            }}
+            sidebarOpen={sidebarOpen}
+            onMenuToggle={() => setSidebarOpen(o => !o)}
           />
 
           <main className="flex-1 flex flex-col overflow-y-auto">
