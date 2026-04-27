@@ -253,7 +253,7 @@ export default function PanelAsesoras() {
                 c={c}
                 isExp={expandedKey === key}
                 onToggle={() => setExpandedKey(expandedKey === key ? null : key)}
-                onEdit={() => { setEditTarget({ item: c, svc: c._svc }); setAddMode(false); }}
+                onEdit={(enriched) => { setEditTarget({ item: enriched, svc: enriched._svc }); setAddMode(false); }}
                 onDelete={() => setDelTarget({ id: c._id, svc: c._svc, name: c.name })}
               />
             );
@@ -291,6 +291,19 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
   const hasBeca = c.beca?.aprobable;
   const hasPend = c.pending?.length > 0;
 
+  // Resuelve el enlace Drive al expandir la card (una sola vez)
+  const [driveUrl, setDriveUrl] = useState(c.driveUrl || "");
+  useEffect(() => {
+    if (isExp && !driveUrl && c._clienteId) {
+      boGET(`/api/admin/clientes/${c._clienteId}/drive-folder-url`)
+        .then(r => { if (r.ok && r.url) setDriveUrl(r.url); })
+        .catch(() => {});
+    }
+  }, [isExp]);
+
+  // c enriquecido con el driveUrl resuelto (se pasa al detail y al form)
+  const enriched = driveUrl ? { ...c, driveUrl } : c;
+
   let subtitle = `${SVC_LABELS[svc]} · ${c.paquete || "Sin paquete"}`;
   if ((svc === "visa" || svc === "ee") && c.fases) {
     const lastDone = [...(c.fases)].reverse().find(f => f.done);
@@ -327,7 +340,7 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
               {c.pending.length}
             </span>
           )}
-          <button onClick={e => { e.stopPropagation(); onEdit(); }}
+          <button onClick={e => { e.stopPropagation(); onEdit(enriched); }}
             className="px-2 py-0.5 text-[11px] rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100">
             Editar
           </button>
@@ -340,7 +353,7 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
       </div>
 
       {/* Detalle expandido */}
-      {isExp && <ClienteDetail c={c} />}
+      {isExp && <ClienteDetail c={enriched} />}
     </div>
   );
 }
