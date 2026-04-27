@@ -169,12 +169,9 @@ export default function ChecklistSolicitudAdmin({
                   {docs.length === 0 ? (
                     <p className="text-[11px] text-neutral-400 mt-1">Sin documentos cargados.</p>
                   ) : (
-                    <div className="border-t border-neutral-100 pt-2 mt-2 space-y-2">
+                    <div className="border-t border-neutral-100 pt-2 mt-2 space-y-3">
                       {docs.map((doc) => (
-                        <div
-                          key={doc.id_documento}
-                          className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-start"
-                        >
+                        <div key={doc.id_documento} className="space-y-1.5">
                           <div className="min-w-0">
                             <p className="text-xs text-neutral-800 truncate font-medium">{doc.nombre_original}</p>
                             <p className="text-[11px] text-neutral-500 mt-0.5">
@@ -187,7 +184,7 @@ export default function ChecklistSolicitudAdmin({
                               </p>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 justify-end shrink-0 flex-wrap">
+                          <div className="flex items-center gap-1 flex-wrap">
                             <button
                               type="button"
                               onClick={() => setViewingDoc(doc)}
@@ -199,7 +196,7 @@ export default function ChecklistSolicitudAdmin({
                               type="button"
                               title="Abrir en Google Drive"
                               onClick={() => abrirEnDrive(doc)}
-                              className="group flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-md active:scale-95 transition-all duration-150 shrink-0"
+                              className="group flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-md active:scale-95 transition-all duration-150"
                             >
                               <svg width="13" height="13" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
                                 <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
