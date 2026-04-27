@@ -1,394 +1,56 @@
 // src/pages/backoffice/documentos/DocumentosBackoffice.jsx
 import { useEffect, useState } from "react";
-import { boGET, boDELETE } from "../../../services/backofficeApi";
+import { boGET } from "../../../services/backofficeApi";
+import { getUser } from "./documentosUtils";
+import { TreeNode, SolicitudNode } from "./DocumentosTree";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-
-function getUser() {
-  try {
-    const u = localStorage.getItem("bo_user");
-    return u ? JSON.parse(u) : null;
-  } catch {
-    return null;
-  }
-}
-
-function formatBytes(bytes) {
-  if (!bytes) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(d) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function EstadoBadge({ estado }) {
-  const map = {
-    APROBADO: "bg-green-100 text-green-700",
-    OBSERVADO: "bg-yellow-100 text-yellow-700",
-    SUBIDO: "bg-blue-100 text-blue-600",
-  };
-  return (
-    <span
-      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-        map[estado] || "bg-neutral-100 text-neutral-500"
-      }`}
-    >
-      {estado}
-    </span>
+function countDocs(lista) {
+  return lista.reduce(
+    (a, c) => a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
+    0
   );
 }
 
-function fileIcon(mime) {
-  if (!mime) return "📄";
-  if (mime.includes("pdf")) return "📕";
-  if (mime.includes("image")) return "🖼️";
-  if (mime.includes("word") || mime.includes("document")) return "📝";
-  if (mime.includes("sheet") || mime.includes("excel")) return "📊";
-  if (mime.includes("zip") || mime.includes("rar")) return "🗜️";
-  return "📄";
+function filtrarLista(lista, q) {
+  if (!q) return lista;
+  return lista
+    .map((c) => ({
+      ...c,
+      solicitudes: c.solicitudes
+        .map((s) => ({
+          ...s,
+          items: s.items
+            .map((it) => ({
+              ...it,
+              documentos: it.documentos.filter(
+                (d) =>
+                  d.nombre_original.toLowerCase().includes(q) ||
+                  it.nombre.toLowerCase().includes(q) ||
+                  s.titulo.toLowerCase().includes(q) ||
+                  c.nombre.toLowerCase().includes(q) ||
+                  (c.email && c.email.toLowerCase().includes(q))
+              ),
+            }))
+            .filter((it) => it.documentos.length > 0),
+        }))
+        .filter((s) => s.items.length > 0),
+    }))
+    .filter((c) => c.solicitudes.length > 0);
 }
 
-async function descargarDocumento(doc) {
-  const token = localStorage.getItem("bo_token");
-  try {
-    const r = await fetch(
-      `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!r.ok) {
-      alert("No se pudo descargar el archivo");
-      return;
-    }
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = doc.nombre_original;
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch {
-    alert("Error al descargar el archivo");
-  }
+function eliminarDocDeEstructura(lista, idDocumento) {
+  return lista.map((entry) => ({
+    ...entry,
+    solicitudes: entry.solicitudes.map((s) => ({
+      ...s,
+      items: s.items.map((it) => ({
+        ...it,
+        documentos: it.documentos.filter((d) => d.id_documento !== idDocumento),
+      })),
+    })),
+  }));
 }
 
-// ─── Visor de documento (modal) ───────────────────────────────────────────────
-function DocViewer({ doc, onClose }) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [blobUrl, setBlobUrl] = useState(null);
-
-  const isPdf = doc.mime_type?.includes("pdf");
-  const isImage = doc.mime_type?.includes("image");
-  const canPreview = isPdf || isImage;
-
-  useEffect(() => {
-    let objectUrl = null;
-    let cancelled = false;
-
-    async function load() {
-      const token = localStorage.getItem("bo_token");
-      try {
-        const r = await fetch(
-          `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (cancelled) return;
-        if (!r.ok) { setError("No se pudo cargar el archivo."); setLoading(false); return; }
-        const blob = await r.blob();
-        if (cancelled) return;
-        objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
-      } catch {
-        if (!cancelled) setError("Error al cargar el archivo.");
-      }
-      if (!cancelled) setLoading(false);
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [doc.id_documento]);
-
-  useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  // Modal pequeño: para tipos no previsualizable o error
-  if (!canPreview || error) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-        onClick={onClose}
-      >
-        <div
-          className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="text-5xl mb-4">{fileIcon(doc.mime_type)}</div>
-          <p className="text-sm font-medium text-neutral-800 mb-1 truncate px-2">
-            {doc.nombre_original}
-          </p>
-          <p className="text-xs text-neutral-400 mb-6">
-            {formatBytes(doc.tamano_bytes)} · {formatDate(doc.fecha_subida)}
-          </p>
-          {loading && <p className="text-sm text-neutral-500 mb-4">Cargando…</p>}
-          {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-          {!loading && !error && (
-            <>
-              <p className="text-xs text-neutral-500 mb-5">
-                Este tipo de archivo no se puede previsualizar en el navegador.
-                Ábrelo con la aplicación correspondiente instalada en tu equipo.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={() => blobUrl && window.open(blobUrl, "_blank")}
-                  className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  Abrir con aplicación ↗
-                </button>
-                <button
-                  onClick={() => { descargarDocumento(doc); onClose(); }}
-                  className="text-sm px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50"
-                >
-                  Descargar
-                </button>
-              </div>
-            </>
-          )}
-          <button
-            onClick={onClose}
-            className="mt-5 text-xs text-neutral-400 hover:text-neutral-600"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Modal grande: PDF e imágenes
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden w-full h-full"
-        style={{ maxWidth: "1300px", maxHeight: "92vh" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabecera del visor */}
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-200 bg-neutral-50 shrink-0">
-          <span className="text-base leading-none">{fileIcon(doc.mime_type)}</span>
-          <span className="flex-1 text-sm font-medium text-neutral-800 truncate">
-            {doc.nombre_original}
-          </span>
-          <span className="text-[11px] text-neutral-400 shrink-0 hidden sm:block">
-            {formatBytes(doc.tamano_bytes)}
-          </span>
-          {blobUrl && isPdf && (
-            <button
-              onClick={() => window.open(blobUrl, "_blank")}
-              className="text-[11px] px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
-            >
-              Nueva ventana ↗
-            </button>
-          )}
-          <button
-            onClick={() => descargarDocumento(doc)}
-            className="text-[11px] px-2 py-1 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
-          >
-            Descargar
-          </button>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-700 text-xl leading-none w-7 h-7 flex items-center justify-center rounded hover:bg-neutral-100 shrink-0"
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
-        </div>
-        {/* Área del visor */}
-        <div className="flex-1 overflow-hidden flex items-center justify-center bg-neutral-300">
-          {loading && (
-            <div className="text-sm text-neutral-600 bg-white px-5 py-3 rounded-lg shadow">
-              Cargando archivo…
-            </div>
-          )}
-          {!loading && !error && blobUrl && isPdf && (
-            <iframe
-              src={blobUrl}
-              className="w-full h-full border-0"
-              title={doc.nombre_original}
-            />
-          )}
-          {!loading && !error && blobUrl && isImage && (
-            <img
-              src={blobUrl}
-              alt={doc.nombre_original}
-              className="max-w-full max-h-full object-contain p-4"
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Fila de documento ────────────────────────────────────────────────────────
-function DocRow({ doc, isAdmin, onEliminar }) {
-  const [eliminando, setEliminando] = useState(false);
-  const [verDoc, setVerDoc] = useState(false);
-
-  async function handleEliminar() {
-    if (!window.confirm(`¿Eliminar "${doc.nombre_original}"? Esta acción no se puede deshacer.`)) return;
-    setEliminando(true);
-    const r = await boDELETE(`/backoffice/documentos/${doc.id_documento}`);
-    if (!r.ok) {
-      alert(r.msg || "No se pudo eliminar");
-      setEliminando(false);
-      return;
-    }
-    onEliminar(doc.id_documento);
-  }
-
-  return (
-    <>
-      <div className="flex items-center gap-2 py-1.5 px-3 hover:bg-neutral-50 rounded-lg group">
-        <span className="text-base leading-none">{fileIcon(doc.mime_type)}</span>
-        <span className="flex-1 text-xs text-neutral-800 truncate min-w-0">
-          {doc.nombre_original}
-        </span>
-        <EstadoBadge estado={doc.estado_revision} />
-        <span className="text-[11px] text-neutral-400 shrink-0">
-          {formatBytes(doc.tamano_bytes)}
-        </span>
-        <span className="text-[11px] text-neutral-400 shrink-0 hidden sm:block">
-          {formatDate(doc.fecha_subida)}
-        </span>
-        <button
-          onClick={() => setVerDoc(true)}
-          className="text-[11px] px-2 py-0.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 shrink-0"
-        >
-          Abrir
-        </button>
-        <button
-          onClick={() => descargarDocumento(doc)}
-          className="text-[11px] px-2 py-0.5 rounded border border-neutral-300 hover:bg-neutral-100 shrink-0"
-        >
-          Descargar
-        </button>
-        {isAdmin && (
-          <button
-            onClick={handleEliminar}
-            disabled={eliminando}
-            className="text-[11px] px-2 py-0.5 rounded border border-red-300 text-red-600 hover:bg-red-50 shrink-0 disabled:opacity-50"
-          >
-            {eliminando ? "…" : "Eliminar"}
-          </button>
-        )}
-      </div>
-      {verDoc && <DocViewer doc={doc} onClose={() => setVerDoc(false)} />}
-    </>
-  );
-}
-
-// ─── Nodo del árbol (colapsable) ──────────────────────────────────────────────
-function TreeNode({ icon, label, sublabel, count, defaultOpen = false, forceOpen, headerExtra, children }) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  useEffect(() => {
-    if (forceOpen !== undefined) setOpen(forceOpen);
-  }, [forceOpen]);
-
-  return (
-    <div>
-      {/* div en vez de button para poder anidar botones reales (headerExtra) */}
-      <div
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 py-1.5 px-2 hover:bg-neutral-100 rounded-lg cursor-pointer select-none"
-      >
-        <span className="text-neutral-400 text-xs w-3 shrink-0">{open ? "▾" : "▸"}</span>
-        <span className="text-base leading-none shrink-0">{icon}</span>
-        {/* headerExtra entre el ícono y el nombre; stopPropagation evita toggle */}
-        {headerExtra && (
-          <span className="shrink-0" onClick={(e) => e.stopPropagation()}>
-            {headerExtra}
-          </span>
-        )}
-        <span className="text-sm font-medium text-neutral-800 flex-1 truncate min-w-0">
-          {label}
-        </span>
-        {sublabel && (
-          <span className="text-[11px] text-neutral-400 hidden sm:block shrink-0">
-            {sublabel}
-          </span>
-        )}
-        {count !== undefined && (
-          <span className="text-[10px] bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full shrink-0">
-            {count}
-          </span>
-        )}
-      </div>
-      {open && <div className="ml-5 border-l border-neutral-200 pl-2 mt-0.5">{children}</div>}
-    </div>
-  );
-}
-
-// ─── Sección de items de un ítem de checklist ────────────────────────────────
-function ItemNode({ item, isAdmin, onEliminar, forceOpen }) {
-  const [docs, setDocs] = useState(item.documentos);
-
-  function handleEliminar(id) {
-    setDocs((prev) => prev.filter((d) => d.id_documento !== id));
-    onEliminar(id);
-  }
-
-  if (docs.length === 0) return null;
-
-  return (
-    <TreeNode icon="📂" label={item.nombre} count={docs.length} forceOpen={forceOpen}>
-      <div className="mt-1 space-y-0.5">
-        {docs.map((doc) => (
-          <DocRow
-            key={doc.id_documento}
-            doc={doc}
-            isAdmin={isAdmin}
-            onEliminar={handleEliminar}
-          />
-        ))}
-      </div>
-    </TreeNode>
-  );
-}
-
-// ─── Sección de solicitud ────────────────────────────────────────────────────
-function SolicitudNode({ solicitud, isAdmin, onEliminar, forceOpen }) {
-  const totalDocs = solicitud.items.reduce((acc, it) => acc + it.documentos.length, 0);
-  if (totalDocs === 0) return null;
-
-  return (
-    <TreeNode icon="📋" label={solicitud.titulo} count={totalDocs} forceOpen={forceOpen}>
-      {solicitud.items.map((item, i) => (
-        <ItemNode key={i} item={item} isAdmin={isAdmin} onEliminar={onEliminar} forceOpen={forceOpen} />
-      ))}
-    </TreeNode>
-  );
-}
-
-// ─── Componente principal ─────────────────────────────────────────────────────
 export default function DocumentosBackoffice() {
   const [clientes, setClientes] = useState([]);
   const [internos, setInternos] = useState([]);
@@ -397,10 +59,6 @@ export default function DocumentosBackoffice() {
   const [busqueda, setBusqueda] = useState("");
   const [expandedMap, setExpandedMap] = useState({});
   const [tab, setTab] = useState("clientes");
-
-  function toggleExpand(id) {
-    setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
 
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
@@ -421,66 +79,21 @@ export default function DocumentosBackoffice() {
   }
 
   function handleEliminarGlobal(idDocumento) {
-    function filtrarDocs(lista) {
-      return lista.map((entry) => ({
-        ...entry,
-        solicitudes: entry.solicitudes.map((s) => ({
-          ...s,
-          items: s.items.map((it) => ({
-            ...it,
-            documentos: it.documentos.filter((d) => d.id_documento !== idDocumento),
-          })),
-        })),
-      }));
-    }
-    setClientes((prev) => filtrarDocs(prev));
-    setInternos((prev) => filtrarDocs(prev));
+    setClientes((prev) => eliminarDocDeEstructura(prev, idDocumento));
+    setInternos((prev) => eliminarDocDeEstructura(prev, idDocumento));
+  }
+
+  function toggleExpand(id) {
+    setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
   const q = busqueda.toLowerCase().trim();
+  const clientesFiltrados = filtrarLista(clientes, q);
+  const internosFiltrados = filtrarLista(internos, q);
 
-  function filtrarLista(lista) {
-    if (!q) return lista;
-    return lista
-      .map((c) => ({
-        ...c,
-        solicitudes: c.solicitudes
-          .map((s) => ({
-            ...s,
-            items: s.items
-              .map((it) => ({
-                ...it,
-                documentos: it.documentos.filter(
-                  (d) =>
-                    d.nombre_original.toLowerCase().includes(q) ||
-                    it.nombre.toLowerCase().includes(q) ||
-                    s.titulo.toLowerCase().includes(q) ||
-                    c.nombre.toLowerCase().includes(q) ||
-                    (c.email && c.email.toLowerCase().includes(q))
-                ),
-              }))
-              .filter((it) => it.documentos.length > 0),
-          }))
-          .filter((s) => s.items.length > 0),
-      }))
-      .filter((c) => c.solicitudes.length > 0);
-  }
-
-  function countDocs(lista) {
-    return lista.reduce(
-      (a, c) => a + c.solicitudes.reduce((b, s) => b + s.items.reduce((c2, it) => c2 + it.documentos.length, 0), 0),
-      0
-    );
-  }
-
-  const clientesFiltrados = filtrarLista(clientes);
-  const internosFiltrados = filtrarLista(internos);
-
+  const totalDocs = countDocs(clientes) + countDocs(internos);
   const totalClienteDocs = countDocs(clientes);
   const totalInternoDocs = countDocs(internos);
-  const totalDocs = totalClienteDocs + totalInternoDocs;
-  const clientesFiltradosDocs = countDocs(clientesFiltrados);
-  const internosFiltradosDocs = countDocs(internosFiltrados);
 
   function ExpandBtn({ id }) {
     return (
@@ -498,10 +111,16 @@ export default function DocumentosBackoffice() {
     );
   }
 
+  const tabConfig = {
+    clientes: { color: "indigo", icon: "👥", label: "Clientes", lista: clientesFiltrados, count: countDocs(clientesFiltrados), total: totalClienteDocs, idKey: "id_cliente" },
+    equipo:   { color: "teal",   icon: "🏢", label: "Equipo",   lista: internosFiltrados, count: countDocs(internosFiltrados), total: totalInternoDocs, idKey: "id_usuario"  },
+  };
+
+  const activeTab = tabConfig[tab];
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-
-      {/* ── Cabecera ── */}
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900">Documentos</h1>
@@ -513,91 +132,60 @@ export default function DocumentosBackoffice() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, cliente, solicitud…"
-            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <button
-            onClick={cargar}
-            title="Recargar"
-            className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base"
-          >
-            ↻
-          </button>
+          <button onClick={cargar} title="Recargar" className="p-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-500 text-base">↻</button>
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
+      {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
           <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Total archivos</p>
           <p className="text-3xl font-bold text-neutral-800">{loading ? "…" : totalDocs}</p>
         </div>
-        <div
-          onClick={() => setTab("clientes")}
-          className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
-            tab === "clientes"
-              ? "bg-indigo-50 border-indigo-300 ring-1 ring-indigo-300"
-              : "bg-white border-neutral-200 hover:border-indigo-200 hover:bg-indigo-50/40"
-          }`}
-        >
-          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Clientes</p>
-          <p className={`text-3xl font-bold ${tab === "clientes" ? "text-indigo-700" : "text-neutral-800"}`}>
-            {loading ? "…" : totalClienteDocs}
-          </p>
-        </div>
-        <div
-          onClick={() => setTab("equipo")}
-          className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
-            tab === "equipo"
-              ? "bg-teal-50 border-teal-300 ring-1 ring-teal-300"
-              : "bg-white border-neutral-200 hover:border-teal-200 hover:bg-teal-50/40"
-          }`}
-        >
-          <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">Equipo</p>
-          <p className={`text-3xl font-bold ${tab === "equipo" ? "text-teal-700" : "text-neutral-800"}`}>
-            {loading ? "…" : totalInternoDocs}
-          </p>
-        </div>
+        {Object.entries(tabConfig).map(([key, cfg]) => (
+          <div
+            key={key}
+            onClick={() => setTab(key)}
+            className={`rounded-xl border shadow-sm p-4 cursor-pointer transition-all ${
+              tab === key
+                ? `bg-${cfg.color}-50 border-${cfg.color}-300 ring-1 ring-${cfg.color}-300`
+                : "bg-white border-neutral-200 hover:border-neutral-300"
+            }`}
+          >
+            <p className="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider mb-1">{cfg.label}</p>
+            <p className={`text-3xl font-bold ${tab === key ? `text-${cfg.color}-700` : "text-neutral-800"}`}>
+              {loading ? "…" : cfg.total}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
 
-      {/* ── Tarjeta principal con pestañas ── */}
+      {/* Tarjeta principal */}
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-
         {/* Pestañas */}
         <div className="flex border-b border-neutral-200 bg-neutral-50 px-4 pt-2 gap-1">
-          <button
-            onClick={() => setTab("clientes")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
-              tab === "clientes"
-                ? "border-indigo-500 text-indigo-600 bg-white"
-                : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
-            }`}
-          >
-            👥 Clientes
-            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
-              tab === "clientes" ? "bg-indigo-100 text-indigo-600" : "bg-neutral-200 text-neutral-500"
-            }`}>
-              {loading ? "…" : clientesFiltradosDocs}
-            </span>
-          </button>
-          <button
-            onClick={() => setTab("equipo")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
-              tab === "equipo"
-                ? "border-teal-500 text-teal-600 bg-white"
-                : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
-            }`}
-          >
-            🏢 Equipo
-            <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
-              tab === "equipo" ? "bg-teal-100 text-teal-600" : "bg-neutral-200 text-neutral-500"
-            }`}>
-              {loading ? "…" : internosFiltradosDocs}
-            </span>
-          </button>
+          {Object.entries(tabConfig).map(([key, cfg]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
+                tab === key
+                  ? `border-${cfg.color}-500 text-${cfg.color}-600 bg-white`
+                  : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+              }`}
+            >
+              {cfg.icon} {cfg.label}
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
+                tab === key ? `bg-${cfg.color}-100 text-${cfg.color}-600` : "bg-neutral-200 text-neutral-500"
+              }`}>
+                {loading ? "…" : cfg.count}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Contenido */}
@@ -609,70 +197,40 @@ export default function DocumentosBackoffice() {
             </div>
           )}
 
-          {!loading && tab === "clientes" && (
-            clientesFiltrados.length === 0 ? (
-              <div className="py-16 text-center text-neutral-400 text-sm">
-                <div className="text-4xl mb-3">🔍</div>
-                {q ? "Sin resultados para esta búsqueda." : "No hay documentos de clientes aún."}
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {clientesFiltrados.map((cliente) => (
-                  <TreeNode
-                    key={cliente.id_cliente}
-                    icon="👤"
-                    label={cliente.nombre}
-                    sublabel={cliente.email}
-                    count={countDocs([cliente])}
-                    forceOpen={expandedMap[cliente.id_cliente]}
-                    headerExtra={<ExpandBtn id={cliente.id_cliente} />}
-                  >
-                    {cliente.solicitudes.map((sol) => (
-                      <SolicitudNode
-                        key={sol.id_solicitud}
-                        solicitud={sol}
-                        isAdmin={isAdmin}
-                        onEliminar={handleEliminarGlobal}
-                        forceOpen={expandedMap[cliente.id_cliente]}
-                      />
-                    ))}
-                  </TreeNode>
-                ))}
-              </div>
-            )
+          {!loading && activeTab.lista.length === 0 && (
+            <div className="py-16 text-center text-neutral-400 text-sm">
+              <div className="text-4xl mb-3">🔍</div>
+              {q ? "Sin resultados para esta búsqueda." : `No hay documentos de ${activeTab.label.toLowerCase()} aún.`}
+            </div>
           )}
 
-          {!loading && tab === "equipo" && (
-            internosFiltrados.length === 0 ? (
-              <div className="py-16 text-center text-neutral-400 text-sm">
-                <div className="text-4xl mb-3">🔍</div>
-                {q ? "Sin resultados para esta búsqueda." : "No hay documentos del equipo aún."}
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {internosFiltrados.map((usr) => (
+          {!loading && activeTab.lista.length > 0 && (
+            <div className="space-y-0.5">
+              {activeTab.lista.map((entry) => {
+                const id = entry[activeTab.idKey];
+                return (
                   <TreeNode
-                    key={usr.id_usuario}
+                    key={id}
                     icon="👤"
-                    label={usr.nombre}
-                    sublabel={usr.rol ? `${usr.rol} · ${usr.email || ""}` : usr.email}
-                    count={countDocs([usr])}
-                    forceOpen={expandedMap[usr.id_usuario]}
-                    headerExtra={<ExpandBtn id={usr.id_usuario} />}
+                    label={entry.nombre}
+                    sublabel={entry.rol ? `${entry.rol} · ${entry.email || ""}` : entry.email}
+                    count={countDocs([entry])}
+                    forceOpen={expandedMap[id]}
+                    headerExtra={<ExpandBtn id={id} />}
                   >
-                    {usr.solicitudes.map((sol) => (
+                    {entry.solicitudes.map((sol) => (
                       <SolicitudNode
                         key={sol.id_solicitud}
                         solicitud={sol}
                         isAdmin={isAdmin}
                         onEliminar={handleEliminarGlobal}
-                        forceOpen={expandedMap[usr.id_usuario]}
+                        forceOpen={expandedMap[id]}
                       />
                     ))}
                   </TreeNode>
-                ))}
-              </div>
-            )
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
