@@ -26,7 +26,8 @@ function ThSort({ label, campo, center, sortKey, sortDir, onSort }) {
   return (
     <th
       onClick={() => onSort(campo)}
-      className={`px-3 py-3 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary/10 transition ${center ? "text-center" : ""}`}
+      title={label}
+      className={`px-3 py-3 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary/10 transition overflow-hidden ${center ? "text-center" : ""}`}
     >
       {label}<SortIcon active={sortKey === campo} dir={sortDir} />
     </th>
@@ -223,18 +224,18 @@ export default function LeadsCalculadora({ user }) {
         */}
         <table className="w-full text-sm table-fixed">
           <colgroup>
-            <col style={{ width: "105px" }} />
-            <col style={{ width: "120px" }} />
-            <col style={{ width: "62px" }} />
-            <col style={{ width: "58px" }} />
-            <col style={{ width: "128px" }} />
-            <col style={{ width: "70px" }} />
-            <col style={{ width: "82px" }} />
-            <col style={{ width: "44px" }} />
-            <col style={{ width: "148px" }} />
-            <col style={{ width: "95px" }} />
-            <col />
-            <col style={{ width: "80px" }} />
+            <col style={{ width: "112px" }} /> {/* Fecha / Hora ↕ ~110px */}
+            <col style={{ width: "112px" }} /> {/* Nombre ↕ */}
+            <col style={{ width: "66px" }}  /> {/* País ↕ */}
+            <col style={{ width: "84px" }}  /> {/* Nota ES ↕ — era 58, insuficiente */}
+            <col style={{ width: "118px" }} /> {/* Área ↕ */}
+            <col style={{ width: "80px" }}  /> {/* Presup. ↕ */}
+            <col style={{ width: "80px" }}  /> {/* Perfil ↕ */}
+            <col style={{ width: "52px" }}  /> {/* AUIP */}
+            <col style={{ width: "142px" }} /> {/* Email */}
+            <col style={{ width: "92px" }}  /> {/* WhatsApp */}
+            <col />                             {/* Becas — toma el espacio sobrante */}
+            <col style={{ width: "76px" }}  /> {/* Acc. */}
           </colgroup>
           <thead>
             <tr className="bg-secondary-light text-primary text-left">
