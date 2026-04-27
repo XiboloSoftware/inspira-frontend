@@ -650,6 +650,18 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
   const [unis, setUnis]         = useState(() => item?.unis ? JSON.parse(JSON.stringify(item.unis)) : []);
   const [fases, setFases]       = useState(() => item?.fases ? JSON.parse(JSON.stringify(item.fases)) : mkFases());
   const [pendingStr, setPendingStr] = useState(() => (item?.pending || []).join("\n"));
+  const [resolvedDriveUrl, setResolvedDriveUrl] = useState(item?.driveUrl || "");
+  const [driveResolving, setDriveResolving] = useState(false);
+
+  useEffect(() => {
+    if (isEdit && !resolvedDriveUrl && item?._id) {
+      setDriveResolving(true);
+      boGET(`/backoffice/panel-asesoras/${item._id}/drive-url`)
+        .then(r => { if (r.ok && r.url) setResolvedDriveUrl(r.url); })
+        .catch(() => {})
+        .finally(() => setDriveResolving(false));
+    }
+  }, []);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
   function setFase(i, field, val) { setFases(f => f.map((x, idx) => idx === i ? { ...x, [field]: val } : x)); }
@@ -730,13 +742,16 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
         </label>
         <div>
           <span className={lab}>Carpeta Drive</span>
-          {form.driveUrl
-            ? <a href={form.driveUrl} target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline truncate max-w-full mt-0.5 block">
-                📁 Abrir carpeta Drive
-              </a>
-            : <span className="block mt-0.5 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
-          }
+          {driveResolving ? (
+            <span className="block mt-0.5 text-xs text-neutral-400 italic">Buscando enlace…</span>
+          ) : resolvedDriveUrl ? (
+            <a href={resolvedDriveUrl} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline mt-0.5">
+              📁 Abrir carpeta Drive
+            </a>
+          ) : (
+            <span className="block mt-0.5 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
+          )}
         </div>
       </div>
 
