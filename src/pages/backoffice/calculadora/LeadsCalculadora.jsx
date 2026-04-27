@@ -447,10 +447,8 @@ export default function LeadsCalculadora({ user }) {
             <col style={{ width: "100px" }} /> {/* Nombre */}
             <col style={{ width: "58px"  }} /> {/* País */}
             <col style={{ width: "68px"  }} /> {/* Nota ES */}
-            <col style={{ width: "96px"  }} /> {/* Área */}
-            <col style={{ width: "120px" }} /> {/* Universidad */}
+            <col style={{ width: "130px" }} /> {/* Área / Universidad */}
             <col style={{ width: "72px"  }} /> {/* Presup. */}
-            <col style={{ width: "74px"  }} /> {/* Perfil */}
             <col style={{ width: "46px"  }} /> {/* AUIP */}
             <col style={{ width: "80px"  }} /> {/* CyL */}
             <col style={{ width: "112px" }} /> {/* Email */}
@@ -465,10 +463,8 @@ export default function LeadsCalculadora({ user }) {
               <ThSort label="Nombre"       campo="nombre"          {...sp} />
               <ThSort label="País"         campo="pais"            {...sp} />
               <ThSort label="Nota ES"      campo="nota_espana"     center {...sp} />
-              <ThSort label="Área"         campo="area"            {...sp} />
-              <ThSort label="Universidad"  campo="universidad"     {...sp} />
+              <ThSort label="Área / Universidad" campo="area"       {...sp} />
               <ThSort label="Presup."      campo="presupuesto"     {...sp} />
-              <ThSort label="Perfil"       campo="vida"            {...sp} />
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">AUIP</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">CyL</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Email</th>
@@ -479,8 +475,8 @@ export default function LeadsCalculadora({ user }) {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={15} className="px-4 py-8 text-center text-neutral-400">Cargando...</td></tr>}
-            {!loading && sortedLeads.length === 0 && <tr><td colSpan={15} className="px-4 py-8 text-center text-neutral-400">Sin leads todavía.</td></tr>}
+            {loading && <tr><td colSpan={13} className="px-4 py-8 text-center text-neutral-400">Cargando...</td></tr>}
+            {!loading && sortedLeads.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-neutral-400">Sin leads todavía.</td></tr>}
             {!loading && sortedLeads.map((l, i) => {
               const notas = Array.isArray(l.notas) ? l.notas : [];
               return (
@@ -499,19 +495,14 @@ export default function LeadsCalculadora({ user }) {
 
                   <td className="px-3 py-2.5 font-semibold text-center text-sm">{Number(l.nota_espana).toFixed(2)}</td>
 
-                  <td className="px-3 py-2.5 text-xs" title={l.area}>
+                  <td className="px-3 py-2.5 text-xs">
                     <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{l.area}</span>
-                  </td>
-
-                  <td className="px-3 py-2.5 text-xs" title={l.universidad || ""}>
-                    {l.universidad
-                      ? <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{l.universidad}</span>
-                      : <span className="text-neutral-300">—</span>}
+                    {l.universidad && (
+                      <span className="block text-neutral-400 mt-0.5" style={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }} title={l.universidad}>{l.universidad}</span>
+                    )}
                   </td>
 
                   <td className="px-3 py-2.5 text-xs whitespace-nowrap">{l.presupuesto.toLocaleString("es-ES")} €</td>
-
-                  <td className="px-3 py-2.5 text-xs whitespace-nowrap">{VIDA_LABEL[l.vida] ?? l.vida}</td>
 
                   <td className="px-3 py-2.5 text-center">
                     {l.auip === "si" ? <span className="text-emerald-600 font-bold">✓</span> : <span className="text-neutral-300">—</span>}
@@ -593,7 +584,6 @@ export default function LeadsCalculadora({ user }) {
                   <p className="font-semibold text-primary text-sm truncate">{l.nombre}</p>
                   <p className="text-xs text-neutral-400">{l.pais} · {fmtFechaHora(l.fecha_creacion)}</p>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-light text-primary font-medium whitespace-nowrap shrink-0">{VIDA_LABEL[l.vida] ?? l.vida}</span>
               </div>
               {l.area && <p className="text-xs text-neutral-600">{l.area}</p>}
               {l.universidad && <p className="text-xs text-neutral-500">🎓 {l.universidad}</p>}
