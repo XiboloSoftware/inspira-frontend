@@ -79,13 +79,13 @@ export default function PanelAsesoras() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Resuelve Drive URLs en background para todos los clientes sin URL guardada
+  // Resuelve Drive URLs en background al nivel de solicitud (Clientes → cliente → paquete)
   useEffect(() => {
     const allClients = SVC_KEYS.flatMap(s => data[s] || []);
-    const toResolve = allClients.filter(c => !c.driveUrl && c._clienteId && !driveUrlMap[c._clienteId]);
+    const toResolve = allClients.filter(c => c._id && !driveUrlMap[c._id]);
     toResolve.forEach(c => {
-      boGET(`/api/admin/clientes/${c._clienteId}/drive-folder-url`)
-        .then(r => { if (r.ok && r.url) setDriveUrlMap(prev => ({ ...prev, [c._clienteId]: r.url })); })
+      boGET(`/backoffice/panel-asesoras/${c._id}/drive-folder-url`)
+        .then(r => { if (r.ok && r.url) setDriveUrlMap(prev => ({ ...prev, [c._id]: r.url })); })
         .catch(() => {});
     });
   }, [data]);
@@ -149,7 +149,7 @@ export default function PanelAsesoras() {
 
   /* ─── Render ─── */
   return (
-    <div className="p-4 sm:p-5 max-w-4xl mx-auto space-y-3">
+    <div className="p-4 sm:p-5 max-w-4xl mx-auto space-y-3 w-full overflow-x-hidden">
 
       {/* Cabecera */}
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -266,10 +266,13 @@ export default function PanelAsesoras() {
         <div className="text-center text-sm text-neutral-400 py-10">Sin resultados</div>
       ) : (
         <>
+          {/* Paginador — arriba */}
+          {totalPages > 1 && <Paginator safePage={safePage} totalPages={totalPages} total={visible.length} onChange={setPanelPage} />}
+
           <div className="flex flex-col gap-2">
             {pageVisible.map(c => {
               const key = keyFor(c);
-              const enriched = { ...c, driveUrl: driveUrlMap[c._clienteId] || c.driveUrl || "" };
+              const enriched = { ...c, driveUrl: driveUrlMap[c._id] || "" };
               return (
                 <ClienteCard
                   key={key}
@@ -283,41 +286,48 @@ export default function PanelAsesoras() {
             })}
           </div>
 
-          {/* Paginador */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between gap-2 pt-1 px-1">
-              <span className="text-xs text-neutral-400">
-                Pág. {safePage}/{totalPages} · {visible.length} cliente{visible.length !== 1 ? "s" : ""}
-              </span>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => setPanelPage(p => Math.max(1, p - 1))}
-                  disabled={safePage <= 1}
-                  className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
-                  ← Ant.
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button key={p}
-                    onClick={() => setPanelPage(p)}
-                    className={`px-3 py-1 text-xs rounded-lg border transition ${
-                      p === safePage
-                        ? "bg-[#023A4B] text-white border-[#023A4B] font-semibold"
-                        : "border-neutral-200 hover:bg-neutral-50"
-                    }`}>
-                    {p}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setPanelPage(p => Math.min(totalPages, p + 1))}
-                  disabled={safePage >= totalPages}
-                  className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
-                  Sig. →
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Paginador — abajo */}
+          {totalPages > 1 && <Paginator safePage={safePage} totalPages={totalPages} total={visible.length} onChange={setPanelPage} />}
         </>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGINATOR
+═══════════════════════════════════════════════════════════════════════════ */
+function Paginator({ safePage, totalPages, total, onChange }) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-1 px-1">
+      <span className="text-xs text-neutral-400">
+        Pág. {safePage}/{totalPages} · {total} cliente{total !== 1 ? "s" : ""}
+      </span>
+      <div className="flex gap-1.5 flex-wrap">
+        <button
+          onClick={() => onChange(p => Math.max(1, p - 1))}
+          disabled={safePage <= 1}
+          className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
+          ← Ant.
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+          <button key={p}
+            onClick={() => onChange(p)}
+            className={`px-3 py-1 text-xs rounded-lg border transition ${
+              p === safePage
+                ? "bg-[#023A4B] text-white border-[#023A4B] font-semibold"
+                : "border-neutral-200 hover:bg-neutral-50"
+            }`}>
+            {p}
+          </button>
+        ))}
+        <button
+          onClick={() => onChange(p => Math.min(totalPages, p + 1))}
+          disabled={safePage >= totalPages}
+          className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
+          Sig. →
+        </button>
+      </div>
     </div>
   );
 }
