@@ -86,7 +86,19 @@ export default function BackofficeApp() {
 
         {/* Panel derecho: header fijo y contenido scrollable */}
         <div className="flex-1 flex flex-col h-full bg-white min-w-0">
-          <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} sidebarPinned={sidebarPinned} />
+          <Topbar
+            user={user}
+            onLogout={logout}
+            sidebarPinned={sidebarPinned}
+            onMenuToggle={() => {
+              if (sidebarPinned) {
+                // Si está fijo, desanclarlo (el sidebar desaparece del layout)
+                toggleSidebarPin();
+              } else {
+                setSidebarOpen(o => !o);
+              }
+            }}
+          />
 
           <main className="flex-1 flex flex-col overflow-y-auto">
             {/* Rutas internas */}
