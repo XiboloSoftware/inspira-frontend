@@ -82,7 +82,7 @@ export default function SeccionPanel({
       </button>
 
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[65vh]">
+        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100vh-160px)]">
           {children}
         </div>
       )}

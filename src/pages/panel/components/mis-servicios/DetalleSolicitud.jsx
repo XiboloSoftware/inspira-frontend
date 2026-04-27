@@ -147,24 +147,26 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         Volver a mis servicios
       </button>
 
-      {/* Encabezado compacto — no crece */}
-      <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
-        {loading && (
-          <div className="flex items-center gap-2 py-2 text-neutral-400">
-            <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Cargando…</span>
-          </div>
-        )}
-        {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
-            <span className="text-red-500">⚠</span>
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-        {!loading && !error && detalle && (
-          <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
-        )}
-      </div>
+      {/* Encabezado — se oculta cuando hay una sección abierta */}
+      {accordionOpenId === null && (
+        <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
+          {loading && (
+            <div className="flex items-center gap-2 py-2 text-neutral-400">
+              <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Cargando…</span>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
+              <span className="text-red-500">⚠</span>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          {!loading && !error && detalle && (
+            <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
+          )}
+        </div>
+      )}
 
       {/* Lista de secciones — crece y scrollea internamente */}
       {!loading && !error && detalle && (
@@ -181,7 +183,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               Todas las secciones
             </button>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
+          <div className={`flex-1 min-h-0 space-y-2 pb-4 pr-1 ${accordionOpenId !== null ? "overflow-hidden" : "overflow-y-auto"}`}>
             <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
             <InstructivosPlantillas instructivos={instructivos} />
