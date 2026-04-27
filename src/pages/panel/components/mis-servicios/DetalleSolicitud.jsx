@@ -50,7 +50,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         setFormCollapsed(true);
       } else {
         setFormData({});
-        setFormCollapsed(false);
+        setFormCollapsed(true);
       }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
