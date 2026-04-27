@@ -99,7 +99,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   // Layout: ocupa toda la altura del <main>, scroll solo en el interior
   return (
-    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 gap-3">
+    <div className="flex flex-col h-full min-h-0 w-full px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 gap-3">
 
       {/* Botón volver — fijo arriba, no crece */}
       <div className="shrink-0 flex items-center gap-3">
