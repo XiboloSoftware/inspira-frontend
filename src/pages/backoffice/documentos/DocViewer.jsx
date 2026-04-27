@@ -1,4 +1,4 @@
-// Visor modal de documentos (PDF e imágenes)
+// Visor modal de documentos (PDF e imágenes); abre en Drive los demás formatos
 import { useEffect, useState } from "react";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento } from "./documentosUtils";
 
@@ -6,12 +6,16 @@ export default function DocViewer({ doc, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [blobUrl, setBlobUrl] = useState(null);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveError, setDriveError] = useState("");
 
   const isPdf = doc.mime_type?.includes("pdf");
   const isImage = doc.mime_type?.includes("image");
   const canPreview = isPdf || isImage;
 
   useEffect(() => {
+    if (!canPreview) { setLoading(false); return; }
+
     let objectUrl = null;
     let cancelled = false;
 
@@ -39,7 +43,7 @@ export default function DocViewer({ doc, onClose }) {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [doc.id_documento]);
+  }, [doc.id_documento, canPreview]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -47,31 +51,61 @@ export default function DocViewer({ doc, onClose }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  if (!canPreview || error) {
+  async function handleAbrirDrive() {
+    setDriveLoading(true);
+    setDriveError("");
+    try {
+      const token = localStorage.getItem("bo_token");
+      const r = await fetch(
+        `${API_URL}/api/admin/documentos/${doc.id_documento}/drive-url`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await r.json();
+      if (!r.ok || !data.ok) {
+        setDriveError(data.msg || "No disponible en Drive aún");
+      } else {
+        window.open(data.url, "_blank");
+      }
+    } catch {
+      setDriveError("Error al obtener URL de Drive");
+    }
+    setDriveLoading(false);
+  }
+
+  if (!canPreview) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
         <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center" onClick={(e) => e.stopPropagation()}>
           <div className="text-5xl mb-4">{fileIcon(doc.mime_type)}</div>
           <p className="text-sm font-medium text-neutral-800 mb-1 truncate px-2">{doc.nombre_original}</p>
           <p className="text-xs text-neutral-400 mb-6">{formatBytes(doc.tamano_bytes)} · {formatDate(doc.fecha_subida)}</p>
-          {loading && <p className="text-sm text-neutral-500 mb-4">Cargando…</p>}
-          {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-          {!loading && !error && (
-            <>
-              <p className="text-xs text-neutral-500 mb-5">
-                Este tipo de archivo no se puede previsualizar. Ábrelo con la aplicación instalada en tu equipo.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button onClick={() => blobUrl && window.open(blobUrl, "_blank")} className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-                  Abrir con aplicación ↗
-                </button>
-                <button onClick={() => { descargarDocumento(doc); onClose(); }} className="text-sm px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50">
-                  Descargar
-                </button>
-              </div>
-            </>
-          )}
+          {driveError && <p className="text-xs text-amber-600 mb-3">{driveError}</p>}
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={handleAbrirDrive}
+              disabled={driveLoading}
+              className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {driveLoading ? "Buscando…" : "Abrir en Drive ↗"}
+            </button>
+            <button onClick={() => { descargarDocumento(doc); onClose(); }} className="text-sm px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50">
+              Descargar
+            </button>
+          </div>
           <button onClick={onClose} className="mt-5 text-xs text-neutral-400 hover:text-neutral-600">Cerrar</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="text-5xl mb-4">{fileIcon(doc.mime_type)}</div>
+          <p className="text-sm font-medium text-neutral-800 mb-1 truncate px-2">{doc.nombre_original}</p>
+          <p className="text-sm text-red-600 mb-4">{error}</p>
+          <button onClick={onClose} className="text-xs text-neutral-400 hover:text-neutral-600">Cerrar</button>
         </div>
       </div>
     );
