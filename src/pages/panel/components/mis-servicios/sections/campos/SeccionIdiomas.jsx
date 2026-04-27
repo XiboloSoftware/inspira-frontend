@@ -1,237 +1,129 @@
-// src/pages/panel/components/mis-servicios/sections/campos/SeccionIdiomas.jsx
-
 export default function SeccionIdiomas({ formData, setFormData }) {
+  function set(key, val) {
+    setFormData((p) => ({ ...p, [key]: val }));
+  }
+
+  const SITUACION_INGLES = [
+    { value: "uni",           label: "Certificación de mi universidad" },
+    { value: "intl",          label: "Certificación internacional (IELTS, TOEFL, Cambridge…)" },
+    { value: "instituto",     label: "Inglés de instituto (sin cert. oficial)" },
+    { value: "sabe_sin_cert", label: "Sé inglés pero no lo he certificado" },
+    { value: "no",            label: "No tengo inglés" },
+  ];
+
   return (
-    <div>
-      <h4 className="text-xs font-semibold text-neutral-900 mb-2">
-        3.4. Idiomas y certificaciones
-      </h4>
+    <div className="space-y-6">
 
-      <div className="grid gap-3">
-        {/* Situación de inglés */}
-        <div>
-          <p className="block text-xs font-medium text-neutral-700 mb-1">
-            Situación actual de inglés
-          </p>
+      {/* Situación de inglés — pills verticales */}
+      <div>
+        <p className="text-xs font-semibold text-neutral-700 mb-2">
+          Situación actual de inglés
+        </p>
+        <div className="flex flex-col gap-2">
+          {SITUACION_INGLES.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => set("ingles_situacion", formData.ingles_situacion === o.value ? "" : o.value)}
+              className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-medium transition-all ${
+                formData.ingles_situacion === o.value
+                  ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                  : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] hover:text-[#023A4B] bg-white"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
 
-          <div className="space-y-1">
-            {/* Univ */}
-            <label className="flex items-start gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="ingles_situacion"
-                value="uni"
-                checked={formData.ingles_situacion === "uni"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    ingles_situacion: e.target.value,
-                  }))
-                }
-                className="mt-0.5 text-[#023A4B]"
-              />
-              <span>
-                Tengo certificación de inglés emitida por mi universidad
-              </span>
-            </label>
-
-            {formData.ingles_situacion === "uni" && (
-              <div className="ml-5 mt-1">
-                <label className="block text-[10px] font-medium text-neutral-700 mb-1">
-                  Nivel
-                </label>
-                <select
-                  value={formData.ingles_uni_nivel || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      ingles_uni_nivel: e.target.value,
-                    }))
-                  }
-                  className="w-full max-w-[180px] rounded-md border border-neutral-300 px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#023A4B]"
+        {/* Sub-campos si cert. universitaria */}
+        {formData.ingles_situacion === "uni" && (
+          <div className="mt-3 ml-1">
+            <label className="block text-xs font-medium text-neutral-600 mb-1.5">Nivel</label>
+            <div className="flex flex-wrap gap-2">
+              {["B1", "B2", "C1", "C2", "Otro"].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => set("ingles_uni_nivel", formData.ingles_uni_nivel === n ? "" : n)}
+                  className={`px-4 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                    formData.ingles_uni_nivel === n
+                      ? "bg-[#023A4B] text-white border-[#023A4B]"
+                      : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] bg-white"
+                  }`}
                 >
-                  <option value="">Selecciona nivel</option>
-                  <option value="B1">B1</option>
-                  <option value="B2">B2</option>
-                  <option value="C1">C1</option>
-                  <option value="C2">C2</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </div>
-            )}
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-            {/* Intl */}
-            <label className="flex items-start gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="ingles_situacion"
-                value="intl"
-                checked={formData.ingles_situacion === "intl"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    ingles_situacion: e.target.value,
-                  }))
-                }
-                className="mt-0.5 text-[#023A4B]"
-              />
-              <span>
-                Tengo certificación internacional (IELTS, TOEFL, Cambridge, etc.)
-              </span>
-            </label>
-
-            {formData.ingles_situacion === "intl" && (
-              <div className="ml-5 mt-1 grid gap-2 md:grid-cols-[1fr,1fr]">
-                <div>
-                  <label className="block text-[10px] font-medium text-neutral-700 mb-1">
-                    Tipo de certificación
-                  </label>
-                  <select
-                    value={formData.ingles_intl_tipo || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        ingles_intl_tipo: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#023A4B]"
+        {/* Sub-campos si cert. internacional */}
+        {formData.ingles_situacion === "intl" && (
+          <div className="mt-3 ml-1 grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1.5">Tipo de certificación</label>
+              <div className="flex flex-wrap gap-2">
+                {["IELTS", "TOEFL", "Cambridge", "Otro"].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => set("ingles_intl_tipo", formData.ingles_intl_tipo === t ? "" : t)}
+                    className={`px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                      formData.ingles_intl_tipo === t
+                        ? "bg-[#023A4B] text-white border-[#023A4B]"
+                        : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] bg-white"
+                    }`}
                   >
-                    <option value="">Selecciona</option>
-                    <option value="IELTS">IELTS</option>
-                    <option value="TOEFL">TOEFL</option>
-                    <option value="Cambridge">Cambridge</option>
-                    <option value="otro">Otro</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-neutral-700 mb-1">
-                    Puntaje o nivel
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ingles_intl_puntaje || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        ingles_intl_puntaje: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#023A4B]"
-                    placeholder="Ej: 6.5, 90, C1"
-                  />
-                </div>
+                    {t}
+                  </button>
+                ))}
               </div>
-            )}
-
-            {/* Instituto */}
-            <label className="flex items-start gap-2 text-xs text-neutral-800">
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1.5">Puntaje o nivel</label>
               <input
-                type="radio"
-                name="ingles_situacion"
-                value="instituto"
-                checked={formData.ingles_situacion === "instituto"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    ingles_situacion: e.target.value,
-                  }))
-                }
-                className="mt-0.5 text-[#023A4B]"
+                type="text"
+                value={formData.ingles_intl_puntaje || ""}
+                onChange={(e) => set("ingles_intl_puntaje", e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
+                placeholder="Ej: 6.5, 90, C1"
               />
-              <span>Tengo inglés de instituto (sin certificación oficial)</span>
-            </label>
-
-            {/* Sé inglés sin cert */}
-            <label className="flex items-start gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="ingles_situacion"
-                value="sin_cert"
-                checked={formData.ingles_situacion === "sin_cert"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    ingles_situacion: e.target.value,
-                  }))
-                }
-                className="mt-0.5 text-[#023A4B]"
-              />
-              <span>Sé inglés pero aún no lo he certificado</span>
-            </label>
-
-            {/* No inglés */}
-            <label className="flex items-start gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="ingles_situacion"
-                value="no"
-                checked={formData.ingles_situacion === "no"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    ingles_situacion: e.target.value,
-                  }))
-                }
-                className="mt-0.5 text-[#023A4B]"
-              />
-              <span>No tengo inglés</span>
-            </label>
+            </div>
           </div>
-        </div>
-
-        {/* Idioma del máster */}
-        <div>
-          <p className="block text-xs font-medium text-neutral-700 mb-1">
-            Idioma del máster que prefieres
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.idioma_master_es}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    idioma_master_es: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Solo en español</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.idioma_master_bilingue}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    idioma_master_bilingue: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Acepto máster bilingüe (español + inglés)</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.idioma_master_ingles}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    idioma_master_ingles: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Acepto máster totalmente en inglés</span>
-            </label>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Idioma del máster — pills */}
+      <div>
+        <p className="text-xs font-semibold text-neutral-700 mb-2">
+          Idioma del máster que aceptas
+        </p>
+        <div className="flex flex-col gap-2">
+          {[
+            { key: "idioma_master_es",       label: "Solo en español" },
+            { key: "idioma_master_bilingue",  label: "Bilingüe (español + inglés)" },
+            { key: "idioma_master_ingles",    label: "Totalmente en inglés" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => set(key, !formData[key])}
+              className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-medium transition-all ${
+                formData[key]
+                  ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                  : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] hover:text-[#023A4B] bg-white"
+              }`}
+            >
+              {label}
+              {formData[key] && <span className="float-right opacity-70">✓</span>}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[10px] text-neutral-400">Puedes seleccionar varios.</p>
+      </div>
+
     </div>
   );
 }

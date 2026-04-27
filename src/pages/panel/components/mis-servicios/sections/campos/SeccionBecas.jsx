@@ -1,105 +1,64 @@
-// src/pages/panel/components/mis-servicios/sections/campos/SeccionBecas.jsx
-
 export default function SeccionBecas({ formData, setFormData }) {
+  function set(key, val) {
+    setFormData((p) => ({ ...p, [key]: val }));
+  }
+
   return (
-    <div>
-      <h4 className="text-xs font-semibold text-neutral-900 mb-2">
-        3.5. Becas y ayudas económicas
-      </h4>
+    <div className="space-y-4">
 
-      <div className="grid gap-2">
-        {/* Pregunta principal */}
+      {/* Pregunta principal — pills */}
+      <div>
+        <p className="text-xs font-semibold text-neutral-700 mb-2">
+          ¿Deseas postular a una beca o ayuda económica?
+        </p>
+        <div className="flex gap-2">
+          {[
+            { value: "si", label: "Sí, me interesa" },
+            { value: "no", label: "No por ahora" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => set("beca_desea", formData.beca_desea === opt.value ? "" : opt.value)}
+              className={`px-5 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                formData.beca_desea === opt.value
+                  ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                  : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] hover:text-[#023A4B] bg-white"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tipos de beca — solo si marcó "sí" */}
+      {formData.beca_desea === "si" && (
         <div>
-          <p className="block text-xs font-medium text-neutral-700 mb-1">
-            ¿Deseas postular a una beca o ayuda económica?
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="beca_desea"
-                value="si"
-                checked={formData.beca_desea === "si"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beca_desea: e.target.value,
-                  }))
-                }
-                className="text-[#023A4B]"
-              />
-              <span>Sí</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="radio"
-                name="beca_desea"
-                value="no"
-                checked={formData.beca_desea === "no"}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beca_desea: e.target.value,
-                  }))
-                }
-                className="text-[#023A4B]"
-              />
-              <span>No</span>
-            </label>
+          <p className="text-xs font-medium text-neutral-600 mb-2">¿Qué tipo de ayuda te interesa?</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { key: "beca_completa",  label: "🎓 Becas completas" },
+              { key: "beca_parcial",   label: "💸 Becas parciales / descuentos" },
+              { key: "beca_ayuda_uni", label: "🏛️ Ayudas de la propia universidad" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => set(key, !formData[key])}
+                className={`px-3 py-2.5 rounded-xl border text-xs font-medium text-center transition-all ${
+                  formData[key]
+                    ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                    : "border-neutral-200 text-neutral-600 hover:border-[#023A4B] hover:text-[#023A4B] bg-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* Tipos de beca, solo si marcó "sí" */}
-        {formData.beca_desea === "si" && (
-          <div className="grid gap-1 md:grid-cols-2">
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.beca_completa}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beca_completa: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Becas completas</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.beca_parcial}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beca_parcial: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Becas parciales / descuentos</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-xs text-neutral-800">
-              <input
-                type="checkbox"
-                checked={!!formData.beca_ayuda_uni}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beca_ayuda_uni: e.target.checked,
-                  }))
-                }
-                className="rounded border-neutral-300"
-              />
-              <span>Ayudas de la propia universidad</span>
-            </label>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

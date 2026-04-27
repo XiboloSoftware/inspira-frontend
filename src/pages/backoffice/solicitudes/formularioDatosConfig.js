@@ -46,6 +46,9 @@ export const FIELD_CONFIG = {
                                  format: (v) => Array.isArray(v) ? v.join(", ") : v },
 
   comentario_especial:         { label: "Comentario especial para IA / asesores", section: "Comentario especial", fullWidth: true },
+
+  es_auip:                     { label: "Universidad afiliada a AUIP", section: "Perfil académico",
+                                 format: (v) => ({ si: "Sí (AUIP)", no: "No" }[v] || v) },
 };
 
 export const SECTIONS_ORDER = [
