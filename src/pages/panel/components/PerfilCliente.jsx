@@ -89,32 +89,46 @@ function paisDePrefijo(prefijo) {
 }
 
 // ── Combobox reutilizable ─────────────────────────────────────────────────────
-function Combobox({ value, onChange, options, placeholder, renderOption, getLabel }) {
-  const [query, setQuery]   = useState("");
-  const [open, setOpen]     = useState(false);
+function Combobox({ value, onChange, options, placeholder, renderOption, getLabel, allowCustom = false }) {
+  const [query, setQuery]     = useState("");
+  const [open, setOpen]       = useState(false);
   const [display, setDisplay] = useState("");
-  const wrapRef = useRef(null);
+  const wrapRef  = useRef(null);
+  const queryRef = useRef("");  // ref para leer en el handler sin re-registrar
+
+  useEffect(() => { queryRef.current = query; }, [query]);
 
   useEffect(() => {
     setDisplay(value ? (getLabel ? getLabel(value) : value) : "");
   }, [value]); // eslint-disable-line
 
   useEffect(() => {
-    const h = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    const h = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        // Si allowCustom y el usuario escribió algo, guárdalo sin necesidad de seleccionar
+        if (allowCustom && queryRef.current.trim()) {
+          const custom = queryRef.current.trim();
+          onChange(custom);
+          setDisplay(custom);
+        }
+        setQuery("");
+        setOpen(false);
+      }
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, []);
+  }, [allowCustom]); // eslint-disable-line
 
   const filtered = query.length >= 1
     ? options.filter(o => {
-        const label = getLabel ? getLabel(o) : o;
+        const label = getLabel ? getLabel(o) : String(o);
         return norm(label).includes(norm(query));
       }).slice(0, 8)
     : options.slice(0, 8);
 
   function select(opt) {
     onChange(opt);
-    setDisplay(getLabel ? getLabel(opt) : opt);
+    setDisplay(getLabel ? getLabel(opt) : String(opt));
     setQuery("");
     setOpen(false);
   }
@@ -125,7 +139,7 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
         type="text"
         value={open ? query : display}
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => { setQuery(""); setOpen(true); }}
+        onFocus={() => { setQuery(display); setOpen(true); }}
         placeholder={placeholder}
         className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
       />
@@ -135,13 +149,15 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
             <li key={i}>
               <button type="button" onMouseDown={() => select(o)}
                 className="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-[#023A4B]/5 hover:text-[#023A4B] transition-colors">
-                {renderOption ? renderOption(o) : o}
+                {renderOption ? renderOption(o) : String(o)}
               </button>
             </li>
           ))}
-          <li className="px-4 py-2 text-xs text-neutral-400 border-t italic">
-            No aparece → escribe el nombre completo y continúa igualmente
-          </li>
+          {allowCustom && (
+            <li className="px-4 py-2 text-xs text-neutral-400 border-t italic">
+              Puedes escribir cualquier nombre si no aparece en la lista
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -404,21 +420,16 @@ export default function PerfilCliente({ user, onUserUpdated }) {
 
   // ── Modo edición ──────────────────────────────────────────────────────────
   return (
-    <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm">
       {/* Header formulario */}
-      <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
         <div>
           <p className="text-base font-bold text-neutral-900">Editar mi perfil</p>
           <p className="text-xs text-neutral-400 mt-0.5">Los datos académicos se comparten con tus solicitudes</p>
         </div>
-        <button type="button"
-          onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 border border-neutral-200 hover:bg-neutral-50 transition">
-          Cancelar
-        </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="px-5 py-5 space-y-6">
+      <form id="perfil-edit-form" onSubmit={handleSubmit} className="px-5 py-5 space-y-6">
 
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -559,6 +570,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 onChange={v => set("universidad_origen", v)}
                 options={UNIS}
                 placeholder="Busca tu universidad o escribe el nombre…"
+                allowCustom
               />
             </div>
             <div>
@@ -575,27 +587,28 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           </div>
         </div>
 
-        {/* Footer botones */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-neutral-100">
-          <button type="button"
-            onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
-            className="px-5 py-2.5 text-sm font-medium rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition">
-            Cancelar
-          </button>
-          <button type="submit" disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95">
-            {saving
-              ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
-              : <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  Guardar cambios
-                </>
-            }
-          </button>
-        </div>
       </form>
+
+      {/* Pie fijo — sticky respecto al contenedor de scroll del panel */}
+      <div className="sticky bottom-0 z-10 bg-white border-t border-neutral-100 px-5 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+        <button type="button"
+          onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
+          className="px-5 py-2.5 text-sm font-medium rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition">
+          Cancelar
+        </button>
+        <button type="submit" form="perfil-edit-form" disabled={saving}
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95">
+          {saving
+            ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
+            : <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Guardar cambios
+              </>
+          }
+        </button>
+      </div>
     </div>
   );
 }

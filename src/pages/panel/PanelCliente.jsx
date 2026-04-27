@@ -89,7 +89,7 @@ export default function PanelCliente() {
           )}
           {/* Otras tabs: scroll normal */}
           {!esServicios && (
-            <div className="max-w-4xl">
+            <div className={tab === "perfil" ? "w-full" : "max-w-4xl"}>
               {tab === "perfil" && <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />}
               {tab === "citas" && <MisCitas />}
             </div>
