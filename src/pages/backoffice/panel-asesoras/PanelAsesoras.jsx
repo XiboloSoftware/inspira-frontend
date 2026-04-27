@@ -654,9 +654,9 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
   const [driveResolving, setDriveResolving] = useState(false);
 
   useEffect(() => {
-    if (isEdit && !resolvedDriveUrl && item?._id) {
+    if (isEdit && !resolvedDriveUrl && item?._clienteId) {
       setDriveResolving(true);
-      boGET(`/backoffice/panel-asesoras/${item._id}/drive-url`)
+      boGET(`/api/admin/clientes/${item._clienteId}/drive-folder-url`)
         .then(r => { if (r.ok && r.url) setResolvedDriveUrl(r.url); })
         .catch(() => {})
         .finally(() => setDriveResolving(false));
