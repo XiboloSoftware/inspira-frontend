@@ -69,6 +69,17 @@ const UNIS = [
   "Universidade de Lisboa", "Universidade do Porto",
 ];
 
+// dígitos esperados por prefijo (mínimo y máximo)
+const LONG_TEL = {
+  "+51": [9, 9],   "+34": [9, 9],   "+57": [10, 10], "+52": [10, 10],
+  "+54": [10, 10], "+56": [9, 9],   "+593": [9, 9],  "+591": [8, 8],
+  "+58": [10, 10], "+598": [8, 9],  "+595": [9, 9],  "+506": [8, 8],
+  "+507": [8, 8],  "+502": [8, 8],  "+504": [8, 8],  "+503": [8, 8],
+  "+505": [8, 8],  "+1": [10, 10],  "+53": [8, 8],   "+55": [10, 11],
+  "+351": [9, 9],  "+33": [9, 9],   "+49": [10, 11], "+39": [9, 10],
+  "+44": [10, 10],
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function norm(s) {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -139,7 +150,24 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
         type="text"
         value={open ? query : display}
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => { setQuery(display); setOpen(true); }}
+        onFocus={() => { setQuery(""); setOpen(true); }}
+        onKeyDown={e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length > 0) {
+              select(filtered[0]);
+            } else if (allowCustom && query.trim()) {
+              const custom = query.trim();
+              onChange(custom);
+              setDisplay(custom);
+              setQuery("");
+              setOpen(false);
+            }
+          } else if (e.key === "Escape") {
+            setQuery("");
+            setOpen(false);
+          }
+        }}
         placeholder={placeholder}
         className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
       />
@@ -208,9 +236,15 @@ function TextInput({ name, value, onChange, placeholder, type = "text", disabled
 }
 
 function TelefonoInput({ prefijo, numero, onPrefijo, onNumero, label, hint }) {
+  const digits  = numero.replace(/\D/g, "");
+  const rango   = LONG_TEL[prefijo];
+  const invalido = digits.length > 0 && rango && (digits.length < rango[0] || digits.length > rango[1]);
+  const valido   = digits.length > 0 && rango &&  digits.length >= rango[0] && digits.length <= rango[1];
+  const hintLong = rango ? (rango[0] === rango[1] ? `${rango[0]} dígitos` : `${rango[0]}–${rango[1]} dígitos`) : null;
+
   return (
     <div>
-      <FieldLabel hint={hint}>{label}</FieldLabel>
+      {label && <FieldLabel hint={hint}>{label}</FieldLabel>}
       <div className="flex gap-2">
         <select
           value={prefijo}
@@ -226,9 +260,19 @@ function TelefonoInput({ prefijo, numero, onPrefijo, onNumero, label, hint }) {
           value={numero}
           onChange={e => onNumero(e.target.value)}
           placeholder="999 999 999"
-          className="flex-1 rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
+          className={`flex-1 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition ${
+            invalido ? "border-red-300 focus:ring-red-200 focus:border-red-400"
+            : "border-neutral-200 focus:ring-[#023A4B]/20 focus:border-[#023A4B]"
+          }`}
         />
       </div>
+      {hintLong && digits.length > 0 && (
+        <p className={`text-[11px] mt-1 ${invalido ? "text-red-500" : valido ? "text-emerald-600" : "text-neutral-400"}`}>
+          {invalido
+            ? `Se esperan ${hintLong} para este país (tienes ${digits.length})`
+            : `✓ Longitud correcta (${digits.length} dígitos)`}
+        </p>
+      )}
     </div>
   );
 }
