@@ -42,12 +42,20 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const rChecklist = await apiGET(`/checklist/${idSolicitud}`);
       if (rChecklist.ok) setChecklist(rChecklist.checklist || []);
 
-      const rForm = await apiGET(`/solicitudes/${idSolicitud}/formulario`);
-      if (rForm.ok && rForm.datos) {
-        setFormData(rForm.datos);
-      } else {
-        setFormData({});
-      }
+      const [rForm, rPerfil] = await Promise.all([
+        apiGET(`/solicitudes/${idSolicitud}/formulario`),
+        apiGET("/cliente/me"),
+      ]);
+      const datosPerfil = rPerfil.ok ? (rPerfil.cliente?.datos_extra || {}) : {};
+      const datosForm   = (rForm.ok && rForm.datos) ? rForm.datos : {};
+      // Pre-rellena campos vacíos del formulario con datos del perfil
+      const merged = {
+        carrera_titulo:     datosForm.carrera_titulo     || datosPerfil.carrera_titulo     || "",
+        area_carrera:       datosForm.area_carrera       || datosPerfil.area_carrera       || "",
+        universidad_origen: datosForm.universidad_origen || datosPerfil.universidad_origen || "",
+        ...datosForm,
+      };
+      setFormData(merged);
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
       if (rInst.ok) {
