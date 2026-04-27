@@ -1,5 +1,5 @@
 // src/pages/panel/components/PerfilCliente.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiPATCH } from "../../../services/api";
 
 // ── Países con prefijo telefónico ─────────────────────────────────────────────
@@ -38,7 +38,42 @@ const AREAS = [
   "Medio Ambiente", "Arte y Diseño", "Otra",
 ];
 
+const UNIS = [
+  "Universidad Nacional Mayor de San Marcos", "Pontificia Universidad Católica del Perú",
+  "Universidad de Lima", "Universidad Nacional de Ingeniería",
+  "Universidad Peruana Cayetano Heredia", "Universidad Nacional Agraria La Molina",
+  "Universidad del Pacífico", "Universidad ESAN",
+  "Universidad Peruana de Ciencias Aplicadas", "Universidad César Vallejo",
+  "Universidad Nacional Federico Villarreal", "Universidad Ricardo Palma",
+  "Universidad San Ignacio de Loyola",
+  "Universidad Nacional de Colombia", "Universidad de los Andes",
+  "Universidad de Antioquia", "Pontificia Universidad Javeriana",
+  "Universidad del Rosario", "Universidad del Valle",
+  "Universidad Industrial de Santander",
+  "Universidad Nacional Autónoma de México", "Instituto Politécnico Nacional",
+  "Universidad de Guadalajara", "Universidad Autónoma de Nuevo León",
+  "Benemérita Universidad Autónoma de Puebla", "Tecnológico de Monterrey",
+  "Universidad de Buenos Aires", "Universidad Nacional de Córdoba",
+  "Universidad Nacional de La Plata", "Universidad Nacional de Rosario",
+  "Universidad de Chile", "Pontificia Universidad Católica de Chile",
+  "Universidad Técnica Federico Santa María",
+  "Universidade de São Paulo", "Universidade Federal do Rio de Janeiro",
+  "Universidade Estadual de Campinas",
+  "Universidad Central del Ecuador", "ESPOL – Escuela Politécnica del Litoral",
+  "Universidad San Francisco de Quito",
+  "Universidad Central de Venezuela", "Universidad del Zulia",
+  "Universidad Mayor de San Andrés", "Universidad Nacional de Asunción",
+  "Universidad de la República", "Universidad de Costa Rica",
+  "Universidad de San Carlos de Guatemala",
+  "Universidad Autónoma de Santo Domingo",
+  "Universidade de Lisboa", "Universidade do Porto",
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function norm(s) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
 function parseTelefono(tel) {
   if (!tel) return { prefijo: "+51", numero: "" };
   const prefijos = [...PAISES.map(p => p.prefijo)].sort((a, b) => b.length - a.length);
@@ -51,6 +86,66 @@ function parseTelefono(tel) {
 
 function paisDePrefijo(prefijo) {
   return PAISES.find(p => p.nombre === prefijo) || null;
+}
+
+// ── Combobox reutilizable ─────────────────────────────────────────────────────
+function Combobox({ value, onChange, options, placeholder, renderOption, getLabel }) {
+  const [query, setQuery]   = useState("");
+  const [open, setOpen]     = useState(false);
+  const [display, setDisplay] = useState("");
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    setDisplay(value ? (getLabel ? getLabel(value) : value) : "");
+  }, [value]); // eslint-disable-line
+
+  useEffect(() => {
+    const h = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const filtered = query.length >= 1
+    ? options.filter(o => {
+        const label = getLabel ? getLabel(o) : o;
+        return norm(label).includes(norm(query));
+      }).slice(0, 8)
+    : options.slice(0, 8);
+
+  function select(opt) {
+    onChange(opt);
+    setDisplay(getLabel ? getLabel(opt) : opt);
+    setQuery("");
+    setOpen(false);
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        type="text"
+        value={open ? query : display}
+        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { setQuery(""); setOpen(true); }}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-30 mt-1 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+          {filtered.map((o, i) => (
+            <li key={i}>
+              <button type="button" onMouseDown={() => select(o)}
+                className="w-full text-left px-4 py-2.5 text-sm text-neutral-700 hover:bg-[#023A4B]/5 hover:text-[#023A4B] transition-colors">
+                {renderOption ? renderOption(o) : o}
+              </button>
+            </li>
+          ))}
+          <li className="px-4 py-2 text-xs text-neutral-400 border-t italic">
+            No aparece → escribe el nombre completo y continúa igualmente
+          </li>
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // ── Componentes menores ───────────────────────────────────────────────────────
@@ -354,16 +449,26 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           <div className="space-y-3">
             <div>
               <FieldLabel>País de origen</FieldLabel>
-              <select
+              <Combobox
                 value={form.pais_origen}
-                onChange={e => handlePaisChange(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
-              >
-                <option value="">— Selecciona tu país —</option>
-                {PAISES.map(p => (
-                  <option key={p.codigo} value={p.nombre}>{p.emoji} {p.nombre}</option>
-                ))}
-              </select>
+                onChange={paisObj => handlePaisChange(paisObj.nombre)}
+                options={PAISES}
+                placeholder="Busca tu país…"
+                getLabel={p => {
+                  if (typeof p === "string") {
+                    const found = PAISES.find(x => x.nombre === p);
+                    return found ? `${found.emoji} ${found.nombre}` : p;
+                  }
+                  return `${p.emoji} ${p.nombre}`;
+                }}
+                renderOption={p => (
+                  <span className="flex items-center gap-2">
+                    <span>{p.emoji}</span>
+                    <span>{p.nombre}</span>
+                    <span className="ml-auto text-neutral-400 text-xs">{p.prefijo}</span>
+                  </span>
+                )}
+              />
             </div>
             <div>
               <FieldLabel hint="(opcional)">Ciudad de residencia</FieldLabel>
@@ -449,8 +554,12 @@ export default function PerfilCliente({ user, onUserUpdated }) {
             </div>
             <div>
               <FieldLabel hint="(opcional)">Universidad de origen</FieldLabel>
-              <TextInput name="universidad_origen" value={form.universidad_origen} onChange={handleChange}
-                placeholder="Ej: PUCP, UBA, UNAM, Universidad de Lima…" />
+              <Combobox
+                value={form.universidad_origen}
+                onChange={v => set("universidad_origen", v)}
+                options={UNIS}
+                placeholder="Busca tu universidad o escribe el nombre…"
+              />
             </div>
             <div>
               <FieldLabel hint="(opcional)">Área de estudio</FieldLabel>
