@@ -17,6 +17,7 @@ export default function SeccionPanel({
   defaultOpen = false,
   sectionId,
   contentClassName,
+  grow = false,
   // modo controlado opcional
   open: openProp,
   onToggle: onToggleProp,
@@ -41,13 +42,15 @@ export default function SeccionPanel({
     return null;
   }
 
-  // Pantalla completa: sectionId + accordion + open → propaga altura vía flex
   const isFullScreen = !!(sectionId && accordion && open);
+  // grow=true → ocupa toda la altura disponible (para formularios con pie fijo)
+  // grow=false (default) → se adapta al contenido, sin espacio en blanco
+  const needsGrow = isFullScreen && grow;
 
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
   return (
-    <section className={`border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden ${isFullScreen ? "flex flex-col flex-1 min-h-0" : ""}`}>
+    <section className={`border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden ${needsGrow ? "flex flex-col flex-1 min-h-0" : isFullScreen ? "flex flex-col" : ""}`}>
       {/* Header clickable */}
       <button
         type="button"
@@ -89,9 +92,9 @@ export default function SeccionPanel({
         <div className={`border-t border-neutral-100 ${
           contentClassName !== undefined
             ? contentClassName
-            : isFullScreen
+            : needsGrow
               ? "flex-1 min-h-0 overflow-y-auto px-5 py-4"
-              : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-220px)]"
+              : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]"
         }`}>
           {children}
         </div>

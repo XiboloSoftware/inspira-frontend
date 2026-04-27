@@ -769,6 +769,7 @@ export default function FormularioDatosAcademicos({
       subtitulo={subtitulo}
       estado={estado}
       sectionId="3"
+      grow
       contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
       <form onSubmit={handleSubmitFormulario} className="flex flex-col flex-1 min-h-0">

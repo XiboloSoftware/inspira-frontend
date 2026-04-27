@@ -22,10 +22,11 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
     onGuardar && onGuardar();
   };
 
-  const tieneDatos = lista.some((e) => e.programa?.trim());
+  const filled = lista.filter((e) => e.programa?.trim()).length;
+  const tieneDatos = filled > 0;
   const estado = tieneDatos ? "completado" : "pendiente";
   const subtitulo = tieneDatos
-    ? `${lista.filter((e) => e.programa?.trim()).length} máster${lista.filter((e) => e.programa?.trim()).length > 1 ? "es" : ""} seleccionado${lista.filter((e) => e.programa?.trim()).length > 1 ? "s" : ""}`
+    ? `${filled} máster${filled > 1 ? "es" : ""} seleccionado${filled > 1 ? "s" : ""}`
     : "Indica a qué másteres te gustaría postular, por orden de prioridad.";
 
   return (
@@ -35,9 +36,13 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
       subtitulo={subtitulo}
       estado={estado}
       sectionId="5"
+      grow
+      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-3">
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+
+        {/* Lista scrolleable */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
           {lista.map((row, index) => (
             <div key={row.prioridad ?? index} className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
               <div className="flex items-center justify-between gap-2 mb-3">
@@ -88,7 +93,8 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-neutral-100">
+        {/* Pie fijo — siempre visible */}
+        <div className="shrink-0 border-t border-neutral-100 bg-white px-5 py-3 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleAdd}
