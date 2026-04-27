@@ -65,9 +65,8 @@ export default function SeccionPanel({
         </div>
       </button>
 
-      {/* Cuerpo con scroll interno — máx. 45vh para secciones largas */}
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[45vh]">
+        <div className="border-t border-neutral-100 px-5 py-4">
           {children}
         </div>
       )}
