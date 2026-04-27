@@ -22,7 +22,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
 
-  const [formCollapsed, setFormCollapsed] = useState(false);
+  const [formCollapsed, setFormCollapsed] = useState(true);
 
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
@@ -47,7 +47,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const rForm = await apiGET(`/solicitudes/${idSolicitud}/formulario`);
       if (rForm.ok && rForm.datos) {
         setFormData(rForm.datos);
-        setFormCollapsed(Object.keys(rForm.datos || {}).length > 0);
+        setFormCollapsed(true);
       } else {
         setFormData({});
         setFormCollapsed(false);
@@ -124,7 +124,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const esVisado = tipoNombre === "visado";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 max-w-4xl mx-auto">
       {/* Botón volver */}
       <button
         onClick={onVolver}
@@ -136,7 +136,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         Volver a mis servicios
       </button>
 
-      {/* Tarjeta principal */}
+      {/* Encabezado */}
       <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6 sm:p-8">
         {loading && (
           <div className="flex flex-col items-center gap-3 py-16 text-neutral-400">
@@ -147,92 +147,66 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
 
         {error && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-            <span className="text-red-500 text-lg">⚠</span>
+            <span className="text-red-500">⚠</span>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
         {!loading && !error && detalle && (
-          <>
-            <EncabezadoSolicitud
-              detalle={detalle}
-              solicitudBase={solicitudBase}
-              progresoChecklist={progresoChecklist}
-            />
-
-            {/* ───── VISADO ───── */}
-            {esVisado ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                {/* Checklist ocupa toda la altura izquierda */}
-                <div className="xl:row-span-2">
-                  <div className="xl:sticky xl:top-4 max-h-[80vh] overflow-y-auto">
-                    <ChecklistDocumentos
-                      checklist={checklist}
-                      cargarTodo={cargarTodo}
-                      idSolicitud={idSolicitud}
-                    />
-                  </div>
-                </div>
-                <InstructivosPlantillas instructivos={instructivos} />
-                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-              </div>
-            ) : (
-              /* ───── MASTER: grid 2 columnas ───── */
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-
-                {/* Fila 1: Checklist (izq, sticky con scroll) | Instructivos + Formulario (der, apilados) */}
-                <div className="xl:row-span-2">
-                  <div className="xl:sticky xl:top-4 max-h-[80vh] overflow-y-auto rounded-2xl">
-                    <ChecklistDocumentos
-                      checklist={checklist}
-                      cargarTodo={cargarTodo}
-                      idSolicitud={idSolicitud}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <InstructivosPlantillas instructivos={instructivos} />
-                  <FormularioDatosAcademicos
-                    formData={formData}
-                    setFormData={setFormData}
-                    handleSubmitFormulario={handleSubmitFormulario}
-                    savingForm={savingForm}
-                    collapsed={formCollapsed}
-                    onToggle={() => setFormCollapsed((v) => !v)}
-                    hasData={hasFormData}
-                  />
-                </div>
-
-                {/* Fila 2: Informe | Elección Másteres */}
-                <InformeBusqueda
-                  idSolicitud={idSolicitud}
-                  informe={{
-                    informe_nombre_original: detalle.informe_nombre_original,
-                    informe_fecha_subida: detalle.informe_fecha_subida,
-                  }}
-                />
-
-                <EleccionMastersCliente
-                  elecciones={elecciones}
-                  setElecciones={setElecciones}
-                  onGuardar={handleGuardarElecciones}
-                  saving={savingElecciones}
-                />
-
-                {/* Fila 3: Programación | Portales */}
-                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
-                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
-
-                {/* Fila 4: Cierre (full width) */}
-                <div className="xl:col-span-2">
-                  <CierreServicioMasterCliente idSolicitud={idSolicitud} />
-                </div>
-              </div>
-            )}
-          </>
+          <EncabezadoSolicitud
+            detalle={detalle}
+            solicitudBase={solicitudBase}
+            progresoChecklist={progresoChecklist}
+          />
         )}
       </div>
+
+      {/* Secciones colapsables */}
+      {!loading && !error && detalle && (
+        <div className="space-y-3">
+          <ChecklistDocumentos
+            checklist={checklist}
+            cargarTodo={cargarTodo}
+            idSolicitud={idSolicitud}
+          />
+
+          <InstructivosPlantillas instructivos={instructivos} />
+
+          <FormularioDatosAcademicos
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmitFormulario={handleSubmitFormulario}
+            savingForm={savingForm}
+            collapsed={formCollapsed}
+            onToggle={() => setFormCollapsed((v) => !v)}
+            hasData={hasFormData}
+          />
+
+          <InformeBusqueda
+            idSolicitud={idSolicitud}
+            informe={{
+              informe_nombre_original: detalle.informe_nombre_original,
+              informe_fecha_subida: detalle.informe_fecha_subida,
+            }}
+          />
+
+          {!esVisado && (
+            <>
+              <EleccionMastersCliente
+                elecciones={elecciones}
+                setElecciones={setElecciones}
+                onGuardar={handleGuardarElecciones}
+                saving={savingElecciones}
+              />
+              <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+            </>
+          )}
+
+          <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+
+          {!esVisado && <CierreServicioMasterCliente idSolicitud={idSolicitud} />}
+        </div>
+      )}
     </div>
   );
 }
