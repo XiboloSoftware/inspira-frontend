@@ -3,6 +3,7 @@ import { useState } from "react";
 import { boPATCH } from "../../../../services/backofficeApi";
 import { API_URL, formatearFecha } from "../utils";
 import DocViewer from "../../documentos/DocViewer";
+import { DriveToast, useDriveToast } from "../../driveToast";
 
 const ESTADO_CFG = {
   aprobado:  { label: "Aprobado",  bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
@@ -23,8 +24,10 @@ export default function ChecklistSolicitudAdmin({
   recargar,
 }) {
   const [viewingDoc, setViewingDoc] = useState(null);
+  const driveToastState = useDriveToast();
 
   async function abrirEnDrive(doc) {
+    window.dispatchEvent(new CustomEvent("drive-opening"));
     try {
       const token = localStorage.getItem("bo_token");
       const r = await fetch(`${API_URL}/api/admin/documentos/${doc.id_documento}/drive-url`, {
@@ -32,9 +35,9 @@ export default function ChecklistSolicitudAdmin({
       });
       const data = await r.json();
       if (data.ok && data.url) window.open(data.url, "_blank");
-      else alert(data.msg || "No disponible en Drive aún");
+      else window.dispatchEvent(new CustomEvent("drive-error"));
     } catch {
-      alert("Error al obtener URL de Drive");
+      window.dispatchEvent(new CustomEvent("drive-error"));
     }
   }
 
@@ -120,6 +123,7 @@ export default function ChecklistSolicitudAdmin({
 
   return (
     <>
+    <DriveToast state={driveToastState} />
     <div className="space-y-5">
       {Object.entries(checklistPorEtapa).map(([nombreEtapa, items]) => (
         <div key={nombreEtapa}>
