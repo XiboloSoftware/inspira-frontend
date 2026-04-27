@@ -16,6 +16,7 @@ export default function SeccionPanel({
   children,
   defaultOpen = false,
   sectionId,
+  contentClassName,
   // modo controlado opcional
   open: openProp,
   onToggle: onToggleProp,
@@ -82,7 +83,7 @@ export default function SeccionPanel({
       </button>
 
       {open && (
-        <div className="border-t border-neutral-100 px-5 py-4 overflow-y-auto max-h-[calc(100vh-160px)]">
+        <div className={`border-t border-neutral-100 ${contentClassName ?? "px-5 py-4 overflow-y-auto max-h-[calc(100vh-160px)]"}`}>
           {children}
         </div>
       )}

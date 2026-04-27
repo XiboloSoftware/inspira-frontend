@@ -769,81 +769,84 @@ export default function FormularioDatosAcademicos({
       subtitulo={subtitulo}
       estado={estado}
       sectionId="3"
+      contentClassName="flex flex-col overflow-hidden max-h-[calc(100vh-160px)]"
     >
-      <form onSubmit={handleSubmitFormulario}>
+      <form onSubmit={handleSubmitFormulario} className="flex flex-col flex-1 min-h-0">
 
-        {/* ── Progress bar + indicador mobile ── */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#023A4B]">
-              Paso {step + 1} / {STEPS.length} — {STEPS[step].title}
-            </span>
-            <span className="text-xs text-neutral-400">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
-          </div>
-          <div className="h-1.5 bg-neutral-100 rounded-full">
-            <div
-              className="h-1.5 bg-[#023A4B] rounded-full transition-all duration-300"
-              style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-            />
-          </div>
-        </div>
+        {/* ── Zona scrolleable: progress + circles + card ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
 
-        {/* ── Circles (solo desktop) ── */}
-        <div className="hidden sm:flex items-center mb-5">
-          {STEPS.map((s, i) => (
-            <div key={i} className="flex items-center flex-1 last:flex-none">
-              <button type="button" onClick={() => setStep(i)}
-                title={s.title}
-                className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold transition-all ${
-                  i < step ? "bg-emerald-500 text-white"
-                  : i === step ? "bg-[#023A4B] text-white ring-4 ring-[#023A4B]/15 shadow"
-                  : "bg-neutral-100 text-neutral-400 hover:bg-neutral-200"
-                }`}>
-                {i < step ? "✓" : i + 1}
+          {/* Progress bar */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-[#023A4B]">
+                Paso {step + 1} / {STEPS.length} — {STEPS[step].title}
+              </span>
+              <span className="text-xs text-neutral-400">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+            </div>
+            <div className="h-1.5 bg-neutral-100 rounded-full">
+              <div
+                className="h-1.5 bg-[#023A4B] rounded-full transition-all duration-300"
+                style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Circles (solo desktop) */}
+          <div className="hidden sm:flex items-center mb-5">
+            {STEPS.map((s, i) => (
+              <div key={i} className="flex items-center flex-1 last:flex-none">
+                <button type="button" onClick={() => setStep(i)}
+                  title={s.title}
+                  className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold transition-all ${
+                    i < step ? "bg-emerald-500 text-white"
+                    : i === step ? "bg-[#023A4B] text-white ring-4 ring-[#023A4B]/15 shadow"
+                    : "bg-neutral-100 text-neutral-400 hover:bg-neutral-200"
+                  }`}>
+                  {i < step ? "✓" : i + 1}
+                </button>
+                {i < STEPS.length - 1 && (
+                  <div className={`flex-1 h-px mx-1 ${i < step ? "bg-emerald-400" : "bg-neutral-200"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Card del paso */}
+          <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-xl flex-shrink-0">{STEPS[step].icon}</span>
+                <h3 className="text-sm font-bold text-[#023A4B] truncate">{STEPS[step].title}</h3>
+              </div>
+              <button type="submit" disabled={savingForm}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-[#023A4B] hover:bg-neutral-50 rounded-lg disabled:opacity-40 transition border border-transparent hover:border-neutral-200 flex-shrink-0">
+                {savingForm
+                  ? <span className="w-3 h-3 border-2 border-neutral-300 border-t-[#023A4B] rounded-full animate-spin" />
+                  : <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                }
+                <span className="hidden sm:inline">{savingForm ? "Guardando…" : "Guardar"}</span>
               </button>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-px mx-1 ${i < step ? "bg-emerald-400" : "bg-neutral-200"}`} />
-              )}
             </div>
-          ))}
-        </div>
-
-        {/* ── Card del paso ── */}
-        <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm">
-          {/* Header del paso */}
-          <div className="px-4 sm:px-5 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-xl flex-shrink-0">{STEPS[step].icon}</span>
-              <h3 className="text-sm font-bold text-[#023A4B] truncate">{STEPS[step].title}</h3>
+            <div className="px-4 sm:px-5 py-5">
+              {renderStep()}
             </div>
-            <button type="submit" disabled={savingForm}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-[#023A4B] hover:bg-neutral-50 rounded-lg disabled:opacity-40 transition border border-transparent hover:border-neutral-200 flex-shrink-0">
-              {savingForm
-                ? <span className="w-3 h-3 border-2 border-neutral-300 border-t-[#023A4B] rounded-full animate-spin" />
-                : <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-              }
-              <span className="hidden sm:inline">{savingForm ? "Guardando…" : "Guardar"}</span>
-            </button>
           </div>
 
-          {/* Contenido */}
-          <div className="px-4 sm:px-5 py-5">
-            {renderStep()}
-          </div>
         </div>
 
-        {/* ── Navegación — sticky al fondo del scroll ── */}
-        <div className="sticky bottom-0 bg-white border-t border-neutral-100 flex items-center justify-between pt-3 pb-1 mt-4 px-0.5">
+        {/* ── Navegación — siempre visible, fuera del scroll ── */}
+        <div className="shrink-0 border-t border-neutral-100 bg-white px-5 py-3 flex items-center justify-between">
           <button type="button"
             onClick={() => setStep(p => Math.max(0, p - 1))}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-5 py-3 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-xl disabled:opacity-30 hover:bg-neutral-50 transition active:scale-95">
+            className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-xl disabled:opacity-30 hover:bg-neutral-50 transition active:scale-95">
             ← Anterior
           </button>
 
           {isLast ? (
             <button type="submit" disabled={savingForm}
-              className="inline-flex items-center gap-2 px-7 py-3 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition-all active:scale-95 shadow-sm">
+              className="inline-flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition-all active:scale-95 shadow-sm">
               {savingForm
                 ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
                 : "✓ Guardar formulario"
@@ -852,7 +855,7 @@ export default function FormularioDatosAcademicos({
           ) : (
             <button type="button"
               onClick={() => setStep(p => Math.min(STEPS.length - 1, p + 1))}
-              className="flex items-center gap-2 px-7 py-3 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] transition-all active:scale-95 shadow-sm">
+              className="flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] transition-all active:scale-95 shadow-sm">
               Continuar →
             </button>
           )}
