@@ -34,10 +34,8 @@ function ThSort({ label, campo, center, sortKey, sortDir, onSort }) {
   );
 }
 
-// ─── Ícono por tipo de nota ───────────────────────────────────────────────────
 const NOTA_ICON = { link: "🔗", nota: "📝" };
 
-// ─── Becas con colapso ────────────────────────────────────────────────────────
 function BecasPills({ becas }) {
   const [expanded, setExpanded] = useState(false);
   if (!becas || becas.length === 0) return <span className="text-neutral-300">—</span>;
@@ -91,9 +89,11 @@ export default function LeadsCalculadora({ user }) {
   const [saving,    setSaving]    = useState(false);
 
   // Modal: notas
-  const [modalNotas,   setModalNotas]   = useState(null); // null | { id, nombre, notas[] }
-  const [newNota,      setNewNota]      = useState({ tipo: "link", label: "", valor: "" });
-  const [savingNotas,  setSavingNotas]  = useState(false);
+  const [modalNotas,      setModalNotas]      = useState(null);
+  const [newNota,         setNewNota]         = useState({ tipo: "link", label: "", valor: "" });
+  const [savingNotas,     setSavingNotas]     = useState(false);
+  const [editingNotaIdx,  setEditingNotaIdx]  = useState(null);
+  const [editingNotaData, setEditingNotaData] = useState({ tipo: "link", label: "", valor: "" });
 
   // Modal: eliminar
   const [confirmDel, setConfirmDel] = useState(null);
@@ -140,17 +140,43 @@ export default function LeadsCalculadora({ user }) {
     const notas = Array.isArray(l.notas) ? [...l.notas] : [];
     setModalNotas({ id: l.id_lead, nombre: l.nombre, notas });
     setNewNota({ tipo: "link", label: "", valor: "" });
+    setEditingNotaIdx(null);
   }
-  function closeNotas() { setModalNotas(null); }
+  function closeNotas() {
+    setEditingNotaIdx(null);
+    setModalNotas(null);
+  }
 
   function addNota() {
     if (!newNota.valor.trim()) return;
     setModalNotas(m => ({ ...m, notas: [...m.notas, { tipo: newNota.tipo, label: newNota.label.trim(), valor: newNota.valor.trim() }] }));
     setNewNota(n => ({ ...n, label: "", valor: "" }));
   }
+
   function removeNota(i) {
+    if (editingNotaIdx === i) setEditingNotaIdx(null);
     setModalNotas(m => ({ ...m, notas: m.notas.filter((_, idx) => idx !== i) }));
   }
+
+  function startEditNota(i) {
+    const n = modalNotas.notas[i];
+    setEditingNotaIdx(i);
+    setEditingNotaData({ tipo: n.tipo, label: n.label || "", valor: n.valor });
+  }
+  function cancelEditNota() { setEditingNotaIdx(null); }
+  function saveEditNota() {
+    if (!editingNotaData.valor.trim()) return;
+    setModalNotas(m => ({
+      ...m,
+      notas: m.notas.map((n, idx) =>
+        idx === editingNotaIdx
+          ? { tipo: editingNotaData.tipo, label: editingNotaData.label.trim(), valor: editingNotaData.valor.trim() }
+          : n
+      ),
+    }));
+    setEditingNotaIdx(null);
+  }
+
   async function saveNotas() {
     if (!modalNotas) return;
     setSavingNotas(true);
@@ -243,19 +269,72 @@ export default function LeadsCalculadora({ user }) {
               <p className="text-sm text-neutral-400 text-center py-4 bg-neutral-50 rounded-xl">Sin notas todavía. Agrega un link o comentario.</p>
             )}
             <div className="space-y-2">
-              {modalNotas.notas.map((n, i) => (
-                <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-neutral-50 border border-neutral-100 group">
-                  <span className="text-base shrink-0 mt-0.5">{NOTA_ICON[n.tipo] ?? "📝"}</span>
-                  <div className="flex-1 min-w-0">
-                    {n.label && <p className="text-xs font-semibold text-neutral-600 mb-0.5">{n.label}</p>}
-                    {n.tipo === "link"
-                      ? <a href={n.valor} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline break-all">{n.valor}</a>
-                      : <p className="text-sm text-neutral-700 break-words whitespace-pre-wrap">{n.valor}</p>
+              {modalNotas.notas.map((n, i) =>
+                editingNotaIdx === i ? (
+                  /* ── Fila en modo edición ── */
+                  <div key={i} className="p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-2">
+                    <div className="flex gap-2">
+                      <select
+                        className="border border-neutral-200 rounded-lg px-2 py-1.5 text-sm bg-white shrink-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        value={editingNotaData.tipo}
+                        onChange={e => setEditingNotaData(d => ({ ...d, tipo: e.target.value }))}
+                      >
+                        <option value="link">🔗 Link</option>
+                        <option value="nota">📝 Nota</option>
+                      </select>
+                      <input
+                        className="flex-1 border border-neutral-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        placeholder="Etiqueta (ej: LinkedIn…)"
+                        value={editingNotaData.label}
+                        onChange={e => setEditingNotaData(d => ({ ...d, label: e.target.value }))}
+                      />
+                    </div>
+                    {editingNotaData.tipo === "nota"
+                      ? <textarea
+                          rows={2}
+                          className="w-full border border-neutral-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                          value={editingNotaData.valor}
+                          onChange={e => setEditingNotaData(d => ({ ...d, valor: e.target.value }))}
+                        />
+                      : <input
+                          className="w-full border border-neutral-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="https://..."
+                          value={editingNotaData.valor}
+                          onChange={e => setEditingNotaData(d => ({ ...d, valor: e.target.value }))}
+                          onKeyDown={e => e.key === "Enter" && saveEditNota()}
+                        />
                     }
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={cancelEditNota} className="px-3 py-1 text-xs border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">Cancelar</button>
+                      <button onClick={saveEditNota} disabled={!editingNotaData.valor.trim()} className="px-3 py-1 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-40 transition">Guardar</button>
+                    </div>
                   </div>
-                  <button onClick={() => removeNota(i)} className="shrink-0 text-neutral-300 hover:text-red-400 transition text-lg leading-none opacity-0 group-hover:opacity-100">×</button>
-                </div>
-              ))}
+                ) : (
+                  /* ── Fila normal ── */
+                  <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-neutral-50 border border-neutral-100 group">
+                    <span className="text-base shrink-0 mt-0.5">{NOTA_ICON[n.tipo] ?? "📝"}</span>
+                    <div className="flex-1 min-w-0">
+                      {n.label && <p className="text-xs font-semibold text-neutral-600 mb-0.5">{n.label}</p>}
+                      {n.tipo === "link"
+                        ? <a href={n.valor} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline break-all">{n.valor}</a>
+                        : <p className="text-sm text-neutral-700 break-words whitespace-pre-wrap">{n.valor}</p>
+                      }
+                    </div>
+                    <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                      <button
+                        onClick={() => startEditNota(i)}
+                        title="Editar"
+                        className="text-neutral-400 hover:text-primary transition text-sm px-1"
+                      >✏️</button>
+                      <button
+                        onClick={() => removeNota(i)}
+                        title="Eliminar"
+                        className="text-neutral-300 hover:text-red-400 transition text-lg leading-none px-1"
+                      >×</button>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
 
             {/* Agregar nueva nota */}
@@ -364,19 +443,19 @@ export default function LeadsCalculadora({ user }) {
       <div className="hidden sm:block overflow-x-auto rounded-xl border border-neutral-200 shadow-sm">
         <table className="w-full text-sm table-fixed">
           <colgroup>
-            <col style={{ width: "112px" }} />
-            <col style={{ width: "112px" }} />
-            <col style={{ width: "66px" }}  />
-            <col style={{ width: "84px" }}  />
-            <col style={{ width: "118px" }} />
-            <col style={{ width: "80px" }}  />
-            <col style={{ width: "80px" }}  />
-            <col style={{ width: "52px" }}  />
-            <col style={{ width: "142px" }} />
-            <col style={{ width: "92px" }}  />
-            <col />                           {/* Becas — auto */}
-            <col style={{ width: "88px" }}  /> {/* Notas */}
-            <col style={{ width: "76px" }}  /> {/* Acc. */}
+            <col style={{ width: "100px" }} /> {/* Fecha/Hora */}
+            <col style={{ width: "100px" }} /> {/* Nombre */}
+            <col style={{ width: "58px"  }} /> {/* País */}
+            <col style={{ width: "68px"  }} /> {/* Nota ES */}
+            <col style={{ width: "96px"  }} /> {/* Área */}
+            <col style={{ width: "72px"  }} /> {/* Presup. */}
+            <col style={{ width: "74px"  }} /> {/* Perfil */}
+            <col style={{ width: "46px"  }} /> {/* AUIP */}
+            <col style={{ width: "112px" }} /> {/* Email */}
+            <col style={{ width: "76px"  }} /> {/* WhatsApp */}
+            <col style={{ width: "110px" }} /> {/* Becas */}
+            <col style={{ width: "182px" }} /> {/* Notas */}
+            <col style={{ width: "62px"  }} /> {/* Acc. */}
           </colgroup>
           <thead>
             <tr className="bg-secondary-light text-primary text-left">
@@ -391,7 +470,7 @@ export default function LeadsCalculadora({ user }) {
               <th className="px-3 py-3 font-semibold whitespace-nowrap">Email</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">WhatsApp</th>
               <th className="px-3 py-3 font-semibold">Becas</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Notas</th>
+              <th className="px-3 py-3 font-semibold">Notas</th>
               <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">Acc.</th>
             </tr>
           </thead>
@@ -438,23 +517,40 @@ export default function LeadsCalculadora({ user }) {
 
                   <td className="px-3 py-2.5"><BecasPills becas={l.becas_califica} /></td>
 
-                  {/* Notas */}
-                  <td className="px-3 py-2.5">
-                    <button
-                      onClick={() => openNotas(l)}
-                      className="flex items-center gap-1 text-xs group"
-                      title="Ver / agregar notas"
-                    >
-                      {notas.length > 0 ? (
-                        <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-2 py-0.5 font-medium hover:bg-primary/20 transition">
-                          📝 {notas.length}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-300 hover:text-primary/60 transition border border-dashed border-neutral-200 hover:border-primary/30 rounded-full px-2 py-0.5">
-                          + nota
-                        </span>
-                      )}
-                    </button>
+                  {/* ── Notas: muestra contenido inline ── */}
+                  <td className="px-3 py-2.5 cursor-pointer" onClick={() => openNotas(l)}>
+                    {notas.length === 0 ? (
+                      <span className="text-[11px] text-neutral-300 hover:text-primary/60 transition border border-dashed border-neutral-200 hover:border-primary/30 rounded-full px-2 py-0.5">
+                        + nota
+                      </span>
+                    ) : (
+                      <div className="space-y-1">
+                        {notas.slice(0, 3).map((n, ni) => (
+                          <div key={ni} className="flex items-center gap-1 min-w-0">
+                            <span className="shrink-0 text-[11px]">{NOTA_ICON[n.tipo] ?? "📝"}</span>
+                            {n.tipo === "link" ? (
+                              <a
+                                href={n.valor}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-blue-600 hover:underline truncate min-w-0"
+                                title={n.label ? `${n.label}: ${n.valor}` : n.valor}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {n.label || n.valor}
+                              </a>
+                            ) : (
+                              <span className="text-[11px] text-neutral-600 truncate min-w-0" title={n.valor}>
+                                {n.label || n.valor}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                        {notas.length > 3 && (
+                          <span className="text-[11px] text-neutral-400">+{notas.length - 3} más</span>
+                        )}
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-3 py-2.5 text-center">
@@ -496,6 +592,19 @@ export default function LeadsCalculadora({ user }) {
                 {l.whatsapp && <a href={`https://wa.me/${l.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-green-600 hover:underline">📱 {l.whatsapp}</a>}
               </div>
               {l.becas_califica && l.becas_califica.length > 0 && <div className="pt-1"><BecasPills becas={l.becas_califica} /></div>}
+              {notas.length > 0 && (
+                <div className="pt-1 space-y-1">
+                  {notas.slice(0, 2).map((n, ni) => (
+                    <div key={ni} className="flex items-center gap-1 text-xs min-w-0">
+                      <span className="shrink-0">{NOTA_ICON[n.tipo] ?? "📝"}</span>
+                      {n.tipo === "link"
+                        ? <a href={n.valor} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">{n.label || n.valor}</a>
+                        : <span className="text-neutral-600 truncate">{n.label || n.valor}</span>
+                      }
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="pt-2 border-t border-neutral-100 flex gap-2">
                 <button onClick={() => openEdit(l)} className="flex-1 py-1.5 text-xs text-neutral-600 border border-neutral-200 rounded hover:bg-neutral-50">✏️ Editar</button>
                 <button onClick={() => openNotas(l)} className={`flex-1 py-1.5 text-xs rounded border transition ${notas.length > 0 ? "text-primary border-primary/30 bg-primary/5 hover:bg-primary/10" : "text-neutral-500 border-neutral-200 hover:bg-neutral-50"}`}>
