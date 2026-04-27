@@ -1,5 +1,5 @@
-// Sección colapsable para el backoffice — independiente (múltiples pueden estar abiertas a la vez)
 import { useState } from "react";
+import { useAccordionBackoffice } from "./AccordionBackofficeContext";
 
 const ESTADO_CFG = {
   pendiente:  { label: "Pendiente",  bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
@@ -14,15 +14,32 @@ export default function SeccionBackoffice({
   estado,
   children,
   defaultOpen = false,
+  sectionId,
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [openInternal, setOpenInternal] = useState(defaultOpen);
+  const accordion = useAccordionBackoffice();
+
+  let open, toggle;
+  if (sectionId && accordion) {
+    open = accordion.openId === sectionId;
+    toggle = () => accordion.setOpenId(open ? null : sectionId);
+  } else {
+    open = openInternal;
+    toggle = () => setOpenInternal((v) => !v);
+  }
+
+  // En modo acordeón: si otra sección está abierta, esta desaparece
+  if (sectionId && accordion && accordion.openId !== null && accordion.openId !== sectionId) {
+    return null;
+  }
+
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
   return (
     <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">

@@ -1,5 +1,5 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
@@ -11,9 +11,19 @@ import ChecklistSolicitudAdmin from "./components/ChecklistSolicitudAdmin";
 import InformeAdmin from "./components/InformeAdmin";
 import SeccionBackoffice from "./components/SeccionBackoffice";
 import AsesoresAsignadosAdmin from "./AsesoresAsignadosAdmin";
+import { AccordionBackofficeContext } from "./components/AccordionBackofficeContext";
 import { formatearFecha } from "./utils";
 
+// Mismos campos requeridos que el panel cliente
+const CAMPOS_REQUERIDOS_FORMULARIO = [
+  "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
+  "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
+  "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
+];
+
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
+  const [accordionOpenId, setAccordionOpenId] = useState(null);
+
   const {
     detalle, setDetalle,
     checklistPorEtapa, setChecklist,
@@ -43,13 +53,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   const checklistStats = useMemo(() => {
     const allItems = Object.values(checklistPorEtapa).flat();
     const total = allItems.length;
-    if (total === 0) return { total: 0, aprobados: 0, estado: "pendiente", subtitulo: "Sin checklist configurado" };
+    if (total === 0) return { estado: "pendiente", subtitulo: "Sin checklist configurado" };
     const aprobados = allItems.filter((it) =>
       ["aprobado", "no_aplica"].includes((it.estado_item || "").toLowerCase())
     ).length;
     const hayObservados = allItems.some((it) => (it.estado_item || "").toLowerCase() === "observado");
     const estado = hayObservados ? "observado" : aprobados === total ? "completado" : "pendiente";
-    return { total, aprobados, estado, subtitulo: `${aprobados} de ${total} documentos listos` };
+    return { estado, subtitulo: `${aprobados} de ${total} documentos listos` };
   }, [checklistPorEtapa]);
 
   if (loading) {
@@ -80,20 +90,21 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   const asesorEstado = asesoresSeleccionados.length > 0 ? "completado" : "pendiente";
   const informeEstado = detalle.informe_fecha_subida ? "completado" : "pendiente";
-  const tieneFormulario = detalle.datos_formulario && Object.keys(detalle.datos_formulario).length > 0;
+
+  // Formulario: requiere todos los campos obligatorios, no solo "alguno"
+  const datos = detalle.datos_formulario || {};
+  const tieneFormulario = CAMPOS_REQUERIDOS_FORMULARIO.every(
+    (campo) => datos[campo] !== undefined && datos[campo] !== null && datos[campo] !== ""
+  );
+
   const tieneEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
-
   const nAsesores = asesoresSeleccionados.length;
-  const asesorSubtitulo = nAsesores > 0
-    ? `${nAsesores} asesor${nAsesores > 1 ? "es" : ""} asignado${nAsesores > 1 ? "s" : ""}`
-    : "Sin asesores asignados";
-
   const nElecciones = tieneEleccion ? detalle.eleccion_masters.length : 0;
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-3">
 
-      {/* Botón volver */}
+      {/* Botón volver al listado */}
       <button
         type="button"
         onClick={onVolver}
@@ -107,160 +118,188 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         Solicitudes
       </button>
 
-      {/* Tarjeta de info del expediente */}
-      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1">
-              Solicitud #{detalle.id_solicitud}
-            </p>
-            <h2 className="text-xl font-bold text-neutral-900 leading-snug">
-              {detalle.titulo || "(Sin título)"}
-            </h2>
-            <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">
-              <p className="text-xs text-neutral-500">
-                <span className="font-medium text-neutral-700">Cliente:</span>{" "}
-                {detalle.cliente?.nombre
-                  ? `${detalle.cliente.nombre}${detalle.cliente.email_contacto ? ` · ${detalle.cliente.email_contacto}` : ""}`
-                  : "N/D"}
+      {/* Tarjeta cabecera — se oculta cuando hay una sección abierta */}
+      {accordionOpenId === null && (
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1">
+                Solicitud #{detalle.id_solicitud}
               </p>
-              <p className="text-xs text-neutral-500">
-                <span className="font-medium text-neutral-700">Creada:</span>{" "}
-                {formatearFecha(detalle.fecha_creacion)}
-              </p>
-              {detalle.fecha_cierre && (
+              <h2 className="text-xl font-bold text-neutral-900 leading-snug">
+                {detalle.titulo || "(Sin título)"}
+              </h2>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">
                 <p className="text-xs text-neutral-500">
-                  <span className="font-medium text-neutral-700">Cerrada:</span>{" "}
-                  {formatearFecha(detalle.fecha_cierre)}
+                  <span className="font-medium text-neutral-700">Cliente:</span>{" "}
+                  {detalle.cliente?.nombre
+                    ? `${detalle.cliente.nombre}${detalle.cliente.email_contacto ? ` · ${detalle.cliente.email_contacto}` : ""}`
+                    : "N/D"}
                 </p>
-              )}
+                <p className="text-xs text-neutral-500">
+                  <span className="font-medium text-neutral-700">Creada:</span>{" "}
+                  {formatearFecha(detalle.fecha_creacion)}
+                </p>
+                {detalle.fecha_cierre && (
+                  <p className="text-xs text-neutral-500">
+                    <span className="font-medium text-neutral-700">Cerrada:</span>{" "}
+                    {formatearFecha(detalle.fecha_cierre)}
+                  </p>
+                )}
+              </div>
             </div>
+            {detalle.estado && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                {detalle.estado}
+              </span>
+            )}
           </div>
-          {detalle.estado && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              {detalle.estado}
-            </span>
-          )}
         </div>
-      </div>
-
-      {/* Asesores asignados */}
-      <SeccionBackoffice
-        titulo="Asesores asignados"
-        subtitulo={asesorSubtitulo}
-        estado={asesorEstado}
-        defaultOpen={asesorEstado === "pendiente"}
-      >
-        <AsesoresAsignadosAdmin
-          asesoresDisponibles={asesoresDisponibles}
-          asesoresSeleccionados={asesoresSeleccionados}
-          onChangeSeleccionados={setAsesoresSeleccionados}
-          onGuardar={handleGuardarAsesores}
-          guardando={guardandoAsesores}
-        />
-      </SeccionBackoffice>
-
-      {/* 1. Documentos requeridos */}
-      <SeccionBackoffice
-        numero="1"
-        titulo="Documentos requeridos"
-        subtitulo={checklistStats.subtitulo}
-        estado={checklistStats.estado}
-        defaultOpen={checklistStats.estado !== "completado"}
-      >
-        <ChecklistSolicitudAdmin
-          detalle={detalle}
-          checklistPorEtapa={checklistPorEtapa}
-          setChecklist={setChecklist}
-          recargar={cargar}
-        />
-      </SeccionBackoffice>
-
-      {isVisado ? (
-        <>
-          <SeccionBackoffice
-            numero="2"
-            titulo="Instructivo y plantillas"
-            subtitulo="Contenido configurado por servicio en Instructivos"
-          >
-            <p className="text-sm text-neutral-500">
-              Este contenido se configura por servicio en <b>Instructivos</b>.
-              (Si quieres que aquí se liste/permita subir instructivos por solicitud,
-              se conecta al endpoint de instructivos del servicio/solicitud).
-            </p>
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="3"
-            titulo="Portales, claves y justificantes"
-            subtitulo="Registra portales, claves, estado del trámite y justificantes"
-          >
-            <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-          </SeccionBackoffice>
-        </>
-      ) : (
-        <>
-          <SeccionBackoffice
-            numero="3"
-            titulo="Formulario de datos académicos"
-            subtitulo={tieneFormulario ? "Formulario completado" : "El cliente aún no ha completado el formulario"}
-            estado={tieneFormulario ? "completado" : "pendiente"}
-          >
-            <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="4"
-            titulo="Informe de búsqueda de másteres"
-            subtitulo={
-              detalle.informe_fecha_subida
-                ? `Subido el ${formatearFecha(detalle.informe_fecha_subida)}`
-                : "Aún no se ha subido el informe"
-            }
-            estado={informeEstado}
-          >
-            <InformeAdmin detalle={detalle} recargar={cargar} />
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="5"
-            titulo="Elección de másteres (cliente)"
-            subtitulo={
-              tieneEleccion
-                ? `${nElecciones} máster${nElecciones > 1 ? "es" : ""} seleccionado${nElecciones > 1 ? "s" : ""}`
-                : "El cliente aún no ha seleccionado másteres"
-            }
-            estado={tieneEleccion ? "completado" : "pendiente"}
-          >
-            <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="6"
-            titulo="Programación de postulaciones"
-            subtitulo="Gestiona las tareas por cada máster confirmado"
-          >
-            <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="7"
-            titulo="Portales, claves y justificantes"
-            subtitulo="Registra portales, claves, estado del trámite y justificantes"
-          >
-            <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-          </SeccionBackoffice>
-
-          <SeccionBackoffice
-            numero="8"
-            titulo="Cierre de servicio de máster y siguientes pasos"
-            subtitulo="Másteres admitidos, matriculados y cierre del expediente"
-          >
-            <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
-          </SeccionBackoffice>
-        </>
       )}
+
+      {/* Botón "Ver todas las secciones" cuando hay una abierta */}
+      {accordionOpenId !== null && (
+        <button
+          type="button"
+          onClick={() => setAccordionOpenId(null)}
+          className="inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-xl bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all group"
+        >
+          <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Ver todas las secciones
+        </button>
+      )}
+
+      {/* Secciones en modo acordeón exclusivo */}
+      <AccordionBackofficeContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
+
+        <SeccionBackoffice
+          sectionId="asesores"
+          titulo="Asesores asignados"
+          subtitulo={
+            nAsesores > 0
+              ? `${nAsesores} asesor${nAsesores > 1 ? "es" : ""} asignado${nAsesores > 1 ? "s" : ""}`
+              : "Sin asesores asignados"
+          }
+          estado={asesorEstado}
+        >
+          <AsesoresAsignadosAdmin
+            asesoresDisponibles={asesoresDisponibles}
+            asesoresSeleccionados={asesoresSeleccionados}
+            onChangeSeleccionados={setAsesoresSeleccionados}
+            onGuardar={handleGuardarAsesores}
+            guardando={guardandoAsesores}
+          />
+        </SeccionBackoffice>
+
+        <SeccionBackoffice
+          sectionId="checklist"
+          numero="1"
+          titulo="Documentos requeridos"
+          subtitulo={checklistStats.subtitulo}
+          estado={checklistStats.estado}
+        >
+          <ChecklistSolicitudAdmin
+            detalle={detalle}
+            checklistPorEtapa={checklistPorEtapa}
+            setChecklist={setChecklist}
+            recargar={cargar}
+          />
+        </SeccionBackoffice>
+
+        {isVisado ? (
+          <>
+            <SeccionBackoffice
+              sectionId="instructivo"
+              numero="2"
+              titulo="Instructivo y plantillas"
+              subtitulo="Contenido configurado por servicio en Instructivos"
+            >
+              <p className="text-sm text-neutral-500">
+                Este contenido se configura por servicio en <b>Instructivos</b>.
+              </p>
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="portales"
+              numero="3"
+              titulo="Portales, claves y justificantes"
+              subtitulo="Registra portales, claves, estado del trámite y justificantes"
+            >
+              <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+            </SeccionBackoffice>
+          </>
+        ) : (
+          <>
+            <SeccionBackoffice
+              sectionId="formulario"
+              numero="3"
+              titulo="Formulario de datos académicos"
+              subtitulo={tieneFormulario ? "Formulario completado" : "El cliente aún no ha completado el formulario"}
+              estado={tieneFormulario ? "completado" : "pendiente"}
+            >
+              <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="informe"
+              numero="4"
+              titulo="Informe de búsqueda de másteres"
+              subtitulo={
+                detalle.informe_fecha_subida
+                  ? `Subido el ${formatearFecha(detalle.informe_fecha_subida)}`
+                  : "Aún no se ha subido el informe"
+              }
+              estado={informeEstado}
+            >
+              <InformeAdmin detalle={detalle} recargar={cargar} />
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="eleccion"
+              numero="5"
+              titulo="Elección de másteres (cliente)"
+              subtitulo={
+                tieneEleccion
+                  ? `${nElecciones} máster${nElecciones > 1 ? "es" : ""} seleccionado${nElecciones > 1 ? "s" : ""}`
+                  : "El cliente aún no ha seleccionado másteres"
+              }
+              estado={tieneEleccion ? "completado" : "pendiente"}
+            >
+              <EleccionMastersAdmin elecciones={detalle.eleccion_masters} />
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="programacion"
+              numero="6"
+              titulo="Programación de postulaciones"
+              subtitulo="Gestiona las tareas por cada máster confirmado"
+            >
+              <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="portales"
+              numero="7"
+              titulo="Portales, claves y justificantes"
+              subtitulo="Registra portales, claves, estado del trámite y justificantes"
+            >
+              <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+            </SeccionBackoffice>
+
+            <SeccionBackoffice
+              sectionId="cierre"
+              numero="8"
+              titulo="Cierre de servicio de máster y siguientes pasos"
+              subtitulo="Másteres admitidos, matriculados y cierre del expediente"
+            >
+              <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+            </SeccionBackoffice>
+          </>
+        )}
+      </AccordionBackofficeContext.Provider>
     </div>
   );
 }
