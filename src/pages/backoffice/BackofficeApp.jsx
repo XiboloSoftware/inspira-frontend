@@ -69,7 +69,7 @@ export default function BackofficeApp() {
         <div className="flex-1 flex flex-col h-full bg-white min-w-0">
           <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} />
 
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 flex flex-col overflow-y-auto">
             {/* Rutas internas */}
             {path === "/backoffice" && <Dashboard />}
             {path === "/backoffice/dashboard" && <Dashboard />}
