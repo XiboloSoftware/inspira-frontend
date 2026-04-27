@@ -52,17 +52,20 @@ function exportJSON(data) {
    COMPONENTE PRINCIPAL
 ═══════════════════════════════════════════════════════════════════════════ */
 export default function PanelAsesoras() {
-  const [data, setData]           = useState({ master:[], visa:[], ee:[], fp:[], legal:[] });
-  const [loading, setLoading]     = useState(true);
-  const [curTab, setCurTab]       = useState("all");
+  const [data, setData]               = useState({ master:[], visa:[], ee:[], fp:[], legal:[] });
+  const [loading, setLoading]         = useState(true);
+  const [curTab, setCurTab]           = useState("all");
   const [expandedKey, setExpandedKey] = useState(null);
-  const [editTarget, setEditTarget]   = useState(null); // { item, svc }
-  const [addMode, setAddMode]     = useState(false);
-  const [addSvc, setAddSvc]       = useState("master");
-  const [search, setSearch]       = useState("");
+  const [editTarget, setEditTarget]   = useState(null);
+  const [addMode, setAddMode]         = useState(false);
+  const [addSvc, setAddSvc]           = useState("master");
+  const [search, setSearch]           = useState("");
   const [filterEstado, setFilterEstado] = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [delTarget, setDelTarget] = useState(null); // { id, svc, name }
+  const [saving, setSaving]           = useState(false);
+  const [delTarget, setDelTarget]     = useState(null);
+  const [driveUrlMap, setDriveUrlMap] = useState({});   // { _clienteId: url }
+  const [panelPage, setPanelPage]     = useState(1);
+  const PAGE_SIZE = 15;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,6 +79,17 @@ export default function PanelAsesoras() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Resuelve Drive URLs en background para todos los clientes sin URL guardada
+  useEffect(() => {
+    const allClients = SVC_KEYS.flatMap(s => data[s] || []);
+    const toResolve = allClients.filter(c => !c.driveUrl && c._clienteId && !driveUrlMap[c._clienteId]);
+    toResolve.forEach(c => {
+      boGET(`/api/admin/clientes/${c._clienteId}/drive-folder-url`)
+        .then(r => { if (r.ok && r.url) setDriveUrlMap(prev => ({ ...prev, [c._clienteId]: r.url })); })
+        .catch(() => {});
+    });
+  }, [data]);
+
   /* ── Lista visible ── */
   const allItems = curTab === "all"
     ? SVC_KEYS.flatMap(s => (data[s] || []).map(c => ({ ...c, _svc: s })))
@@ -84,6 +98,13 @@ export default function PanelAsesoras() {
   const visible = allItems
     .filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()))
     .filter(c => !filterEstado || c.estado === filterEstado);
+
+  const totalPages  = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const safePage    = Math.min(panelPage, totalPages);
+  const pageVisible = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset page cuando cambia la búsqueda o filtro
+  useEffect(() => { setPanelPage(1); }, [search, filterEstado, curTab]);
 
   /* ── Contadores ── */
   const total     = SVC_KEYS.reduce((a,s) => a + (data[s]?.length || 0), 0);
@@ -244,21 +265,58 @@ export default function PanelAsesoras() {
       ) : visible.length === 0 ? (
         <div className="text-center text-sm text-neutral-400 py-10">Sin resultados</div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {visible.map(c => {
-            const key = keyFor(c);
-            return (
-              <ClienteCard
-                key={key}
-                c={c}
-                isExp={expandedKey === key}
-                onToggle={() => setExpandedKey(expandedKey === key ? null : key)}
-                onEdit={(enriched) => { setEditTarget({ item: enriched, svc: enriched._svc }); setAddMode(false); }}
-                onDelete={() => setDelTarget({ id: c._id, svc: c._svc, name: c.name })}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="flex flex-col gap-2">
+            {pageVisible.map(c => {
+              const key = keyFor(c);
+              const enriched = { ...c, driveUrl: driveUrlMap[c._clienteId] || c.driveUrl || "" };
+              return (
+                <ClienteCard
+                  key={key}
+                  c={enriched}
+                  isExp={expandedKey === key}
+                  onToggle={() => setExpandedKey(expandedKey === key ? null : key)}
+                  onEdit={(item) => { setEditTarget({ item, svc: item._svc }); setAddMode(false); }}
+                  onDelete={() => setDelTarget({ id: c._id, svc: c._svc, name: c.name })}
+                />
+              );
+            })}
+          </div>
+
+          {/* Paginador */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-2 pt-1 px-1">
+              <span className="text-xs text-neutral-400">
+                Pág. {safePage}/{totalPages} · {visible.length} cliente{visible.length !== 1 ? "s" : ""}
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => setPanelPage(p => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                  className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
+                  ← Ant.
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button key={p}
+                    onClick={() => setPanelPage(p)}
+                    className={`px-3 py-1 text-xs rounded-lg border transition ${
+                      p === safePage
+                        ? "bg-[#023A4B] text-white border-[#023A4B] font-semibold"
+                        : "border-neutral-200 hover:bg-neutral-50"
+                    }`}>
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPanelPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages}
+                  className="px-3 py-1 text-xs border border-neutral-200 rounded-lg disabled:opacity-30 hover:bg-neutral-50 transition">
+                  Sig. →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -290,19 +348,6 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
   const colors = SVC_COLORS[svc] || SVC_COLORS.master;
   const hasBeca = c.beca?.aprobable;
   const hasPend = c.pending?.length > 0;
-
-  // Resuelve el enlace Drive al expandir la card (una sola vez)
-  const [driveUrl, setDriveUrl] = useState(c.driveUrl || "");
-  useEffect(() => {
-    if (isExp && !driveUrl && c._clienteId) {
-      boGET(`/api/admin/clientes/${c._clienteId}/drive-folder-url`)
-        .then(r => { if (r.ok && r.url) setDriveUrl(r.url); })
-        .catch(() => {});
-    }
-  }, [isExp]);
-
-  // c enriquecido con el driveUrl resuelto (se pasa al detail y al form)
-  const enriched = driveUrl ? { ...c, driveUrl } : c;
 
   let subtitle = `${SVC_LABELS[svc]} · ${c.paquete || "Sin paquete"}`;
   if ((svc === "visa" || svc === "ee") && c.fases) {
@@ -340,7 +385,7 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
               {c.pending.length}
             </span>
           )}
-          <button onClick={e => { e.stopPropagation(); onEdit(enriched); }}
+          <button onClick={e => { e.stopPropagation(); onEdit(c); }}
             className="px-2 py-0.5 text-[11px] rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100">
             Editar
           </button>
@@ -353,7 +398,7 @@ function ClienteCard({ c, isExp, onToggle, onEdit, onDelete }) {
       </div>
 
       {/* Detalle expandido */}
-      {isExp && <ClienteDetail c={enriched} />}
+      {isExp && <ClienteDetail c={c} />}
     </div>
   );
 }
@@ -404,15 +449,38 @@ function FieldGrid({ fields }) {
   );
 }
 
+function DriveIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/>
+      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 11.5z" fill="#ea4335"/>
+      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+    </svg>
+  );
+}
+
 function CarpetaLinks({ c }) {
   return (
-    <div className="flex gap-1.5 flex-wrap mt-1.5">
-      {c.driveUrl
-        ? <a href={c.driveUrl} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">📁 Drive</a>
-        : <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-400 border border-neutral-200 opacity-40 cursor-default">📁 Drive</span>}
-      {c.portalUrl
-        ? <a href={c.portalUrl} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">🔗 Portal</a>
-        : <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-400 border border-neutral-200 opacity-40 cursor-default">🔗 Portal</span>}
+    <div className="flex gap-2 flex-wrap mt-2">
+      {c.driveUrl ? (
+        <a
+          href={c.driveUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-sm active:scale-95 transition-all duration-150 text-[11px] font-medium text-neutral-600 group-hover:text-neutral-900"
+        >
+          <DriveIcon size={13} />
+          <span className="group-hover:text-neutral-900 transition-colors">Drive ↗</span>
+        </a>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-100 bg-neutral-50 text-[11px] text-neutral-300 cursor-default select-none">
+          <DriveIcon size={13} />
+          <span>Drive</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -663,18 +731,7 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
   const [unis, setUnis]         = useState(() => item?.unis ? JSON.parse(JSON.stringify(item.unis)) : []);
   const [fases, setFases]       = useState(() => item?.fases ? JSON.parse(JSON.stringify(item.fases)) : mkFases());
   const [pendingStr, setPendingStr] = useState(() => (item?.pending || []).join("\n"));
-  const [resolvedDriveUrl, setResolvedDriveUrl] = useState(item?.driveUrl || "");
-  const [driveResolving, setDriveResolving] = useState(false);
-
-  useEffect(() => {
-    if (isEdit && !resolvedDriveUrl && item?._clienteId) {
-      setDriveResolving(true);
-      boGET(`/api/admin/clientes/${item._clienteId}/drive-folder-url`)
-        .then(r => { if (r.ok && r.url) setResolvedDriveUrl(r.url); })
-        .catch(() => {})
-        .finally(() => setDriveResolving(false));
-    }
-  }, []);
+  const resolvedDriveUrl = item?.driveUrl || "";
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
   function setFase(i, field, val) { setFases(f => f.map((x, idx) => idx === i ? { ...x, [field]: val } : x)); }
@@ -755,15 +812,14 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
         </label>
         <div>
           <span className={lab}>Carpeta Drive</span>
-          {driveResolving ? (
-            <span className="block mt-0.5 text-xs text-neutral-400 italic">Buscando enlace…</span>
-          ) : resolvedDriveUrl ? (
+          {resolvedDriveUrl ? (
             <a href={resolvedDriveUrl} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline mt-0.5">
-              📁 Abrir carpeta Drive
+              className="group inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50 hover:border-blue-200 hover:shadow-sm active:scale-95 transition-all duration-150 text-[11px] font-medium text-neutral-600">
+              <DriveIcon size={13} />
+              <span>Abrir en Drive ↗</span>
             </a>
           ) : (
-            <span className="block mt-0.5 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
+            <span className="block mt-1 text-xs text-neutral-400 italic">Sin carpeta asignada</span>
           )}
         </div>
       </div>
