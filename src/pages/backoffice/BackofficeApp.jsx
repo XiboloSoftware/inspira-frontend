@@ -93,7 +93,15 @@ export default function BackofficeApp() {
         <div className="flex-1 flex flex-col h-full bg-white min-w-0">
           <Topbar user={user} onLogout={logout} onMenuToggle={() => setSidebarOpen(o => !o)} />
 
-          <main className="flex-1 flex flex-col overflow-y-auto">
+          <main className="flex-1 flex flex-col overflow-y-auto relative">
+            {/* Overlay transparente: cierra el sidebar al hacer clic fuera cuando no está fijado */}
+            {sidebarOpen && !sidebarPinned && (
+              <div
+                aria-hidden="true"
+                onClick={() => setSidebarOpen(false)}
+                className="absolute inset-0 z-10"
+              />
+            )}
             {/* Rutas internas */}
             {path === "/backoffice" && <Dashboard />}
             {path === "/backoffice/dashboard" && <Dashboard />}
