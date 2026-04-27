@@ -164,7 +164,16 @@ export default function DocumentosBackoffice() {
   const q = busqueda.toLowerCase().trim();
   const listaFiltrada = filtrarPorEstado(filtrarPorTexto(todos, q), filtroEstado);
 
-  useEffect(() => { setPagina(0); }, [busqueda, filtroEstado]);
+  // Resetear página Y colapsar todo al cambiar filtro o búsqueda
+  useEffect(() => {
+    setPagina(0);
+    // Colapsar con false explícito (no undefined) para que TreeNode responda
+    setExpandedMap((prev) => {
+      const m = {};
+      Object.keys(prev).forEach((k) => { m[k] = false; });
+      return m;
+    });
+  }, [busqueda, filtroEstado]);
 
   const totalDocs = countDocs(todos);
   const estadoCounts = countByEstado(todos);
@@ -174,22 +183,23 @@ export default function DocumentosBackoffice() {
   // Expandir / contraer todo
   const allExpanded =
     listaVisible.length > 0 &&
-    listaVisible.every((e) => expandedMap[entryId(e)]);
+    listaVisible.every((e) => expandedMap[entryId(e)] === true);
 
   function toggleExpandAll() {
+    const map = {};
     if (allExpanded) {
-      setExpandedMap({});
+      // false explícito → TreeNode recibe forceOpen=false (no undefined) y se cierra
+      listaFiltrada.forEach((e) => { map[entryId(e)] = false; });
     } else {
-      const map = {};
       listaFiltrada.forEach((e) => { map[entryId(e)] = true; });
-      setExpandedMap(map);
     }
+    setExpandedMap(map);
   }
 
   function ExpandBtn({ id }) {
     return (
       <button
-        onClick={() => setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }))}
+        onClick={() => setExpandedMap((prev) => ({ ...prev, [id]: prev[id] !== true }))}
         title={expandedMap[id] ? "Contraer" : "Expandir"}
         className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors shrink-0 leading-none ${
           expandedMap[id]
@@ -341,7 +351,7 @@ export default function DocumentosBackoffice() {
               </div>
             )}
             {!loading && listaVisible.length > 0 && (
-              <div className="space-y-0.5">
+              <div key={`${filtroEstado ?? "none"}-${q}`} className="space-y-0.5">
                 {listaVisible.map((entry) => {
                   const id = entryId(entry);
                   return (
