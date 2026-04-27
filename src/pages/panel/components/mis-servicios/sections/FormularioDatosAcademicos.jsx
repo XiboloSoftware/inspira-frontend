@@ -834,14 +834,16 @@ export default function FormularioDatosAcademicos({
             ← Anterior
           </button>
 
-          {/* Ambos botones siempre en el DOM — evita que mousedown/mouseup en posiciones distintas dispare el submit */}
+          {/* Ambos siempre en el DOM — inline style gana sobre Tailwind para ocultar sin quitar el nodo */}
           <button type="button"
             onClick={() => setStep(p => Math.min(STEPS.length - 1, p + 1))}
-            className={`flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] transition-all active:scale-95 shadow-sm ${isLast ? "hidden" : ""}`}>
+            style={{ display: isLast ? "none" : undefined }}
+            className="flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] transition-all active:scale-95 shadow-sm">
             Continuar →
           </button>
           <button type="submit" disabled={savingForm}
-            className={`inline-flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition-all active:scale-95 shadow-sm ${!isLast ? "hidden" : ""}`}>
+            style={{ display: isLast ? undefined : "none" }}
+            className="inline-flex items-center gap-2 px-7 py-2.5 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition-all active:scale-95 shadow-sm">
             {savingForm
               ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
               : "✓ Guardar formulario"
