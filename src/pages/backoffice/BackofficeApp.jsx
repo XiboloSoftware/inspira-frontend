@@ -58,11 +58,11 @@ export default function BackofficeApp() {
   return (
     <ProtectedRoute onLogout={logout}>
       {/* Layout de altura fija, con sidebar izquierdo + panel derecho con scroll */}
-      <div className="flex w-full h-screen overflow-hidden">
+      <div className="flex w-full h-dvh overflow-hidden">
         <Sidebar path={path} />
 
         {/* Panel derecho: header fijo y contenido scrollable */}
-        <div className="flex-1 flex flex-col h-screen bg-white">
+        <div className="flex-1 flex flex-col h-full bg-white">
           <Topbar user={user} onLogout={logout} />
 
           <main className="flex-1 overflow-y-auto">

@@ -17,7 +17,7 @@ const items = [
 
 export default function Sidebar({ path }) {
   return (
-    <aside className="w-64 bg-primary text-white h-screen px-4 py-6 flex-shrink-0">
+    <aside className="w-64 bg-primary text-white h-full px-4 py-6 flex-shrink-0 overflow-y-auto">
       <div
         className="text-2xl font-bold mb-8 cursor-pointer"
         onClick={() => navigate("/backoffice/dashboard")}
