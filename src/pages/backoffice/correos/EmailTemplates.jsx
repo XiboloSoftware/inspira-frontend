@@ -1,6 +1,8 @@
 // src/pages/backoffice/correos/EmailTemplates.jsx
-import { useCallback, useEffect, useRef, useState } from "react";
-import EmailEditor from "react-email-editor";
+import { useEffect, useRef, useState } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { html as htmlLang } from "@codemirror/lang-html";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
@@ -13,15 +15,11 @@ const TIPO_META = {
   otro:         { label: "Otro",          color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
 };
 
-// Merge tags de Unlayer — el valor {{x}} es lo que se inserta en el HTML exportado
-const MERGE_TAGS = {
-  nombre:    { name: "Nombre del cliente",     value: "{{nombre}}",    sample: "Juan García" },
-  email:     { name: "Correo del cliente",     value: "{{email}}",     sample: "juan@ejemplo.com" },
-  fecha:     { name: "Fecha actual",           value: "{{fecha}}",     sample: "27 de abril de 2026" },
-  solicitud: { name: "N° de solicitud",        value: "{{solicitud}}", sample: "73" },
-  item:      { name: "Ítem del documento",     value: "{{item}}",      sample: "Pasaporte" },
-  archivos:  { name: "Nombre(s) de archivos",  value: "{{archivos}}",  sample: "Passport_Juan.pdf" },
-};
+const MERGE_TAGS = [
+  { key: "nombre", label: "Nombre del cliente", sample: "Juan García" },
+  { key: "email",  label: "Correo del cliente",  sample: "juan@ejemplo.com" },
+  { key: "fecha",  label: "Fecha actual",        sample: "27 de abril de 2026" },
+];
 
 // ── Chip de tipo ──────────────────────────────────────────────────────────────
 function TipoBadge({ tipo }) {
@@ -44,11 +42,8 @@ function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar }) {
         {t.activo ? "ACTIVO — se usa al enviar correos de este tipo" : "Inactivo"}
       </div>
       <div className="p-4">
-        <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1">
           <TipoBadge tipo={t.tipo} />
-          {t.design_json
-            ? <span className="text-[10px] text-emerald-600 font-medium">✓ Editor visual</span>
-            : <span className="text-[10px] text-neutral-400">HTML heredado</span>}
         </div>
         <p className="font-semibold text-neutral-900 text-sm mt-1 leading-snug">{t.nombre}</p>
         <p className="text-xs text-neutral-500 truncate mt-0.5">{t.asunto}</p>
@@ -84,22 +79,13 @@ function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar }) {
   );
 }
 
-// ── Modal editor ─────────────────────────────────────────────────────────────
-// Tab "visual": Unlayer drag & drop (para templates nuevos o con design_json)
-// Tab "html": textarea de HTML directo (para templates heredados o avanzados)
-const TOPBAR_H = 56; // px
-const TABBAR_H = 40; // px
-const EDITOR_H = `calc(100vh - ${TOPBAR_H + TABBAR_H}px)`;
-
-function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
-  const editorRef  = useRef(null);
-  const taRef      = useRef(null);
+// ── Modal editor ──────────────────────────────────────────────────────────────
+function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
+  const cmViewRef  = useRef(null);
+  const previewRef = useRef(null);
   const isNew      = !template;
 
-  // Default: visual si tiene design_json, html si es heredado o nuevo
-  const [tab, setTab]             = useState(template?.design_json ? "visual" : "html");
   const [htmlContent, setHtml]    = useState(template?.html || "");
-  const [editorListo, setListo]   = useState(false);
   const [saving, setSaving]       = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [testNombre, setTestNom]  = useState("Cliente Ejemplo");
@@ -112,46 +98,58 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
   });
   const [error, setError] = useState("");
 
-  const onReady = useCallback(() => {
-    setListo(true);
-    if (template?.design_json) {
-      try { editorRef.current.loadDesign(JSON.parse(template.design_json)); }
-      catch (e) { console.error("Error cargando diseño:", e); }
-    }
-  }, [template]);
+  // Vista previa en vivo — debounce 350 ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const iframe = previewRef.current;
+      if (!iframe) return;
+      const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+      const rendered = htmlContent
+        .replaceAll("{{nombre}}", testNombre || "Juan García")
+        .replaceAll("${nombre}",  testNombre || "Juan García")
+        .replaceAll("{{email}}",  testEmail  || "juan@ejemplo.com")
+        .replaceAll("${email}",   testEmail  || "juan@ejemplo.com")
+        .replaceAll("{{fecha}}",  fecha)
+        .replaceAll("${fecha}",   fecha);
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
+      doc.open();
+      doc.write(rendered ||
+        `<div style="padding:3rem;color:#aaa;font-family:sans-serif;text-align:center;font-size:14px">
+           El HTML aparecerá aquí…
+         </div>`
+      );
+      doc.close();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [htmlContent, testNombre, testEmail]);
 
+  // Escape cierra el modal
   useEffect(() => {
     const fn = (e) => { if (e.key === "Escape") onCerrar(); };
     document.addEventListener("keydown", fn);
     return () => document.removeEventListener("keydown", fn);
   }, [onCerrar]);
 
-  // Insertar variable en el cursor del textarea HTML
+  // Inserta variable en la posición del cursor en CodeMirror
   function insertarVariable(v) {
-    const ta = taRef.current;
-    if (!ta) return;
-    const s = ta.selectionStart, e2 = ta.selectionEnd;
-    const next = htmlContent.slice(0, s) + v + htmlContent.slice(e2);
-    setHtml(next);
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length, s + v.length); }, 0);
+    const view = cmViewRef.current;
+    if (!view) { setHtml(h => h + v); return; }
+    const { from, to } = view.state.selection.main;
+    view.dispatch({
+      changes: { from, to, insert: v },
+      selection: { anchor: from + v.length },
+    });
+    view.focus();
   }
 
   const guardar = () => {
     if (!form.nombre.trim() || !form.asunto.trim()) { setError("Nombre y Asunto son obligatorios"); return; }
+    if (!htmlContent.trim()) { setError("El HTML no puede estar vacío"); return; }
     setError("");
-
-    if (tab === "html") {
-      if (!htmlContent.trim()) { setError("El HTML no puede estar vacío"); return; }
-      onGuardar({ ...form, html: htmlContent, design_json: null });
-      return;
-    }
-
-    // Tab visual → exportar de Unlayer
     setSaving(true);
-    editorRef.current.exportHtml(({ design, html }) => {
-      onGuardar({ ...form, html, design_json: JSON.stringify(design) });
-      setSaving(false);
-    });
+    Promise.resolve(onGuardar({ ...form, html: htmlContent, design_json: null }))
+      .finally(() => setSaving(false));
   };
 
   const enviarPrueba = async () => {
@@ -168,196 +166,226 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#f5f5f5" }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0d1117" }}>
 
-      {/* ── Barra superior (56px) ── */}
-      <div className="bg-white border-b border-neutral-200 px-4 flex items-center gap-3 shrink-0 shadow-sm"
-        style={{ height: TOPBAR_H }}>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-neutral-900 text-sm truncate">
-            {isNew ? "Nuevo template de correo" : `Editando: ${template.nombre}`}
-          </p>
-        </div>
+      {/* ── Barra superior ── */}
+      <div className="flex items-center gap-3 px-4 shrink-0 border-b"
+        style={{ height: 52, background: "#161b22", borderColor: "#30363d" }}>
+        <p className="font-semibold text-sm truncate" style={{ color: "#e6edf3" }}>
+          {isNew ? "Nuevo template de correo" : `Editando: ${template.nombre}`}
+        </p>
+        <div className="flex-1" />
 
         {/* Prueba rápida */}
         {template?.id_template && (
           <div className="hidden lg:flex items-center gap-2">
             <input value={testNombre} onChange={e => setTestNom(e.target.value)}
-              className="border border-neutral-200 rounded-lg px-2 py-1 text-xs w-28 focus:outline-none" />
+              style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
+              className="border rounded-lg px-2 py-1 text-xs w-28 focus:outline-none focus:border-blue-500" />
             <input value={testEmail} onChange={e => setTestEmail(e.target.value)} type="email"
               placeholder="correo@prueba.com"
-              className="border border-neutral-200 rounded-lg px-2 py-1 text-xs w-44 focus:outline-none" />
+              style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
+              className="border rounded-lg px-2 py-1 text-xs w-44 focus:outline-none focus:border-blue-500 placeholder:text-neutral-600" />
             <button onClick={enviarPrueba} disabled={testLoading || !testEmail}
               className="px-3 py-1 text-xs bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
               {testLoading ? "Enviando…" : "📧 Prueba"}
             </button>
-            {testMsg && <span className={`text-xs font-medium ${testMsg.tipo === "ok" ? "text-emerald-600" : "text-red-500"}`}>{testMsg.msg}</span>}
+            {testMsg && (
+              <span className={`text-xs font-medium ${testMsg.tipo === "ok" ? "text-emerald-400" : "text-red-400"}`}>
+                {testMsg.msg}
+              </span>
+            )}
           </div>
         )}
 
         <button onClick={onCerrar}
-          className="px-4 py-1.5 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50">
+          style={{ borderColor: "#30363d", color: "#8b949e" }}
+          className="px-4 py-1.5 rounded-xl border text-sm hover:bg-white/5 transition-colors">
           Cancelar
         </button>
-        <button onClick={guardar} disabled={saving || (tab === "visual" && !editorListo)}
+        <button onClick={guardar} disabled={saving}
           className="px-5 py-1.5 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2">
-          {saving && <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
+          {saving && (
+            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+          )}
           {saving ? "Guardando…" : isNew ? "Crear template" : "Guardar cambios"}
         </button>
       </div>
 
-      {/* ── Contenido principal ── */}
-      <div className="flex overflow-hidden" style={{ height: `calc(100vh - ${TOPBAR_H}px)` }}>
+      {/* ── Cuerpo ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-        {/* Sidebar izquierdo */}
-        <div className="w-60 bg-white border-r border-neutral-200 overflow-y-auto shrink-0">
+        {/* ── Sidebar ── */}
+        <div className="w-52 overflow-y-auto shrink-0 border-r"
+          style={{ background: "#161b22", borderColor: "#30363d" }}>
           <div className="p-4 space-y-4">
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-neutral-600">Nombre interno <span className="text-red-400">*</span></label>
-              <input value={form.nombre} onChange={e => setForm(f => ({...f, nombre: e.target.value}))}
-                className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
-                placeholder="Ej: Bienvenida oficial" />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-neutral-600">Tipo</label>
-              <select value={form.tipo} onChange={e => setForm(f => ({...f, tipo: e.target.value}))}
-                className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/25">
-                {tipos.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-              <p className="text-[11px] text-neutral-400">Solo 1 activo por tipo.</p>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-neutral-600">Asunto <span className="text-red-400">*</span></label>
-              <input value={form.asunto} onChange={e => setForm(f => ({...f, asunto: e.target.value}))}
-                className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
-                placeholder="¡Bienvenido/a a Inspira! 🚀" />
-            </div>
-
-            {/* Variables */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-              <p className="text-xs font-semibold text-amber-800 mb-1.5">Variables dinámicas</p>
-              <div className="space-y-1.5">
-                {Object.entries(MERGE_TAGS).map(([k, tag]) => (
-                  <button key={k} type="button"
-                    onClick={() => tab === "html" ? insertarVariable(`{{${k}}}`) : undefined}
-                    title={tab === "html" ? "Insertar en el cursor" : "Variable disponible en Merge Tags del editor"}
-                    className={`w-full text-left flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white border border-amber-200 transition-colors
-                      ${tab === "html" ? "hover:border-amber-400 cursor-pointer" : "cursor-default"}`}>
-                    <code className="text-[11px] text-amber-700 font-mono">{`{{${k}}}`}</code>
-                    <span className="text-[11px] text-neutral-500">{tag.name}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-amber-700 mt-2">
-                {tab === "html" ? "Clic → inserta en el cursor" : "En el editor: botón Merge Tags ↗"}
-              </p>
-            </div>
-
-            {/* Imágenes */}
-            {assets.length > 0 && (
-              <div className="border border-neutral-200 rounded-xl overflow-hidden">
-                <p className="text-xs font-semibold text-neutral-600 px-3 py-2 bg-neutral-50 border-b border-neutral-100">
-                  📎 Imágenes disponibles
-                </p>
-                <div className="max-h-44 overflow-y-auto p-2 space-y-1">
-                  {assets.map(a => (
-                    <button key={a.id_asset} type="button"
-                      onClick={() => navigator.clipboard.writeText(a.url_publica)}
-                      className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-colors">
-                      <img src={a.url_publica} alt={a.nombre} className="w-9 h-7 object-cover rounded shrink-0" />
-                      <span className="text-[11px] text-neutral-600 truncate text-left">{a.nombre}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-neutral-400 px-3 py-1.5 border-t border-neutral-100">
-                  Clic → copia URL · pega en bloque imagen del editor
-                </p>
-              </div>
-            )}
-
-            {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{error}</p>}
-          </div>
-        </div>
-
-        {/* Área del editor */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-
-          {/* ── Tab bar (40px) ── */}
-          <div className="bg-white border-b border-neutral-200 px-4 flex items-stretch shrink-0"
-            style={{ height: TABBAR_H }}>
-            {[
-              { key: "visual", label: "🎨 Editor visual", desc: "Drag & drop, sin programación" },
-              { key: "html",   label: "📄 Editar HTML",   desc: "Para usuarios avanzados" },
-            ].map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)} title={t.desc}
-                className={`px-5 text-xs font-medium border-b-2 transition-colors
-                  ${tab === t.key ? "border-primary text-primary" : "border-transparent text-neutral-400 hover:text-neutral-700"}`}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ── Cuerpo del editor (ocupa todo el resto) ── */}
-          <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-
-            {/* Spinner Unlayer */}
-            {!editorListo && tab === "visual" && (
-              <div className="absolute inset-0 bg-neutral-100 flex items-center justify-center z-10">
-                <div className="text-center">
-                  <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-sm text-neutral-600 font-medium">Cargando editor visual…</p>
-                  <p className="text-xs text-neutral-400 mt-1">La primera carga puede tardar unos segundos</p>
-                </div>
-              </div>
-            )}
-
-            {/* Unlayer — siempre montado, oculto cuando el tab es HTML */}
-            <div style={{ position: "absolute", inset: 0, display: tab === "visual" ? "flex" : "none", flexDirection: "column" }}>
-              <EmailEditor
-                ref={editorRef}
-                onReady={onReady}
-                style={{ height: "100%" }}
-                options={{
-                  displayMode: "email",
-                  mergeTags: MERGE_TAGS,
-                  features: {
-                    stockImages: { enabled: false },
-                    userUploads: false,
-                    preview: true,
-                    imageEditor: false,
-                  },
-                  appearance: {
-                    theme: "light",
-                    panels: { tools: { dock: "left" } },
-                  },
-                }}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
+                Nombre interno <span className="text-red-400">*</span>
+              </label>
+              <input
+                value={form.nombre}
+                onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                placeholder="Ej: Bienvenida oficial"
               />
             </div>
 
-            {/* Tab HTML */}
-            {tab === "html" && (
-              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-                {!template?.design_json && (
-                  <div className="bg-sky-50 border-b border-sky-200 px-4 py-2 text-xs text-sky-700 shrink-0">
-                    ✏️ Template heredado — edita el HTML directamente o usa <strong>+ Nuevo template</strong> para crear uno visual desde cero.
-                  </div>
-                )}
-                <textarea
-                  ref={taRef}
-                  value={htmlContent}
-                  onChange={e => setHtml(e.target.value)}
-                  style={{ flex: 1, resize: "none", fontFamily: "monospace" }}
-                  className="w-full p-4 text-xs focus:outline-none bg-neutral-950 text-emerald-400 leading-relaxed"
-                  spellCheck={false}
-                  placeholder={"<!DOCTYPE html>\n<html lang='es'>\n..."}
-                />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>Tipo</label>
+              <select
+                value={form.tipo}
+                onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}
+                style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                {tipos.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <p className="text-[11px]" style={{ color: "#6e7681" }}>Solo 1 activo por tipo.</p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
+                Asunto <span className="text-red-400">*</span>
+              </label>
+              <input
+                value={form.asunto}
+                onChange={e => setForm(f => ({ ...f, asunto: e.target.value }))}
+                style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                placeholder="¡Bienvenido/a a Inspira! 🚀"
+              />
+            </div>
+
+            {/* Variables dinámicas */}
+            <div className="rounded-xl p-3 border" style={{ background: "#21262d", borderColor: "#30363d" }}>
+              <p className="text-xs font-semibold mb-2.5" style={{ color: "#e3b341" }}>
+                Variables dinámicas
+              </p>
+              <div className="space-y-1.5">
+                {MERGE_TAGS.map(tag => (
+                  <button
+                    key={tag.key}
+                    type="button"
+                    onClick={() => insertarVariable(`{{${tag.key}}}`)}
+                    title={`Insertar {{${tag.key}}} en el cursor`}
+                    className="w-full text-left flex items-center gap-1.5 px-2 py-2 rounded-lg border transition-colors hover:bg-white/5"
+                    style={{ background: "#0d1117", borderColor: "#30363d" }}>
+                    <code className="text-[11px] font-mono shrink-0" style={{ color: "#e3b341" }}>
+                      {`{{${tag.key}}}`}
+                    </code>
+                    <span className="text-[11px] truncate" style={{ color: "#8b949e" }}>{tag.label}</span>
+                  </button>
+                ))}
               </div>
+              <p className="text-[10px] mt-2" style={{ color: "#6e7681" }}>
+                Clic → inserta en el cursor
+              </p>
+            </div>
+
+            {/* Imágenes disponibles */}
+            {assets.length > 0 && (
+              <div className="rounded-xl overflow-hidden border" style={{ borderColor: "#30363d" }}>
+                <p className="text-xs font-semibold px-3 py-2 border-b"
+                  style={{ color: "#8b949e", background: "#21262d", borderColor: "#30363d" }}>
+                  📎 Imágenes disponibles
+                </p>
+                <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                  {assets.map(a => (
+                    <button
+                      key={a.id_asset}
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(a.url_publica)}
+                      title="Copiar URL"
+                      className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition-colors">
+                      <img src={a.url_publica} alt={a.nombre} className="w-9 h-7 object-cover rounded shrink-0" />
+                      <span className="text-[11px] truncate text-left" style={{ color: "#8b949e" }}>{a.nombre}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] px-3 py-1.5 border-t" style={{ color: "#6e7681", borderColor: "#30363d" }}>
+                  Clic → copia URL · pega en src=""
+                </p>
+              </div>
+            )}
+
+            {error && (
+              <p className="text-xs text-red-400 rounded-lg p-2 border border-red-800/50"
+                style={{ background: "rgba(220,38,38,0.1)" }}>
+                {error}
+              </p>
             )}
           </div>
         </div>
+
+        {/* ── Editor de código ── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 px-4 shrink-0 border-b"
+            style={{ height: 32, background: "#161b22", borderColor: "#30363d" }}>
+            <span className="text-xs font-mono font-semibold" style={{ color: "#58a6ff" }}>HTML</span>
+            <span className="text-xs" style={{ color: "#484f58" }}>
+              {htmlContent.length.toLocaleString()} caracteres · {htmlContent.split("\n").length} líneas
+            </span>
+            <div className="flex-1" />
+            <span className="text-[10px]" style={{ color: "#484f58" }}>
+              Tab = 2 espacios · Ctrl+Z deshacer
+            </span>
+          </div>
+          <div className="flex-1 relative overflow-hidden">
+            <div className="absolute inset-0">
+              <CodeMirror
+                value={htmlContent}
+                height="100%"
+                style={{ height: "100%", fontSize: "13px" }}
+                theme={vscodeDark}
+                extensions={[htmlLang()]}
+                onChange={(val) => setHtml(val)}
+                onCreateEditor={(view) => { cmViewRef.current = view; }}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  foldGutter: true,
+                  drawSelection: true,
+                  indentOnInput: true,
+                  syntaxHighlighting: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  highlightActiveLine: true,
+                  highlightSelectionMatches: true,
+                  tabSize: 2,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Vista previa en vivo ── */}
+        <div className="w-[44%] flex flex-col border-l overflow-hidden"
+          style={{ borderColor: "#30363d" }}>
+          <div className="flex items-center justify-between px-4 shrink-0 border-b"
+            style={{ height: 32, background: "#161b22", borderColor: "#30363d" }}>
+            <span className="text-xs font-medium" style={{ color: "#e6edf3" }}>
+              Vista previa en vivo
+            </span>
+            <span className="text-[10px]" style={{ color: "#484f58" }}>
+              variables reemplazadas con valores de prueba
+            </span>
+          </div>
+          <div className="flex-1 relative overflow-hidden" style={{ background: "#e5e7eb" }}>
+            <iframe
+              ref={previewRef}
+              title="Vista previa del correo"
+              className="w-full h-full border-0"
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -366,11 +394,11 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function EmailTemplates() {
   const [templates, setTemplates] = useState([]);
-  const [tipos, setTipos] = useState([]);
-  const [assets, setAssets] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [editando, setEditando] = useState(null); // null=cerrado | false=nuevo | objeto=editar
-  const [toast, setToast] = useState(null);
+  const [tipos, setTipos]         = useState([]);
+  const [assets, setAssets]       = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [editando, setEditando]   = useState(null);
+  const [toast, setToast]         = useState(null);
   const [filtroTipo, setFiltroTipo] = useState("todos");
 
   useEffect(() => { cargar(); cargarTipos(); cargarAssets(); }, []);
@@ -418,7 +446,7 @@ export default function EmailTemplates() {
     const r = await fetch(`${API_URL}/backoffice/email-templates/${t.id_template}/activar`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
-    }).then((x) => x.json());
+    }).then(x => x.json());
     if (!r.ok) { setToast({ tipo: "error", msg: r.msg }); return; }
     cargar();
     setToast({ tipo: "ok", msg: `"${t.nombre}" activado. Los demás de tipo "${t.tipo}" fueron desactivados.` });
@@ -429,10 +457,10 @@ export default function EmailTemplates() {
     const r = await fetch(`${API_URL}/backoffice/email-templates/${t.id_template}/desactivar`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
-    }).then((x) => x.json());
+    }).then(x => x.json());
     if (!r.ok) { setToast({ tipo: "error", msg: r.msg }); return; }
     cargar();
-    setToast({ tipo: "ok", msg: `Template desactivado.` });
+    setToast({ tipo: "ok", msg: "Template desactivado." });
   }
 
   async function eliminar(t) {
@@ -455,7 +483,7 @@ export default function EmailTemplates() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-primary">Templates de correo</h1>
-          <p className="text-sm text-neutral-500">Editor visual — sin programación. Solo 1 activo por tipo.</p>
+          <p className="text-sm text-neutral-500">Editor HTML con vista previa en vivo. Solo 1 activo por tipo.</p>
         </div>
         <button onClick={() => setEditando(false)}
           className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:opacity-90 shadow-sm">
@@ -519,7 +547,7 @@ export default function EmailTemplates() {
 
       {/* Editor modal */}
       {editando !== null && (
-        <VisualEditorModal
+        <EditorModal
           template={editando || null}
           tipos={tipos}
           assets={assets}
