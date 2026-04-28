@@ -103,8 +103,8 @@ const PREVIEW_SAMPLES = {
   concepto:    "Asesoría migratoria",
   referencia:  "TXN-789456",
   metodo:      "Transferencia bancaria",
-  resultado:    "APTO para visa de trabajo",
-  tipo_visa:    "Visa Temporaria de Trabajo",
+  resultado:    "7.8",
+  tipo_visa:    "Administración y Negocios",
   puntaje:      "7.8",
   pais:         "Colombia",
   whatsapp:     "+57 300 000 0000",
@@ -116,7 +116,7 @@ const PREVIEW_SAMPLES = {
   funcionario:  "No",
   ods:          "Sí",
   cyl:          "No",
-  becas:        "<div>✓ <strong>Beca Santander</strong> — Califica</div><div>~ <strong>Beca AUIP</strong> — Posible</div>",
+  becas:        "✓ Beca Santander — Califica<br>~ Beca AUIP — Posible",
 };
 
 function renderPreview(html, nombreOverride, emailOverride) {
