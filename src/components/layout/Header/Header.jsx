@@ -75,15 +75,8 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Right: CTA + Login */}
+          {/* Right: Login */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="/diagnostico"
-              onClick={(e) => go(e, "/diagnostico")}
-              className="bg-accent hover:bg-accent-dark text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all hover:shadow-md"
-            >
-              Reserva Diagnóstico 25€
-            </a>
             {!user && <LoginButton />}
             {user && <UserMenu user={user} />}
           </div>

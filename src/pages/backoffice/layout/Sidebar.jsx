@@ -4,7 +4,6 @@ import { navigate } from "../../../services/navigate";
 const NAV_ITEMS = [
   { label: "Dashboard",            href: "/backoffice/dashboard" },
   { label: "Agenda",               href: "/backoffice/agenda" },
-  { label: "Reservas Diagnóstico", href: "/backoffice/diagnosticos" },
   { label: "Solicitudes",          href: "/backoffice/solicitudes" },
   { label: "Documentos",           href: "/backoffice/documentos" },
   { label: "Calculadora — Leads",  href: "/backoffice/calculadora" },

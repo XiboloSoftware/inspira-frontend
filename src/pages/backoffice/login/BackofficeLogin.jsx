@@ -29,7 +29,7 @@ export default function BackofficeLogin({ onLogin }) {
     if (onLogin) onLogin(r.user);
 
     // Redirigir a la pantalla principal del backoffice
-    navigate("/backoffice/diagnosticos");
+    navigate("/backoffice/dashboard");
   }
 
   return (

@@ -55,7 +55,7 @@ export default function Dashboard() {
     );
   }
 
-  const { kpis, reservas_7_dias, clientes_por_mes, solicitudes_por_estado, solicitudes_por_tipo, documentos_por_estado } = stats;
+  const { kpis, clientes_por_mes, solicitudes_por_estado, solicitudes_por_tipo, documentos_por_estado } = stats;
 
   const docsMap = Object.fromEntries(documentos_por_estado.map((d) => [d.estado, d.count]));
 
@@ -64,8 +64,7 @@ export default function Dashboard() {
       <h1 className="text-xl sm:text-2xl font-bold text-primary">Dashboard</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard title="Diagnósticos hoy" value={kpis.diagnosticos_hoy} sub="reservas confirmadas" accent="blue" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <KpiCard title="Leads esta semana" value={kpis.leads_semana} sub="últimos 7 días" accent="teal" />
         <KpiCard title="Docs pendientes" value={kpis.documentos_pendientes} sub="sin revisar" accent="amber" />
         <KpiCard title="Expedientes activos" value={kpis.expedientes_activos} sub="en curso" accent="violet" />
@@ -73,18 +72,6 @@ export default function Dashboard() {
 
       {/* Gráficos fila 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <VerticalBarChart
-          title="Reservas de diagnóstico"
-          subtitle="Últimos 7 días"
-          data={reservas_7_dias}
-          labelKey="fecha"
-          valueKey="count"
-          formatLabel={(f) => {
-            const d = new Date(f + "T12:00:00");
-            return d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" });
-          }}
-          color="bg-primary"
-        />
         <VerticalBarChart
           title="Clientes nuevos"
           subtitle="Últimos 6 meses"

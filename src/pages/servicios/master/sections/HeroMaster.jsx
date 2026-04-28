@@ -68,17 +68,10 @@ export default function HeroMaster() {
             {/* CTAs */}
             <div className="flex flex-wrap gap-3">
               <a
-                href="/diagnostico"
-                onClick={(e) => go(e, "/diagnostico")}
-                className="inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105 hover:shadow-xl"
-                style={{ background: "#F49E4B" }}
-              >
-                Reserva Diagnóstico · 25€
-              </a>
-              <a
                 href="/calculadora-master"
                 onClick={(e) => go(e, "/calculadora-master")}
-                className="inline-flex items-center gap-2 border-2 border-white/25 hover:border-white/50 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:bg-white/10"
+                className="inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105 hover:shadow-xl"
+                style={{ background: "#F49E4B" }}
               >
                 Calculadora Gratuita
               </a>

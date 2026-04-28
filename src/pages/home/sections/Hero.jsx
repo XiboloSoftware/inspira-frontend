@@ -61,12 +61,12 @@ export default function Hero() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
           <a
-            href="/diagnostico"
-            onClick={(e) => go(e, "/diagnostico")}
+            href="/servicios/master"
+            onClick={(e) => go(e, "/servicios/master")}
             className="inline-flex items-center justify-center gap-2 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 hover:shadow-2xl"
             style={{ background: "#F49E4B" }}
           >
-            Reserva tu Diagnóstico · 25€
+            Ver Programa Máster 360°
             <svg
               width="18"
               height="18"

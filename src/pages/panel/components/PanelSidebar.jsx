@@ -49,11 +49,6 @@ export default function PanelSidebar({ user, activeTab, onChangeTab, isOpen, onC
           Navegación
         </p>
         <SidebarItem
-          label="Mis citas"
-          active={activeTab === "citas"}
-          onClick={() => onChangeTab("citas")}
-        />
-        <SidebarItem
           label="Perfil"
           active={activeTab === "perfil"}
           onClick={() => onChangeTab("perfil")}

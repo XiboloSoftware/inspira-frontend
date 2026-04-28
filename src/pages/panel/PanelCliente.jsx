@@ -4,15 +4,14 @@ import { apiGET } from "../../services/api";
 
 import PanelSidebar from "./components/PanelSidebar";
 import PerfilCliente from "./components/PerfilCliente";
-import MisCitas from "./components/citas/MisCitas";
 import MisServicios from "./components/MisServicios";
 
 export default function PanelCliente() {
   const [tab, setTab] = useState(() => {
-    if (typeof window === "undefined") return "citas";
+    if (typeof window === "undefined") return "servicios";
     const saved = window.localStorage.getItem("panel_tab");
-    if (saved === "perfil" || saved === "citas" || saved === "servicios") return saved;
-    return "citas";
+    if (saved === "perfil" || saved === "servicios") return saved;
+    return "servicios";
   });
 
   const [user, setUser] = useState(null);
@@ -91,7 +90,6 @@ export default function PanelCliente() {
           {!esServicios && (
             <div className={tab === "perfil" ? "w-full" : "max-w-4xl"}>
               {tab === "perfil" && <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />}
-              {tab === "citas" && <MisCitas />}
             </div>
           )}
         </div>

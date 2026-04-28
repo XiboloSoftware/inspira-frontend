@@ -16,16 +16,7 @@ export default function TopBar({ onOpenMenu }) {
 
         {/* Right Desktop */}
         <div className="hidden items-center gap-3 md:flex">
-
-          <a
-            href="/diagnostico"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-dark transition"
-          >
-            Reserva Diagnóstico 25€
-          </a>
-
           {!user && <LoginButton />}
-
           {user && <UserMenu user={user} />}
         </div>
 

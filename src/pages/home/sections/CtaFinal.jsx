@@ -30,26 +30,23 @@ export default function CtaFinal() {
           ¿Listo para comenzar?
         </span>
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-          Tu proceso empieza con un diagnóstico
+          Tu camino a estudiar en España empieza aquí
         </h2>
         <p className="text-white/55 text-lg mb-10 max-w-lg mx-auto leading-relaxed">
-          En 25€ obtienes un análisis completo de tu perfil, una sesión con asesor
-          y una recomendación personalizada de másteres y paquetes.
+          Conoce nuestro Programa Máster 360° y descubre cómo te acompañamos
+          desde la elección hasta la matrícula en universidades españolas.
         </p>
         <a
-          href="/diagnostico"
-          onClick={(e) => go(e, "/diagnostico")}
+          href="/servicios/master"
+          onClick={(e) => go(e, "/servicios/master")}
           className="inline-flex items-center gap-3 text-white font-bold px-10 py-5 rounded-xl text-xl transition-all hover:scale-105 hover:shadow-2xl"
           style={{ background: "#F49E4B" }}
         >
-          Reserva tu Asesoría de Diagnóstico · 25€
+          Ver Programa Máster 360°
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M5 10h10M11 6l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </a>
-        <p className="text-white/25 text-sm mt-5">
-          Si luego contratas un paquete, los 25€ se descuentan del precio total.
-        </p>
       </div>
     </section>
   );

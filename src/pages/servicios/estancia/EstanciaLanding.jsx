@@ -51,12 +51,12 @@ export default function EstanciaLanding() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/diagnostico"
-              onClick={(e) => go(e, "/diagnostico")}
+              href="/servicios/master"
+              onClick={(e) => go(e, "/servicios/master")}
               className="inline-flex items-center justify-center gap-2 text-white font-semibold px-7 py-3.5 rounded-xl transition-all hover:scale-105 hover:shadow-xl"
               style={{ background: "#F49E4B" }}
             >
-              Reserva un Diagnóstico · 25€
+              Ver Programa Máster 360°
             </a>
             <a
               href="/servicios/master"
@@ -128,15 +128,15 @@ export default function EstanciaLanding() {
             </h3>
             <p className="text-neutral-500 mb-7 max-w-md mx-auto">
               Estamos preparando la página completa con planes y precios.
-              Mientras tanto, reserva un diagnóstico para conocer tu caso específico.
+              Mientras tanto, conoce nuestro Programa Máster 360°.
             </p>
             <a
-              href="/diagnostico"
-              onClick={(e) => go(e, "/diagnostico")}
+              href="/servicios/master"
+              onClick={(e) => go(e, "/servicios/master")}
               className="inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:scale-105"
               style={{ background: "#023A4B" }}
             >
-              Consultar con un asesor →
+              Ver Programa Máster 360° →
             </a>
           </div>
         </div>

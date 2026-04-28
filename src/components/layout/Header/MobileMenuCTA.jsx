@@ -1,11 +1,14 @@
 // src/components/layout/Header/MobileMenuCTA.jsx
+import { navigate } from "../../../services/navigate";
+
 export default function MobileMenuCTA() {
   return (
     <a
-      href="/diagnostico"
-      className="w-full text-center rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition"
+      href="/servicios/master"
+      onClick={(e) => { e.preventDefault(); navigate("/servicios/master"); }}
+      className="w-full text-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white hover:bg-primary-dark transition"
     >
-      Reserva Diagnóstico 25€
+      Ver Programa Máster 360°
     </a>
   );
 }

@@ -450,7 +450,7 @@ export default function LeadsCalculadora({ user }) {
             <col style={{ width: "130px" }} /> {/* Área / Universidad */}
             <col style={{ width: "72px"  }} /> {/* Presup. */}
             <col style={{ width: "46px"  }} /> {/* AUIP */}
-            <col style={{ width: "80px"  }} /> {/* CyL */}
+            <col style={{ width: "100px" }} /> {/* CyL */}
             <col style={{ width: "112px" }} /> {/* Email */}
             <col style={{ width: "76px"  }} /> {/* WhatsApp */}
             <col style={{ width: "110px" }} /> {/* Becas */}
@@ -508,8 +508,10 @@ export default function LeadsCalculadora({ user }) {
                     {l.auip === "si" ? <span className="text-emerald-600 font-bold">✓</span> : <span className="text-neutral-300">—</span>}
                   </td>
 
-                  <td className="px-3 py-2.5 text-xs whitespace-nowrap">
-                    {l.cyl ? <span>{l.cyl}</span> : <span className="text-neutral-300">—</span>}
+                  <td className="px-3 py-2.5 text-xs" title={l.cyl || ""}>
+                    {l.cyl
+                      ? <span style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{l.cyl}</span>
+                      : <span className="text-neutral-300">—</span>}
                   </td>
 
                   <td className="px-3 py-2.5">
