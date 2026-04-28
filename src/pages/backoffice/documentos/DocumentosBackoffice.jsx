@@ -86,7 +86,7 @@ function countDocs(lista) {
 }
 
 function countByEstado(lista) {
-  const counts = { APROBADO: 0, OBSERVADO: 0, SUBIDO: 0 };
+  const counts = { APROBADO: 0, OBSERVADO: 0, SUBIDO: 0, INFORME: 0, PORTAL: 0 };
   for (const c of lista) {
     for (const s of c.solicitudes) {
       for (const it of s.items) {
@@ -97,6 +97,8 @@ function countByEstado(lista) {
           else counts.SUBIDO++;
         }
       }
+      if (s.informe) counts.INFORME++;
+      counts.PORTAL += s.justificantes?.length || 0;
     }
   }
   return counts;
@@ -130,30 +132,42 @@ function filtrarPorTexto(lista, q) {
     .filter((c) => c.solicitudes.length > 0);
 }
 
-// Filtro profundo por estado: muestra solo los documentos con ese estado
+// Filtro profundo por estado/tipo: muestra solo los documentos que corresponden
 function filtrarPorEstado(lista, filtro) {
   if (!filtro) return lista;
   return lista
     .map((c) => ({
       ...c,
       solicitudes: c.solicitudes
-        .map((s) => ({
-          ...s,
-          informe: undefined,
-          justificantes: undefined,
-          items: s.items
-            .map((it) => ({
-              ...it,
-              documentos: it.documentos.filter((doc) => {
-                if (filtro === "SUBIDO") {
-                  return doc.estado_revision !== "APROBADO" && doc.estado_revision !== "OBSERVADO";
-                }
-                return doc.estado_revision === filtro;
-              }),
-            }))
-            .filter((it) => it.documentos.length > 0),
-        }))
-        .filter((s) => s.items.length > 0),
+        .map((s) => {
+          if (filtro === "INFORME") {
+            return { ...s, justificantes: undefined, items: [] };
+          }
+          if (filtro === "PORTAL") {
+            return { ...s, informe: undefined, items: [] };
+          }
+          return {
+            ...s,
+            informe: undefined,
+            justificantes: undefined,
+            items: s.items
+              .map((it) => ({
+                ...it,
+                documentos: it.documentos.filter((doc) => {
+                  if (filtro === "SUBIDO") {
+                    return doc.estado_revision !== "APROBADO" && doc.estado_revision !== "OBSERVADO";
+                  }
+                  return doc.estado_revision === filtro;
+                }),
+              }))
+              .filter((it) => it.documentos.length > 0),
+          };
+        })
+        .filter((s) => {
+          if (filtro === "INFORME") return !!s.informe;
+          if (filtro === "PORTAL") return (s.justificantes?.length || 0) > 0;
+          return s.items.length > 0;
+        }),
     }))
     .filter((c) => c.solicitudes.length > 0);
 }
@@ -178,15 +192,19 @@ function entryId(entry) {
 const POR_PAGINA = 20;
 
 const FILTROS = [
-  { key: "APROBADO", label: "Aprobados", icon: "✅", color: "green" },
-  { key: "OBSERVADO", label: "Observados", icon: "⚠️", color: "yellow" },
-  { key: "SUBIDO",    label: "Sin revisar", icon: "📤", color: "blue" },
+  { key: "APROBADO", label: "Aprobados",     icon: "✅", color: "green" },
+  { key: "OBSERVADO", label: "Observados",   icon: "⚠️", color: "yellow" },
+  { key: "SUBIDO",    label: "Sin revisar",  icon: "📤", color: "blue" },
+  { key: "INFORME",   label: "Informes",     icon: "📑", color: "purple" },
+  { key: "PORTAL",    label: "Justificantes", icon: "🗂️", color: "teal" },
 ];
 
 const COLOR = {
-  green:  { card: "bg-green-50 border-green-200",  text: "text-green-700",  sub: "text-green-600",  active: "bg-green-500 border-green-600 text-white ring-green-400" },
+  green:  { card: "bg-green-50 border-green-200",   text: "text-green-700",  sub: "text-green-600",  active: "bg-green-500 border-green-600 text-white ring-green-400" },
   yellow: { card: "bg-yellow-50 border-yellow-200", text: "text-yellow-700", sub: "text-yellow-600", active: "bg-yellow-500 border-yellow-600 text-white ring-yellow-400" },
-  blue:   { card: "bg-blue-50 border-blue-200",    text: "text-blue-700",   sub: "text-blue-600",   active: "bg-blue-500 border-blue-600 text-white ring-blue-400" },
+  blue:   { card: "bg-blue-50 border-blue-200",     text: "text-blue-700",   sub: "text-blue-600",   active: "bg-blue-500 border-blue-600 text-white ring-blue-400" },
+  purple: { card: "bg-purple-50 border-purple-200", text: "text-purple-700", sub: "text-purple-600", active: "bg-purple-500 border-purple-600 text-white ring-purple-400" },
+  teal:   { card: "bg-teal-50 border-teal-200",     text: "text-teal-700",   sub: "text-teal-600",   active: "bg-teal-500 border-teal-600 text-white ring-teal-400" },
 };
 
 export default function DocumentosBackoffice() {
