@@ -81,32 +81,39 @@ function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar }) {
   );
 }
 
-// ── Modal editor visual (Unlayer) ─────────────────────────────────────────────
-function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast }) {
-  const editorRef = useRef(null);
-  const [editorListo, setEditorListo] = useState(false);
-  const [saving, setSaving] = useState(false);
+// ── Modal editor ─────────────────────────────────────────────────────────────
+// Tab "visual": Unlayer drag & drop (para templates nuevos o con design_json)
+// Tab "html": textarea de HTML directo (para templates heredados o avanzados)
+const TOPBAR_H = 56; // px
+const TABBAR_H = 40; // px
+const EDITOR_H = `calc(100vh - ${TOPBAR_H + TABBAR_H}px)`;
+
+function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
+  const editorRef  = useRef(null);
+  const taRef      = useRef(null);
+  const isNew      = !template;
+
+  // Default: visual si tiene design_json, html si es heredado o nuevo
+  const [tab, setTab]             = useState(template?.design_json ? "visual" : "html");
+  const [htmlContent, setHtml]    = useState(template?.html || "");
+  const [editorListo, setListo]   = useState(false);
+  const [saving, setSaving]       = useState(false);
   const [testEmail, setTestEmail] = useState("");
-  const [testNombre, setTestNombre] = useState("Cliente Ejemplo");
-  const [testLoading, setTestLoading] = useState(false);
-  const [testMsg, setTestMsg] = useState(null);
-  const [form, setForm] = useState({
+  const [testNombre, setTestNom]  = useState("Cliente Ejemplo");
+  const [testLoading, setTestL]   = useState(false);
+  const [testMsg, setTestMsg]     = useState(null);
+  const [form, setForm]           = useState({
     nombre: template?.nombre || "",
     tipo:   template?.tipo   || "bienvenida",
     asunto: template?.asunto || "",
   });
   const [error, setError] = useState("");
-  const isLegacy = !!template && !template.design_json;
-  const isNew = !template;
 
   const onReady = useCallback(() => {
-    setEditorListo(true);
+    setListo(true);
     if (template?.design_json) {
-      try {
-        editorRef.current.loadDesign(JSON.parse(template.design_json));
-      } catch (e) {
-        console.error("Error cargando diseño:", e);
-      }
+      try { editorRef.current.loadDesign(JSON.parse(template.design_json)); }
+      catch (e) { console.error("Error cargando diseño:", e); }
     }
   }, [template]);
 
@@ -116,13 +123,28 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast
     return () => document.removeEventListener("keydown", fn);
   }, [onCerrar]);
 
+  // Insertar variable en el cursor del textarea HTML
+  function insertarVariable(v) {
+    const ta = taRef.current;
+    if (!ta) return;
+    const s = ta.selectionStart, e2 = ta.selectionEnd;
+    const next = htmlContent.slice(0, s) + v + htmlContent.slice(e2);
+    setHtml(next);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(s + v.length, s + v.length); }, 0);
+  }
+
   const guardar = () => {
-    if (!form.nombre.trim() || !form.asunto.trim()) {
-      setError("Nombre y Asunto son obligatorios");
+    if (!form.nombre.trim() || !form.asunto.trim()) { setError("Nombre y Asunto son obligatorios"); return; }
+    setError("");
+
+    if (tab === "html") {
+      if (!htmlContent.trim()) { setError("El HTML no puede estar vacío"); return; }
+      onGuardar({ ...form, html: htmlContent, design_json: null });
       return;
     }
+
+    // Tab visual → exportar de Unlayer
     setSaving(true);
-    setError("");
     editorRef.current.exportHtml(({ design, html }) => {
       onGuardar({ ...form, html, design_json: JSON.stringify(design) });
       setSaving(false);
@@ -130,76 +152,63 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast
   };
 
   const enviarPrueba = async () => {
-    if (!template?.id_template || !testEmail) {
-      setTestMsg({ tipo: "error", msg: "Ingresa un email de destino" });
-      return;
-    }
-    setTestLoading(true);
-    setTestMsg(null);
+    if (!template?.id_template || !testEmail) { setTestMsg({ tipo: "error", msg: "Ingresa un email de destino" }); return; }
+    setTestL(true); setTestMsg(null);
     const token = localStorage.getItem("bo_token");
     const r = await fetch(`${API_URL}/backoffice/email-templates/${template.id_template}/enviar-prueba`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ to: testEmail, nombre: testNombre }),
-    }).then((x) => x.json());
-    setTestLoading(false);
+    }).then(x => x.json());
+    setTestL(false);
     setTestMsg({ tipo: r.ok ? "ok" : "error", msg: r.msg });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-neutral-100">
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#f5f5f5" }}>
 
-      {/* Barra superior */}
-      <div className="bg-white border-b border-neutral-200 px-5 py-3 flex items-center gap-4 shrink-0 shadow-sm">
+      {/* ── Barra superior (56px) ── */}
+      <div className="bg-white border-b border-neutral-200 px-4 flex items-center gap-3 shrink-0 shadow-sm"
+        style={{ height: TOPBAR_H }}>
         <div className="flex-1 min-w-0">
-          <h2 className="font-bold text-neutral-900 text-sm truncate">
+          <p className="font-bold text-neutral-900 text-sm truncate">
             {isNew ? "Nuevo template de correo" : `Editando: ${template.nombre}`}
-          </h2>
-          <p className="text-xs text-neutral-400">Editor visual — arrastra bloques para diseñar el correo</p>
+          </p>
         </div>
 
-        {/* Prueba rápida (solo si editando template con ID) */}
+        {/* Prueba rápida */}
         {template?.id_template && (
-          <div className="hidden md:flex items-center gap-2">
-            <input value={testNombre} onChange={e => setTestNombre(e.target.value)}
-              placeholder="Nombre prueba"
-              className="border border-neutral-200 rounded-lg px-2 py-1.5 text-xs w-32 focus:outline-none focus:ring-2 focus:ring-primary/25" />
-            <input value={testEmail} onChange={e => setTestEmail(e.target.value)}
-              type="email" placeholder="correo@prueba.com"
-              className="border border-neutral-200 rounded-lg px-2 py-1.5 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+          <div className="hidden lg:flex items-center gap-2">
+            <input value={testNombre} onChange={e => setTestNom(e.target.value)}
+              className="border border-neutral-200 rounded-lg px-2 py-1 text-xs w-28 focus:outline-none" />
+            <input value={testEmail} onChange={e => setTestEmail(e.target.value)} type="email"
+              placeholder="correo@prueba.com"
+              className="border border-neutral-200 rounded-lg px-2 py-1 text-xs w-44 focus:outline-none" />
             <button onClick={enviarPrueba} disabled={testLoading || !testEmail}
-              className="px-3 py-1.5 text-xs bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 transition-colors font-medium">
+              className="px-3 py-1 text-xs bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
               {testLoading ? "Enviando…" : "📧 Prueba"}
             </button>
-            {testMsg && (
-              <span className={`text-xs font-medium ${testMsg.tipo === "ok" ? "text-emerald-600" : "text-red-500"}`}>
-                {testMsg.msg}
-              </span>
-            )}
+            {testMsg && <span className={`text-xs font-medium ${testMsg.tipo === "ok" ? "text-emerald-600" : "text-red-500"}`}>{testMsg.msg}</span>}
           </div>
         )}
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={onCerrar}
-            className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50 transition-colors">
-            Cancelar
-          </button>
-          {!isLegacy && (
-            <button onClick={guardar} disabled={saving || !editorListo}
-              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-colors flex items-center gap-2">
-              {saving && <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
-              {saving ? "Guardando…" : isNew ? "Crear template" : "Guardar cambios"}
-            </button>
-          )}
-        </div>
+        <button onClick={onCerrar}
+          className="px-4 py-1.5 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50">
+          Cancelar
+        </button>
+        <button onClick={guardar} disabled={saving || (tab === "visual" && !editorListo)}
+          className="px-5 py-1.5 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center gap-2">
+          {saving && <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
+          {saving ? "Guardando…" : isNew ? "Crear template" : "Guardar cambios"}
+        </button>
       </div>
 
-      {/* Contenido */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* ── Contenido principal ── */}
+      <div className="flex overflow-hidden" style={{ height: `calc(100vh - ${TOPBAR_H}px)` }}>
 
         {/* Sidebar izquierdo */}
-        <div className="w-60 bg-white border-r border-neutral-200 flex flex-col shrink-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="w-60 bg-white border-r border-neutral-200 overflow-y-auto shrink-0">
+          <div className="p-4 space-y-4">
 
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-neutral-600">Nombre interno <span className="text-red-400">*</span></label>
@@ -214,11 +223,11 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast
                 className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/25">
                 {tipos.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
-              <p className="text-[11px] text-neutral-400 leading-snug">Solo 1 activo por tipo.</p>
+              <p className="text-[11px] text-neutral-400">Solo 1 activo por tipo.</p>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-neutral-600">Asunto del correo <span className="text-red-400">*</span></label>
+              <label className="text-xs font-medium text-neutral-600">Asunto <span className="text-red-400">*</span></label>
               <input value={form.asunto} onChange={e => setForm(f => ({...f, asunto: e.target.value}))}
                 className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
                 placeholder="¡Bienvenido/a a Inspira! 🚀" />
@@ -227,30 +236,33 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast
             {/* Variables */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
               <p className="text-xs font-semibold text-amber-800 mb-1.5">Variables dinámicas</p>
-              <p className="text-[11px] text-amber-700 mb-2 leading-snug">
-                En el editor: clic en <strong>"Merge Tags"</strong> (botón de variable) para insertarlas.
-              </p>
               <div className="space-y-1.5">
                 {Object.entries(MERGE_TAGS).map(([k, tag]) => (
-                  <div key={k} className="flex items-center gap-1.5">
-                    <code className="text-[11px] bg-white border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded font-mono">{`{{${k}}}`}</code>
+                  <button key={k} type="button"
+                    onClick={() => tab === "html" ? insertarVariable(`{{${k}}}`) : undefined}
+                    title={tab === "html" ? "Insertar en el cursor" : "Variable disponible en Merge Tags del editor"}
+                    className={`w-full text-left flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white border border-amber-200 transition-colors
+                      ${tab === "html" ? "hover:border-amber-400 cursor-pointer" : "cursor-default"}`}>
+                    <code className="text-[11px] text-amber-700 font-mono">{`{{${k}}}`}</code>
                     <span className="text-[11px] text-neutral-500">{tag.name}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
+              <p className="text-[10px] text-amber-700 mt-2">
+                {tab === "html" ? "Clic → inserta en el cursor" : "En el editor: botón Merge Tags ↗"}
+              </p>
             </div>
 
-            {/* Imágenes del panel media */}
+            {/* Imágenes */}
             {assets.length > 0 && (
               <div className="border border-neutral-200 rounded-xl overflow-hidden">
                 <p className="text-xs font-semibold text-neutral-600 px-3 py-2 bg-neutral-50 border-b border-neutral-100">
                   📎 Imágenes disponibles
                 </p>
-                <div className="max-h-40 overflow-y-auto p-2 space-y-1">
+                <div className="max-h-44 overflow-y-auto p-2 space-y-1">
                   {assets.map(a => (
                     <button key={a.id_asset} type="button"
                       onClick={() => navigator.clipboard.writeText(a.url_publica)}
-                      title="Copiar URL"
                       className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-colors">
                       <img src={a.url_publica} alt={a.nombre} className="w-9 h-7 object-cover rounded shrink-0" />
                       <span className="text-[11px] text-neutral-600 truncate text-left">{a.nombre}</span>
@@ -258,67 +270,90 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar, toast
                   ))}
                 </div>
                 <p className="text-[10px] text-neutral-400 px-3 py-1.5 border-t border-neutral-100">
-                  Clic → copia URL · luego pega en bloque de imagen del editor
+                  Clic → copia URL · pega en bloque imagen del editor
                 </p>
               </div>
             )}
 
-            {isLegacy && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                <p className="text-xs font-semibold text-amber-800 mb-1">Template heredado</p>
-                <p className="text-[11px] text-amber-700 leading-relaxed">
-                  Este template fue creado con HTML directo. Se muestra en modo lectura.<br/>
-                  Para editarlo visualmente, crea un nuevo template desde el botón <strong>+ Nuevo template</strong>.
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{error}</p>
-            )}
+            {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{error}</p>}
           </div>
         </div>
 
-        {/* Área principal: editor Unlayer o preview de legado */}
-        <div className="flex-1 relative overflow-hidden">
-          {!editorListo && !isLegacy && (
-            <div className="absolute inset-0 bg-neutral-100 flex items-center justify-center z-10">
-              <div className="text-center">
-                <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-sm text-neutral-600 font-medium">Cargando editor visual…</p>
-                <p className="text-xs text-neutral-400 mt-1">Puede tardar unos segundos la primera vez</p>
-              </div>
-            </div>
-          )}
+        {/* Área del editor */}
+        <div className="flex-1 flex flex-col overflow-hidden">
 
-          {isLegacy ? (
-            <div className="h-full flex flex-col">
-              <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-700 font-medium shrink-0">
-                Vista previa — solo lectura. Para editar, crea un nuevo template con el editor visual.
+          {/* ── Tab bar (40px) ── */}
+          <div className="bg-white border-b border-neutral-200 px-4 flex items-stretch shrink-0"
+            style={{ height: TABBAR_H }}>
+            {[
+              { key: "visual", label: "🎨 Editor visual", desc: "Drag & drop, sin programación" },
+              { key: "html",   label: "📄 Editar HTML",   desc: "Para usuarios avanzados" },
+            ].map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)} title={t.desc}
+                className={`px-5 text-xs font-medium border-b-2 transition-colors
+                  ${tab === t.key ? "border-primary text-primary" : "border-transparent text-neutral-400 hover:text-neutral-700"}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Cuerpo del editor (ocupa todo el resto) ── */}
+          <div style={{ height: EDITOR_H, position: "relative" }}>
+
+            {/* Spinner Unlayer */}
+            {!editorListo && tab === "visual" && (
+              <div className="absolute inset-0 bg-neutral-100 flex items-center justify-center z-10">
+                <div className="text-center">
+                  <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm text-neutral-600 font-medium">Cargando editor visual…</p>
+                  <p className="text-xs text-neutral-400 mt-1">La primera carga puede tardar unos segundos</p>
+                </div>
               </div>
-              <iframe srcDoc={template.html} className="flex-1 w-full border-0" title="preview" sandbox="allow-same-origin" />
+            )}
+
+            {/* Unlayer — siempre montado, oculto cuando el tab es HTML */}
+            <div style={{ height: "100%", display: tab === "visual" ? "block" : "none" }}>
+              <EmailEditor
+                ref={editorRef}
+                onReady={onReady}
+                style={{ height: "100%" }}
+                options={{
+                  displayMode: "email",
+                  mergeTags: MERGE_TAGS,
+                  features: {
+                    stockImages: { enabled: false },
+                    userUploads: false,
+                    preview: true,
+                    imageEditor: false,
+                  },
+                  appearance: {
+                    theme: "light",
+                    panels: { tools: { dock: "left" } },
+                  },
+                }}
+              />
             </div>
-          ) : (
-            <EmailEditor
-              ref={editorRef}
-              onReady={onReady}
-              style={{ height: "100%" }}
-              options={{
-                displayMode: "email",
-                mergeTags: MERGE_TAGS,
-                features: {
-                  stockImages: { enabled: false },
-                  userUploads: false,
-                  preview: true,
-                  imageEditor: false,
-                },
-                appearance: {
-                  theme: "light",
-                  panels: { tools: { dock: "left" } },
-                },
-              }}
-            />
-          )}
+
+            {/* Tab HTML */}
+            {tab === "html" && (
+              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                {!template?.design_json && (
+                  <div className="bg-sky-50 border-b border-sky-200 px-4 py-2 text-xs text-sky-700 shrink-0">
+                    ✏️ Template heredado — edita el HTML directamente o usa <strong>+ Nuevo template</strong> para crear uno visual desde cero.
+                  </div>
+                )}
+                <textarea
+                  ref={taRef}
+                  value={htmlContent}
+                  onChange={e => setHtml(e.target.value)}
+                  style={{ flex: 1, resize: "none", fontFamily: "monospace" }}
+                  className="w-full p-4 text-xs focus:outline-none bg-neutral-950 text-emerald-400 leading-relaxed"
+                  spellCheck={false}
+                  placeholder={"<!DOCTYPE html>\n<html lang='es'>\n..."}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
