@@ -193,6 +193,24 @@ export default function Clientes({ user }) {
     }
   }
 
+  async function onPurgarCliente(c) {
+    if (!isAdmin) return;
+    const ok = window.confirm(
+      `¿Purgar a "${c.nombre || c.email_contacto}"?\n\nEsto borrará todos sus datos personales de forma permanente. El registro queda vacío para liberar el correo.`
+    );
+    if (!ok) return;
+
+    const r = await boPOST(`/backoffice/clientes/${c.id_cliente}/purgar`);
+
+    if (!r.ok) {
+      setToast({ msg: r.msg || "No se pudo purgar el cliente.", tipo: "error" });
+      return;
+    }
+
+    setToast({ msg: "Cliente purgado. Sus datos han sido eliminados.", tipo: "ok" });
+    cargar();
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-6xl mx-auto">
       {/* Cabecera */}
@@ -244,6 +262,7 @@ export default function Clientes({ user }) {
         onEditar={onEditarCliente}
         onVerServicios={onVerServiciosCliente}
         onToggleActivo={onToggleActivoCliente}
+        onPurgar={onPurgarCliente}
         isAdmin={isAdmin}
       />
 

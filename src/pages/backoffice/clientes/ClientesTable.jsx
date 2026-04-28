@@ -21,7 +21,7 @@ function ToggleGroup({ value, onChange, options }) {
 }
 
 // Fila de tabla — solo desktop
-function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
+function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo, onPurgar }) {
   return (
     <tr className="border-b last:border-0 hover:bg-neutral-50">
       <td className="py-2 px-3">
@@ -53,6 +53,15 @@ function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
             >
               {c.activo ? "Desactivar" : "Activar"}
             </button>
+            {!c.activo && (
+              <button
+                type="button"
+                onClick={() => onPurgar?.(c)}
+                className="text-xs px-2.5 py-1 rounded-lg border border-red-600 text-red-700 hover:bg-red-50"
+              >
+                Purgar
+              </button>
+            )}
           </div>
         </td>
       )}
@@ -61,7 +70,7 @@ function ClienteRow({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
 }
 
 // Card para móvil
-function ClienteCard({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
+function ClienteCard({ c, isAdmin, onEditar, onVerServicios, onToggleActivo, onPurgar }) {
   return (
     <div className="p-4 border-b last:border-0 hover:bg-neutral-50 active:bg-neutral-100">
       {/* Nombre + badges */}
@@ -102,6 +111,15 @@ function ClienteCard({ c, isAdmin, onEditar, onVerServicios, onToggleActivo }) {
           >
             {c.activo ? "Desactivar" : "Activar"}
           </button>
+          {!c.activo && (
+            <button
+              type="button"
+              onClick={() => onPurgar?.(c)}
+              className="flex-1 min-w-[80px] text-xs py-2 rounded-lg border border-red-600 text-red-700 font-medium active:bg-red-50"
+            >
+              Purgar
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -120,7 +138,7 @@ const FILTROS_ACTIVO = [
   { value: "todos",     label: "Todos",     activeClass: "bg-neutral-900 text-white" },
 ];
 
-export default function ClientesTable({ clientes, loading, onEditar, onVerServicios, onToggleActivo, isAdmin }) {
+export default function ClientesTable({ clientes, loading, onEditar, onVerServicios, onToggleActivo, onPurgar, isAdmin }) {
   const [filtroServicio, setFiltroServicio] = useState("todos");
   const [filtroActivo, setFiltroActivo] = useState("activos");
   const [filtroNombre, setFiltroNombre] = useState("");
@@ -190,7 +208,7 @@ export default function ClientesTable({ clientes, loading, onEditar, onVerServic
               </thead>
               <tbody>
                 {clientesFiltrados.map((c) => (
-                  <ClienteRow key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} />
+                  <ClienteRow key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} onPurgar={onPurgar} />
                 ))}
               </tbody>
             </table>
@@ -199,7 +217,7 @@ export default function ClientesTable({ clientes, loading, onEditar, onVerServic
           {/* ── Móvil: cards ── */}
           <div className="sm:hidden divide-y divide-neutral-100">
             {clientesFiltrados.map((c) => (
-              <ClienteCard key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} />
+              <ClienteCard key={c.id_cliente} c={c} isAdmin={isAdmin} onEditar={onEditar} onVerServicios={onVerServicios} onToggleActivo={onToggleActivo} onPurgar={onPurgar} />
             ))}
           </div>
         </>
