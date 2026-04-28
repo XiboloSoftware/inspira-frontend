@@ -15,9 +15,12 @@ const TIPO_META = {
 
 // Merge tags de Unlayer — el valor {{x}} es lo que se inserta en el HTML exportado
 const MERGE_TAGS = {
-  nombre: { name: "Nombre del cliente",     value: "{{nombre}}", sample: "Juan García" },
-  email:  { name: "Correo del cliente",     value: "{{email}}",  sample: "juan@ejemplo.com" },
-  fecha:  { name: "Fecha actual",           value: "{{fecha}}",  sample: "27 de abril de 2026" },
+  nombre:    { name: "Nombre del cliente",     value: "{{nombre}}",    sample: "Juan García" },
+  email:     { name: "Correo del cliente",     value: "{{email}}",     sample: "juan@ejemplo.com" },
+  fecha:     { name: "Fecha actual",           value: "{{fecha}}",     sample: "27 de abril de 2026" },
+  solicitud: { name: "N° de solicitud",        value: "{{solicitud}}", sample: "73" },
+  item:      { name: "Ítem del documento",     value: "{{item}}",      sample: "Pasaporte" },
+  archivos:  { name: "Nombre(s) de archivos",  value: "{{archivos}}",  sample: "Passport_Juan.pdf" },
 };
 
 // ── Chip de tipo ──────────────────────────────────────────────────────────────
@@ -298,7 +301,7 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
           </div>
 
           {/* ── Cuerpo del editor (ocupa todo el resto) ── */}
-          <div style={{ height: EDITOR_H, position: "relative" }}>
+          <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
 
             {/* Spinner Unlayer */}
             {!editorListo && tab === "visual" && (
@@ -312,7 +315,7 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
             )}
 
             {/* Unlayer — siempre montado, oculto cuando el tab es HTML */}
-            <div style={{ height: "100%", display: tab === "visual" ? "block" : "none" }}>
+            <div style={{ position: "absolute", inset: 0, display: tab === "visual" ? "flex" : "none", flexDirection: "column" }}>
               <EmailEditor
                 ref={editorRef}
                 onReady={onReady}
@@ -336,7 +339,7 @@ function VisualEditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
 
             {/* Tab HTML */}
             {tab === "html" && (
-              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
                 {!template?.design_json && (
                   <div className="bg-sky-50 border-b border-sky-200 px-4 py-2 text-xs text-sky-700 shrink-0">
                     ✏️ Template heredado — edita el HTML directamente o usa <strong>+ Nuevo template</strong> para crear uno visual desde cero.
