@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { label: "Checklist Servicios",  href: "/backoffice/checklist-servicios" },
   { label: "Instructivos",         href: "/backoffice/instructivos" },
   { label: "Panel Asesoras",       href: "/backoffice/panel-asesoras" },
+  { label: "Correos",              href: "/backoffice/correos" },
+  { label: "Media",                href: "/backoffice/media" },
   { label: "Settings",             href: "/backoffice/settings" },
 ];
 

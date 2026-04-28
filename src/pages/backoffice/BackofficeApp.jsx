@@ -16,6 +16,8 @@ import DocumentosBackoffice from "./documentos/DocumentosBackoffice";
 import LeadsCalculadora from "./calculadora/LeadsCalculadora";
 import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
 import Agenda from "./agenda/Agenda";
+import EmailTemplates from "./correos/EmailTemplates";
+import MediaPanel from "./media/MediaPanel";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -144,6 +146,9 @@ export default function BackofficeApp() {
             {path === "/backoffice/calculadora" && <LeadsCalculadora user={user} />}
 
             {path === "/backoffice/panel-asesoras" && <PanelAsesoras />}
+
+            {path === "/backoffice/correos" && <EmailTemplates />}
+            {path === "/backoffice/media" && <MediaPanel />}
 
             {path === "/backoffice/settings" && (
               <UsuariosSettings user={user} />
