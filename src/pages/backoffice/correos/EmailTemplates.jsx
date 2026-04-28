@@ -8,18 +8,107 @@ import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi"
 const API_URL = import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
 
 const TIPO_META = {
-  bienvenida:   { label: "Bienvenida",    color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  recordatorio: { label: "Recordatorio",  color: "bg-sky-100 text-sky-700 border-sky-200" },
-  notificacion: { label: "Notificación",  color: "bg-violet-100 text-violet-700 border-violet-200" },
-  documento:    { label: "Documento",     color: "bg-amber-100 text-amber-700 border-amber-200" },
-  otro:         { label: "Otro",          color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+  bienvenida:          { label: "Bienvenida",        color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  documento:           { label: "Doc. cargado",      color: "bg-amber-100 text-amber-700 border-amber-200" },
+  documento_observado: { label: "Doc. observado",    color: "bg-orange-100 text-orange-700 border-orange-200" },
+  documento_aprobado:  { label: "Doc. aprobado",     color: "bg-teal-100 text-teal-700 border-teal-200" },
+  pago_confirmado:     { label: "Pago confirmado",   color: "bg-green-100 text-green-700 border-green-200" },
+  postulacion:         { label: "Postulación",       color: "bg-blue-100 text-blue-700 border-blue-200" },
+  lead_calculadora:    { label: "Lead calc.",        color: "bg-pink-100 text-pink-700 border-pink-200" },
+  recordatorio:        { label: "Recordatorio",      color: "bg-sky-100 text-sky-700 border-sky-200" },
+  notificacion:        { label: "Notificación",      color: "bg-violet-100 text-violet-700 border-violet-200" },
+  otro:                { label: "Otro",              color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
 };
 
-const MERGE_TAGS = [
-  { key: "nombre", label: "Nombre del cliente", sample: "Juan García" },
-  { key: "email",  label: "Correo del cliente",  sample: "juan@ejemplo.com" },
-  { key: "fecha",  label: "Fecha actual",        sample: "27 de abril de 2026" },
+// Variables agrupadas por categoría
+const VARIABLES_GRUPOS = [
+  {
+    id: "globales",
+    label: "Globales",
+    accent: "#58a6ff",
+    vars: [
+      { key: "nombre", label: "Nombre del cliente" },
+      { key: "email",  label: "Correo del cliente" },
+      { key: "fecha",  label: "Fecha actual" },
+    ],
+  },
+  {
+    id: "solicitud",
+    label: "Solicitud / Documento",
+    accent: "#bc8cff",
+    vars: [
+      { key: "solicitud", label: "N° de solicitud" },
+      { key: "item",      label: "Ítem del expediente" },
+      { key: "archivos",  label: "Archivo(s) subido(s)" },
+      { key: "documento", label: "Nombre del documento" },
+      { key: "tipo_doc",  label: "Tipo de documento" },
+    ],
+  },
+  {
+    id: "observacion",
+    label: "Observación / Rechazo",
+    accent: "#e3b341",
+    vars: [
+      { key: "observacion", label: "Motivo de observación" },
+      { key: "comentario",  label: "Comentario adicional" },
+    ],
+  },
+  {
+    id: "pago",
+    label: "Pago",
+    accent: "#3fb950",
+    vars: [
+      { key: "monto",      label: "Monto pagado" },
+      { key: "concepto",   label: "Concepto del pago" },
+      { key: "referencia", label: "Referencia / N° transacción" },
+      { key: "metodo",     label: "Método de pago" },
+    ],
+  },
+  {
+    id: "lead",
+    label: "Lead / Calculadora",
+    accent: "#f78166",
+    vars: [
+      { key: "resultado",  label: "Resultado de la calculadora" },
+      { key: "tipo_visa",  label: "Tipo de visa sugerido" },
+      { key: "puntaje",    label: "Puntaje obtenido" },
+    ],
+  },
 ];
+
+// Valores de muestra para la vista previa
+const PREVIEW_SAMPLES = {
+  nombre:      "Juan García",
+  email:       "juan@ejemplo.com",
+  fecha:       "27 de abril de 2026",
+  solicitud:   "SOL-2026-0042",
+  item:        "Pasaporte vigente",
+  archivos:    "pasaporte.pdf",
+  documento:   "Contrato de trabajo",
+  tipo_doc:    "Identificación",
+  observacion: "Falta firma en página 2",
+  comentario:  "Por favor adjunta el documento actualizado",
+  monto:       "$150.000",
+  concepto:    "Asesoría migratoria",
+  referencia:  "TXN-789456",
+  metodo:      "Transferencia bancaria",
+  resultado:   "APTO para visa de trabajo",
+  tipo_visa:   "Visa Temporaria de Trabajo",
+  puntaje:     "78 / 100",
+};
+
+function renderPreview(html, nombreOverride, emailOverride) {
+  let out = html;
+  const samples = {
+    ...PREVIEW_SAMPLES,
+    nombre: nombreOverride || PREVIEW_SAMPLES.nombre,
+    email:  emailOverride  || PREVIEW_SAMPLES.email,
+  };
+  Object.entries(samples).forEach(([key, val]) => {
+    out = out.replaceAll(`{{${key}}}`, val).replaceAll(`\${${key}}`, val);
+  });
+  return out;
+}
 
 // ── Chip de tipo ──────────────────────────────────────────────────────────────
 function TipoBadge({ tipo }) {
@@ -32,7 +121,7 @@ function TipoBadge({ tipo }) {
 }
 
 // ── Card de template ──────────────────────────────────────────────────────────
-function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar }) {
+function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar, onClonar }) {
   return (
     <div className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all
       ${t.activo ? "border-emerald-300 ring-1 ring-emerald-200" : "border-neutral-200"}`}>
@@ -66,6 +155,13 @@ function TemplateCard({ t, onEditar, onEliminar, onActivar, onDesactivar }) {
               Activar
             </button>
         }
+        {/* Clonar */}
+        <button onClick={() => onClonar(t)} title="Clonar este template"
+          className="text-xs px-3 py-2 rounded-xl border border-sky-200 text-sky-500 hover:bg-sky-50 transition-colors">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+        </button>
         {!t.activo && (
           <button onClick={() => onEliminar(t)}
             className="text-xs px-3 py-2 rounded-xl border border-red-200 text-red-400 hover:bg-red-50 transition-colors">
@@ -98,19 +194,24 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
   });
   const [error, setError] = useState("");
 
+  // Estado de grupos abiertos/cerrados (solo el primero abierto por defecto)
+  const [gruposOpen, setGruposOpen] = useState(
+    Object.fromEntries(VARIABLES_GRUPOS.map((g, i) => [g.id, i === 0]))
+  );
+
+  // Lista completa de tipos (API + los que no estén en la API)
+  const TIPOS_FALLBACK = Object.entries(TIPO_META).map(([value, m]) => ({ value, label: m.label }));
+  const tiposCompletos = [
+    ...tipos,
+    ...TIPOS_FALLBACK.filter(t => !tipos.some(a => a.value === t.value)),
+  ];
+
   // Vista previa en vivo — debounce 350 ms
   useEffect(() => {
     const timer = setTimeout(() => {
       const iframe = previewRef.current;
       if (!iframe) return;
-      const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
-      const rendered = htmlContent
-        .replaceAll("{{nombre}}", testNombre || "Juan García")
-        .replaceAll("${nombre}",  testNombre || "Juan García")
-        .replaceAll("{{email}}",  testEmail  || "juan@ejemplo.com")
-        .replaceAll("${email}",   testEmail  || "juan@ejemplo.com")
-        .replaceAll("{{fecha}}",  fecha)
-        .replaceAll("${fecha}",   fecha);
+      const rendered = renderPreview(htmlContent, testNombre, testEmail);
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (!doc) return;
       doc.open();
@@ -124,14 +225,12 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
     return () => clearTimeout(timer);
   }, [htmlContent, testNombre, testEmail]);
 
-  // Escape cierra el modal
   useEffect(() => {
     const fn = (e) => { if (e.key === "Escape") onCerrar(); };
     document.addEventListener("keydown", fn);
     return () => document.removeEventListener("keydown", fn);
   }, [onCerrar]);
 
-  // Inserta variable en la posición del cursor en CodeMirror
   function insertarVariable(v) {
     const view = cmViewRef.current;
     if (!view) { setHtml(h => h + v); return; }
@@ -175,8 +274,6 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
           {isNew ? "Nuevo template de correo" : `Editando: ${template.nombre}`}
         </p>
         <div className="flex-1" />
-
-        {/* Prueba rápida */}
         {template?.id_template && (
           <div className="hidden lg:flex items-center gap-2">
             <input value={testNombre} onChange={e => setTestNom(e.target.value)}
@@ -197,7 +294,6 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
             )}
           </div>
         )}
-
         <button onClick={onCerrar}
           style={{ borderColor: "#30363d", color: "#8b949e" }}
           className="px-4 py-1.5 rounded-xl border text-sm hover:bg-white/5 transition-colors">
@@ -218,13 +314,14 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
       {/* ── Cuerpo ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Sidebar ── */}
-        <div className="w-52 overflow-y-auto shrink-0 border-r"
-          style={{ background: "#161b22", borderColor: "#30363d" }}>
-          <div className="p-4 space-y-4">
+        {/* ── Sidebar (más ancha y organizada) ── */}
+        <div className="overflow-y-auto shrink-0 border-r"
+          style={{ width: 280, background: "#161b22", borderColor: "#30363d" }}>
+          <div className="p-3 space-y-3">
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
+            {/* Nombre */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "#6e7681" }}>
                 Nombre interno <span className="text-red-400">*</span>
               </label>
               <input
@@ -236,20 +333,22 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>Tipo</label>
+            {/* Tipo */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "#6e7681" }}>Tipo</label>
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}
                 style={{ background: "#21262d", borderColor: "#30363d", color: "#e6edf3" }}
                 className="border rounded-lg px-3 py-2 text-sm focus:outline-none">
-                {tipos.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                {tiposCompletos.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
-              <p className="text-[11px]" style={{ color: "#6e7681" }}>Solo 1 activo por tipo.</p>
+              <p className="text-[10px]" style={{ color: "#6e7681" }}>Solo 1 activo por tipo.</p>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium" style={{ color: "#8b949e" }}>
+            {/* Asunto */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "#6e7681" }}>
                 Asunto <span className="text-red-400">*</span>
               </label>
               <input
@@ -261,35 +360,69 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
               />
             </div>
 
-            {/* Variables dinámicas */}
-            <div className="rounded-xl p-3 border" style={{ background: "#21262d", borderColor: "#30363d" }}>
-              <p className="text-xs font-semibold mb-2.5" style={{ color: "#e3b341" }}>
+            <div style={{ height: 1, background: "#30363d" }} />
+
+            {/* Variables agrupadas y colapsables */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: "#6e7681" }}>
                 Variables dinámicas
               </p>
               <div className="space-y-1.5">
-                {MERGE_TAGS.map(tag => (
-                  <button
-                    key={tag.key}
-                    type="button"
-                    onClick={() => insertarVariable(`{{${tag.key}}}`)}
-                    title={`Insertar {{${tag.key}}} en el cursor`}
-                    className="w-full text-left flex items-center gap-1.5 px-2 py-2 rounded-lg border transition-colors hover:bg-white/5"
-                    style={{ background: "#0d1117", borderColor: "#30363d" }}>
-                    <code className="text-[11px] font-mono shrink-0" style={{ color: "#e3b341" }}>
-                      {`{{${tag.key}}}`}
-                    </code>
-                    <span className="text-[11px] truncate" style={{ color: "#8b949e" }}>{tag.label}</span>
-                  </button>
+                {VARIABLES_GRUPOS.map(grupo => (
+                  <div key={grupo.id} className="rounded-lg overflow-hidden border" style={{ borderColor: "#30363d" }}>
+                    {/* Header del grupo */}
+                    <button
+                      type="button"
+                      onClick={() => setGruposOpen(p => ({ ...p, [grupo.id]: !p[grupo.id] }))}
+                      className="w-full flex items-center justify-between px-3 py-2 transition-colors hover:bg-white/5"
+                      style={{ background: "#21262d" }}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: grupo.accent }} />
+                        <span className="text-xs font-medium" style={{ color: "#e6edf3" }}>{grupo.label}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "#30363d", color: "#8b949e" }}>
+                          {grupo.vars.length}
+                        </span>
+                      </div>
+                      <svg
+                        className="w-3.5 h-3.5 transition-transform"
+                        style={{ color: "#6e7681", transform: gruposOpen[grupo.id] ? "rotate(180deg)" : "rotate(0deg)" }}
+                        fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+
+                    {/* Variables del grupo */}
+                    {gruposOpen[grupo.id] && (
+                      <div className="p-1.5 space-y-1" style={{ background: "#0d1117" }}>
+                        {grupo.vars.map(v => (
+                          <button
+                            key={v.key}
+                            type="button"
+                            onClick={() => insertarVariable(`{{${v.key}}}`)}
+                            title={`Insertar {{${v.key}}} en el cursor`}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md border border-transparent hover:border-white/10 hover:bg-white/5 transition-colors text-left">
+                            <code className="text-[11px] font-mono shrink-0 px-1 py-0.5 rounded"
+                              style={{ color: grupo.accent, background: `${grupo.accent}15` }}>
+                              {`{{${v.key}}}`}
+                            </code>
+                            <span className="text-[11px] truncate" style={{ color: "#8b949e" }}>{v.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
-              <p className="text-[10px] mt-2" style={{ color: "#6e7681" }}>
-                Clic → inserta en el cursor
+              <p className="text-[10px] mt-2" style={{ color: "#484f58" }}>
+                Clic en cualquier variable → inserta en el cursor
               </p>
             </div>
 
+            <div style={{ height: 1, background: "#30363d" }} />
+
             {/* Imágenes disponibles */}
             {assets.length > 0 && (
-              <div className="rounded-xl overflow-hidden border" style={{ borderColor: "#30363d" }}>
+              <div className="rounded-lg overflow-hidden border" style={{ borderColor: "#30363d" }}>
                 <p className="text-xs font-semibold px-3 py-2 border-b"
                   style={{ color: "#8b949e", background: "#21262d", borderColor: "#30363d" }}>
                   📎 Imágenes disponibles
@@ -328,12 +461,10 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
             style={{ height: 32, background: "#161b22", borderColor: "#30363d" }}>
             <span className="text-xs font-mono font-semibold" style={{ color: "#58a6ff" }}>HTML</span>
             <span className="text-xs" style={{ color: "#484f58" }}>
-              {htmlContent.length.toLocaleString()} caracteres · {htmlContent.split("\n").length} líneas
+              {htmlContent.length.toLocaleString()} chars · {htmlContent.split("\n").length} líneas
             </span>
             <div className="flex-1" />
-            <span className="text-[10px]" style={{ color: "#484f58" }}>
-              Tab = 2 espacios · Ctrl+Z deshacer
-            </span>
+            <span className="text-[10px]" style={{ color: "#484f58" }}>Tab = 2 esp · Ctrl+Z deshacer</span>
           </div>
           <div className="flex-1 relative overflow-hidden">
             <div className="absolute inset-0">
@@ -369,12 +500,8 @@ function EditorModal({ template, tipos, assets, onGuardar, onCerrar }) {
           style={{ borderColor: "#30363d" }}>
           <div className="flex items-center justify-between px-4 shrink-0 border-b"
             style={{ height: 32, background: "#161b22", borderColor: "#30363d" }}>
-            <span className="text-xs font-medium" style={{ color: "#e6edf3" }}>
-              Vista previa en vivo
-            </span>
-            <span className="text-[10px]" style={{ color: "#484f58" }}>
-              variables reemplazadas con valores de prueba
-            </span>
+            <span className="text-xs font-medium" style={{ color: "#e6edf3" }}>Vista previa en vivo</span>
+            <span className="text-[10px]" style={{ color: "#484f58" }}>todas las variables reemplazadas</span>
           </div>
           <div className="flex-1 relative overflow-hidden" style={{ background: "#e5e7eb" }}>
             <iframe
@@ -441,6 +568,22 @@ export default function EmailTemplates() {
     setToast({ tipo: "ok", msg: esNuevo ? "Template creado (inactivo)." : "Template actualizado." });
   }
 
+  async function clonar(t) {
+    const r = await boGET(`/backoffice/email-templates/${t.id_template}`);
+    if (!r.ok) { setToast({ tipo: "error", msg: r.msg }); return; }
+    const payload = {
+      nombre:      `${r.template.nombre} (copia)`,
+      tipo:        r.template.tipo,
+      asunto:      r.template.asunto,
+      html:        r.template.html,
+      design_json: null,
+    };
+    const crear = await boPOST("/backoffice/email-templates", payload);
+    if (!crear.ok) { setToast({ tipo: "error", msg: crear.msg }); return; }
+    cargar();
+    setToast({ tipo: "ok", msg: `Clonado como "${payload.nombre}" (inactivo).` });
+  }
+
   async function activar(t) {
     const token = localStorage.getItem("bo_token");
     const r = await fetch(`${API_URL}/backoffice/email-templates/${t.id_template}/activar`, {
@@ -479,7 +622,6 @@ export default function EmailTemplates() {
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-primary">Templates de correo</h1>
@@ -494,14 +636,13 @@ export default function EmailTemplates() {
         </button>
       </div>
 
-      {/* Info */}
       <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 text-xs text-sky-700 flex items-start gap-2">
         <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
         </svg>
         <span>
           Al <strong>activar</strong> un template, todos los demás del mismo tipo se desactivan automáticamente.
-          Si <strong>ninguno está activo</strong>, el sistema no envía ese correo automático.
+          Usa <strong>Clonar</strong> (ícono azul) para duplicar un template como punto de partida.
         </span>
       </div>
 
@@ -527,7 +668,6 @@ export default function EmailTemplates() {
         </div>
       )}
 
-      {/* Grid */}
       {loading && <p className="text-sm text-neutral-400 text-center py-10">Cargando templates…</p>}
       {!loading && templates.length === 0 && (
         <div className="text-center py-16 text-neutral-400">
@@ -537,15 +677,15 @@ export default function EmailTemplates() {
           <p className="text-sm">No hay templates. Crea el primero con el botón de arriba.</p>
         </div>
       )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {templatesVisibles.map(t => (
           <TemplateCard key={t.id_template} t={t}
             onEditar={abrirEditar} onEliminar={eliminar}
-            onActivar={activar} onDesactivar={desactivar} />
+            onActivar={activar} onDesactivar={desactivar} onClonar={clonar} />
         ))}
       </div>
 
-      {/* Editor modal */}
       {editando !== null && (
         <EditorModal
           template={editando || null}
@@ -556,7 +696,6 @@ export default function EmailTemplates() {
         />
       )}
 
-      {/* Toast */}
       {toast && (
         <div className={`fixed bottom-5 right-5 z-[60] flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm max-w-sm
           ${toast.tipo === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
