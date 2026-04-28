@@ -16,6 +16,7 @@ import InstructivosServicios from "./instructivos/InstructivosServicios";
 import DocumentosBackoffice from "./documentos/DocumentosBackoffice";
 import LeadsCalculadora from "./calculadora/LeadsCalculadora";
 import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
+import Agenda from "./agenda/Agenda";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -109,7 +110,7 @@ export default function BackofficeApp() {
             {path === "/backoffice" && <Dashboard />}
             {path === "/backoffice/dashboard" && <Dashboard />}
 
-            {path === "/backoffice/agenda" && <Placeholder title="Agenda" />}
+            {path === "/backoffice/agenda" && <Agenda />}
 
             {/* LISTA DE SOLICITUDES */}
             {path === "/backoffice/solicitudes" && (
