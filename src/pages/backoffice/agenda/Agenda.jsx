@@ -7,15 +7,26 @@ const DAYS_OPTIONS = [
   { label: "30 días", value: 30 },
 ];
 
+function getUserRole() {
+  try {
+    return JSON.parse(localStorage.getItem("bo_user") || "{}").rol || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function Agenda() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
-  const [cancelling, setCancelling] = useState(null);
-  const [cancelModal, setCancelModal] = useState(null); // { uuid, name }
+  const [cancelModal, setCancelModal] = useState(null); // { uuid, clientName }
+  const [cancelStep, setCancelStep] = useState(1);      // 1 = razón, 2 = confirmación final
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
+
+  const isAdmin = getUserRole() === "admin";
 
   function load(d = days) {
     setLoading(true);
@@ -31,21 +42,32 @@ export default function Agenda() {
 
   useEffect(() => { load(days); }, [days]);
 
+  function openCancelModal(uuid, clientName) {
+    setCancelModal({ uuid, clientName });
+    setCancelStep(1);
+    setCancelReason("");
+  }
+
+  function closeCancelModal() {
+    setCancelModal(null);
+    setCancelStep(1);
+    setCancelReason("");
+  }
+
   async function handleCancel() {
     if (!cancelModal) return;
-    setCancelling(cancelModal.uuid);
+    setCancelling(true);
     try {
       const res = await boPOST(`/backoffice/calendly/events/${cancelModal.uuid}/cancel`, {
-        reason: cancelReason || "Cancelado por el equipo de Inspira Legal",
+        reason: cancelReason.trim() || "Cancelado por el equipo de Inspira Legal",
       });
       if (res.error) throw new Error(res.error);
-      setCancelModal(null);
-      setCancelReason("");
+      closeCancelModal();
       load(days);
     } catch (err) {
       alert("Error al cancelar: " + err.message);
     } finally {
-      setCancelling(null);
+      setCancelling(false);
     }
   }
 
@@ -53,10 +75,9 @@ export default function Agenda() {
     if (!data?.booking_url) return;
     navigator.clipboard.writeText(data.booking_url);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   }
 
-  // Agrupar eventos por día
   const grouped = groupByDay(data?.events || []);
   const todayKey = toDateKey(new Date());
 
@@ -69,7 +90,6 @@ export default function Agenda() {
           <p className="text-xs text-neutral-500 mt-0.5">Reuniones sincronizadas desde Calendly</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Filtro días */}
           <div className="flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
             {DAYS_OPTIONS.map((opt) => (
               <button
@@ -85,7 +105,6 @@ export default function Agenda() {
               </button>
             ))}
           </div>
-          {/* Link de reserva */}
           {data?.booking_url && (
             <button
               onClick={copyLink}
@@ -124,42 +143,106 @@ export default function Agenda() {
               dateKey={dateKey}
               isToday={dateKey === todayKey}
               events={events}
-              onCancel={(uuid, name) => { setCancelModal({ uuid, name }); setCancelReason(""); }}
+              isAdmin={isAdmin}
+              onCancel={openCancelModal}
             />
           ))}
         </div>
       )}
 
-      {/* Modal cancelar */}
+      {/* Modal cancelación — doble confirmación */}
       {cancelModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-base font-semibold text-neutral-800 mb-1">Cancelar reunión</h3>
-            <p className="text-sm text-neutral-500 mb-4">
-              Se cancelará: <span className="font-medium text-neutral-700">{cancelModal.name}</span>
-            </p>
-            <textarea
-              className="w-full border border-neutral-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-primary"
-              rows={3}
-              placeholder="Motivo de cancelación (opcional)"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-            />
-            <div className="flex gap-2 mt-4 justify-end">
-              <button
-                onClick={() => setCancelModal(null)}
-                className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 rounded-lg border border-neutral-200"
-              >
-                Cerrar
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={cancelling === cancelModal.uuid}
-                className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
-              >
-                {cancelling === cancelModal.uuid ? "Cancelando..." : "Confirmar cancelación"}
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+
+            {/* Paso 1: Motivo */}
+            {cancelStep === 1 && (
+              <>
+                <div className="bg-amber-50 border-b border-amber-100 px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-500 text-lg">⚠️</span>
+                    <h3 className="text-base font-semibold text-neutral-800">Cancelar reunión</h3>
+                  </div>
+                  <p className="text-sm text-neutral-500 mt-1">
+                    Cliente: <span className="font-medium text-neutral-700">{cancelModal.clientName}</span>
+                  </p>
+                </div>
+                <div className="px-6 py-5 space-y-3">
+                  <label className="text-xs font-medium text-neutral-600 block">
+                    Motivo de cancelación
+                  </label>
+                  <textarea
+                    className="w-full border border-neutral-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-primary transition-colors"
+                    rows={3}
+                    placeholder="Ej: Reagendamiento solicitado por el equipo..."
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    autoFocus
+                  />
+                  <p className="text-xs text-neutral-400">
+                    Este mensaje se enviará automáticamente al cliente por email.
+                  </p>
+                </div>
+                <div className="flex gap-2 px-6 pb-5 justify-end">
+                  <button
+                    onClick={closeCancelModal}
+                    className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 rounded-lg border border-neutral-200"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={() => setCancelStep(2)}
+                    className="px-4 py-2 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium"
+                  >
+                    Continuar →
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Paso 2: Confirmación final */}
+            {cancelStep === 2 && (
+              <>
+                <div className="bg-red-50 border-b border-red-100 px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500 text-lg">🚨</span>
+                    <h3 className="text-base font-semibold text-neutral-800">Confirmación final</h3>
+                  </div>
+                </div>
+                <div className="px-6 py-5 space-y-4">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+                    <p className="font-semibold mb-1">Esta acción no se puede deshacer.</p>
+                    <p>
+                      Se cancelará la reunión con{" "}
+                      <span className="font-medium">{cancelModal.clientName}</span> y Calendly
+                      le enviará un aviso por email de forma automática.
+                    </p>
+                  </div>
+                  {cancelReason.trim() && (
+                    <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 text-sm text-neutral-600">
+                      <span className="text-xs font-medium text-neutral-400 block mb-1">Motivo que se enviará:</span>
+                      {cancelReason}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 px-6 pb-5 justify-end">
+                  <button
+                    onClick={() => setCancelStep(1)}
+                    className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 rounded-lg border border-neutral-200"
+                  >
+                    ← Atrás
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50"
+                  >
+                    {cancelling ? "Cancelando..." : "Sí, cancelar definitivamente"}
+                  </button>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       )}
@@ -168,7 +251,7 @@ export default function Agenda() {
 }
 
 /* ── Day Section ──────────────────────────────────────────────── */
-function DaySection({ dateKey, isToday, events, onCancel }) {
+function DaySection({ dateKey, isToday, events, isAdmin, onCancel }) {
   const date = new Date(dateKey + "T12:00:00");
   const label = isToday
     ? "Hoy"
@@ -179,19 +262,19 @@ function DaySection({ dateKey, isToday, events, onCancel }) {
       <div className="flex items-center gap-3 mb-3">
         <div
           className={`text-sm font-semibold capitalize px-3 py-1 rounded-full ${
-            isToday
-              ? "bg-primary text-white"
-              : "bg-neutral-100 text-neutral-600"
+            isToday ? "bg-primary text-white" : "bg-neutral-100 text-neutral-600"
           }`}
         >
           {label}
         </div>
         <div className="flex-1 h-px bg-neutral-100" />
-        <span className="text-xs text-neutral-400">{events.length} reunión{events.length !== 1 ? "es" : ""}</span>
+        <span className="text-xs text-neutral-400">
+          {events.length} reunión{events.length !== 1 ? "es" : ""}
+        </span>
       </div>
       <div className="grid gap-3">
         {events.map((event) => (
-          <EventCard key={event.uuid} event={event} onCancel={onCancel} />
+          <EventCard key={event.uuid} event={event} isAdmin={isAdmin} onCancel={onCancel} />
         ))}
       </div>
     </div>
@@ -199,91 +282,159 @@ function DaySection({ dateKey, isToday, events, onCancel }) {
 }
 
 /* ── Event Card ───────────────────────────────────────────────── */
-function EventCard({ event, onCancel }) {
+function EventCard({ event, isAdmin, onCancel }) {
+  const [expanded, setExpanded] = useState(false);
   const start = new Date(event.start_time);
   const end = new Date(event.end_time);
-  const isPast = end < new Date();
+  const now = new Date();
+  const isPast = end < now;
+  const isNow = start <= now && now <= end;
   const invitee = event.invitees?.[0];
-
-  const timeStr = `${start.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
   const duration = Math.round((end - start) / 60000);
+
+  // Tiempo restante hasta la reunión
+  const msUntil = start - now;
+  const hoursUntil = Math.floor(msUntil / 3600000);
+  const minutesUntil = Math.floor((msUntil % 3600000) / 60000);
+  const countdown =
+    msUntil > 0 && msUntil < 86400000
+      ? hoursUntil > 0
+        ? `en ${hoursUntil}h ${minutesUntil}m`
+        : `en ${minutesUntil} min`
+      : null;
+
+  // Cuándo agendó
+  const bookedAt = invitee?.created_at
+    ? new Date(invitee.created_at).toLocaleDateString("es-ES", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : null;
+
+  const extraQuestions = (invitee?.questions || []);
 
   return (
     <div
-      className={`bg-white border rounded-xl p-4 flex flex-col sm:flex-row gap-4 ${
-        isPast ? "border-neutral-100 opacity-60" : "border-neutral-200 hover:border-primary/30 transition-colors"
+      className={`bg-white border rounded-xl overflow-hidden transition-all ${
+        isNow
+          ? "border-primary ring-2 ring-primary/20"
+          : isPast
+          ? "border-neutral-100 opacity-60"
+          : "border-neutral-200 hover:border-neutral-300"
       }`}
     >
-      {/* Hora */}
-      <div className="flex-shrink-0 w-28 text-center sm:text-left">
-        <div className="text-lg font-bold text-primary leading-tight">
-          {start.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+      {/* Banda superior si es ahora */}
+      {isNow && (
+        <div className="bg-primary text-white text-xs font-semibold text-center py-1 tracking-wide">
+          EN CURSO AHORA
         </div>
-        <div className="text-xs text-neutral-400">{duration} min</div>
-        <StatusBadge status={event.status} past={isPast} />
-      </div>
+      )}
 
-      {/* Info cliente */}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-neutral-800">
-          {invitee?.name || "Sin datos del cliente"}
-        </div>
-        {invitee?.email && (
-          <div className="text-xs text-neutral-500 mt-0.5">{invitee.email}</div>
-        )}
-        {invitee?.phone && (
-          <div className="text-xs text-neutral-500">{invitee.phone}</div>
-        )}
-        {invitee?.notes && (
-          <div className="mt-2 text-xs text-neutral-600 bg-neutral-50 rounded-lg p-2 border border-neutral-100">
-            {invitee.notes}
+      <div className="p-4 flex flex-col sm:flex-row gap-4">
+        {/* Hora y duración */}
+        <div className="flex-shrink-0 w-28 text-center sm:text-left">
+          <div className="text-2xl font-bold text-primary leading-tight">
+            {start.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
           </div>
-        )}
-      </div>
+          <div className="text-xs text-neutral-400 mt-0.5">
+            {start.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} –{" "}
+            {end.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+          <div className="text-xs text-neutral-400">{duration} min</div>
+          <StatusBadge status={event.status} past={isPast} isNow={isNow} />
+          {countdown && (
+            <div className="mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 inline-block">
+              {countdown}
+            </div>
+          )}
+        </div>
 
-      {/* Acciones */}
-      <div className="flex sm:flex-col gap-2 flex-wrap items-start sm:items-end justify-end flex-shrink-0">
-        {event.location && !isPast && (
-          <a
-            href={event.location}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M15 10l4.553-2.776A1 1 0 0121 8.175v7.65a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-            </svg>
-            Unirse
-          </a>
-        )}
-        {invitee?.reschedule_url && !isPast && (
-          <a
-            href={invitee.reschedule_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 bg-white border border-neutral-200 text-neutral-600 rounded-lg text-xs hover:border-neutral-300 transition-colors"
-          >
-            Reprogramar
-          </a>
-        )}
-        {!isPast && event.status === "active" && (
-          <button
-            onClick={() => onCancel(event.uuid, invitee?.name || event.name)}
-            className="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-lg text-xs hover:bg-red-50 transition-colors"
-          >
-            Cancelar
-          </button>
-        )}
+        {/* Info principal */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-start gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-neutral-800">
+              {invitee?.name || "Sin datos del cliente"}
+            </span>
+            <span className="text-xs text-neutral-400 bg-neutral-100 rounded px-2 py-0.5">
+              {event.event_name}
+            </span>
+          </div>
+          {invitee?.email && (
+            <a
+              href={`mailto:${invitee.email}`}
+              className="text-xs text-primary hover:underline block"
+            >
+              {invitee.email}
+            </a>
+          )}
+
+          {/* Preguntas del formulario */}
+          {extraQuestions.length > 0 && (
+            <div className="space-y-1 mt-2">
+              {extraQuestions.map((q, i) => (
+                <div key={i} className="bg-neutral-50 border border-neutral-100 rounded-lg px-3 py-2">
+                  <div className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide mb-0.5">
+                    {q.question}
+                  </div>
+                  <div className="text-xs text-neutral-700">{q.answer}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Cuándo agendó */}
+          {bookedAt && (
+            <div className="text-[10px] text-neutral-400 mt-1">
+              Agendado el {bookedAt}
+            </div>
+          )}
+        </div>
+
+        {/* Acciones */}
+        <div className="flex sm:flex-col gap-2 flex-wrap items-start sm:items-end justify-end flex-shrink-0">
+          {event.location && !isPast && (
+            <a
+              href={event.location}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15 10l4.553-2.776A1 1 0 0121 8.175v7.65a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+              </svg>
+              Unirse
+            </a>
+          )}
+          {invitee?.reschedule_url && !isPast && (
+            <a
+              href={invitee.reschedule_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-white border border-neutral-200 text-neutral-600 rounded-lg text-xs hover:border-neutral-300 transition-colors"
+            >
+              Reprogramar
+            </a>
+          )}
+          {isAdmin && !isPast && event.status === "active" && (
+            <button
+              onClick={() => onCancel(event.uuid, invitee?.name || "cliente")}
+              className="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-lg text-xs hover:bg-red-50 transition-colors"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 /* ── Status Badge ─────────────────────────────────────────────── */
-function StatusBadge({ status, past }) {
+function StatusBadge({ status, past, isNow }) {
+  if (isNow) return null;
   if (past) return <span className="text-[10px] text-neutral-400 mt-1 block">Completada</span>;
-  if (status === "canceled") return <span className="text-[10px] text-red-400 mt-1 block">Cancelada</span>;
-  return <span className="text-[10px] text-green-600 mt-1 block">Confirmada</span>;
+  if (status === "canceled") return <span className="text-[10px] text-red-400 mt-1 block font-medium">Cancelada</span>;
+  return <span className="text-[10px] text-green-600 mt-1 block font-medium">Confirmada</span>;
 }
 
 /* ── Empty State ──────────────────────────────────────────────── */
@@ -319,13 +470,14 @@ function LoadingSkeleton() {
           <div className="space-y-3">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="bg-white border border-neutral-100 rounded-xl p-4 flex gap-4 animate-pulse">
-                <div className="w-20 space-y-2">
-                  <div className="h-6 bg-neutral-100 rounded" />
+                <div className="w-24 space-y-2">
+                  <div className="h-7 bg-neutral-100 rounded" />
                   <div className="h-3 bg-neutral-100 rounded w-2/3" />
                 </div>
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-neutral-100 rounded w-1/3" />
                   <div className="h-3 bg-neutral-100 rounded w-1/2" />
+                  <div className="h-8 bg-neutral-50 rounded-lg w-full mt-2" />
                 </div>
               </div>
             ))}
