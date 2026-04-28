@@ -82,6 +82,7 @@ const VARIABLES_GRUPOS = [
       { key: "funcionario",  label: "Variable Funcionario" },
       { key: "ods",          label: "Variable ODS" },
       { key: "cyl",          label: "Variable CyL" },
+      { key: "becas",        label: "Lista de becas (HTML)" },
     ],
   },
 ];
@@ -115,6 +116,7 @@ const PREVIEW_SAMPLES = {
   funcionario:  "No",
   ods:          "Sí",
   cyl:          "No",
+  becas:        "<div>✓ <strong>Beca Santander</strong> — Califica</div><div>~ <strong>Beca AUIP</strong> — Posible</div>",
 };
 
 function renderPreview(html, nombreOverride, emailOverride) {
