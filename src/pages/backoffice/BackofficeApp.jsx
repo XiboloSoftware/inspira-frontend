@@ -18,6 +18,7 @@ import PanelAsesoras from "./panel-asesoras/PanelAsesoras";
 import Agenda from "./agenda/Agenda";
 import EmailTemplates from "./correos/EmailTemplates";
 import MediaPanel from "./media/MediaPanel";
+import PresupuestosPortal from "./presupuestos/PresupuestosPortal";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -72,19 +73,6 @@ export default function BackofficeApp() {
   const token = localStorage.getItem("bo_token");
   if (!token || path === "/backoffice/login") {
     return <BackofficeLogin onLogin={setUser} />;
-  }
-
-  // Página de presupuestos: HTML standalone con su propio layout, sin wrapper React
-  if (path === "/backoffice/presupuestos") {
-    return (
-      <div style={{ width: "100%", height: "100vh" }}>
-        <iframe
-          src="/backoffice-presupuestos.html"
-          title="Solicitudes de Presupuesto — Inspira Backoffice"
-          style={{ width: "100%", height: "100%", border: "none" }}
-        />
-      </div>
-    );
   }
 
   // ¿Estamos en /backoffice/solicitudes/:id ?
@@ -155,6 +143,8 @@ export default function BackofficeApp() {
 
             {path === "/backoffice/clientes" && <Clientes user={user} />}
             {path === "/backoffice/precios" && <PreciosServicios />}
+
+            {path === "/backoffice/presupuestos" && <PresupuestosPortal />}
 
             {path === "/backoffice/calculadora" && <LeadsCalculadora user={user} />}
 
