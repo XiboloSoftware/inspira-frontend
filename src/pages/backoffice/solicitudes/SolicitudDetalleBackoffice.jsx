@@ -179,6 +179,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
             : "overflow-y-auto space-y-3 pb-6 pr-0.5"     // lista: scroll interno
         }`}>
 
+          {/* Sección de asesores asignados desactivada temporalmente — todos los asesores ven todas las solicitudes
           <SeccionBackoffice
             sectionId="asesores"
             titulo="Asesores asignados"
@@ -193,6 +194,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               guardando={guardandoAsesores}
             />
           </SeccionBackoffice>
+          */}
 
           <SeccionBackoffice
             sectionId="checklist"
