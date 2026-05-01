@@ -87,6 +87,19 @@ export async function apiUpload(path, formData) {
   return data;
 }
 
+export async function apiDELETE(url) {
+  const r = await fetch(API_URL + url, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+    cache: "no-store",
+  });
+  const data = await parseJsonSafe(r);
+  if (!r.ok || data.ok === false) {
+    throw new Error(data.msg || data.message || "Error al eliminar");
+  }
+  return data;
+}
+
 export async function boUpload(path, file) {
   const formData = new FormData();
   formData.append("archivo", file);
