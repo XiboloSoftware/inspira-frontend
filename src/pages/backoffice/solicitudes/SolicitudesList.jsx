@@ -85,10 +85,10 @@ export default function SolicitudesList({ onVerSolicitud }) {
             {/* ── Desktop: tabla ── */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-white border-b">
-                  <tr className="text-left text-xs text-neutral-400">
+                <thead>
+                  <tr className="bg-[#e8f5ee] text-[#1a5c3a] text-left text-xs font-bold uppercase tracking-wide">
                     {["#ID", "Cliente", "Tipo", "Estado", "Origen", "Fecha", "Pagado", "Acciones"].map((h) => (
-                      <th key={h} className={`px-3 py-2 font-medium ${h === "Acciones" ? "text-right" : ""}`}>{h}</th>
+                      <th key={h} className={`px-3 py-3 ${h === "Acciones" ? "text-right" : ""}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>

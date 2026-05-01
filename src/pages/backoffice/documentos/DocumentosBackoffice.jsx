@@ -326,8 +326,8 @@ export default function DocumentosBackoffice() {
       {/* ── Cabecera ────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 leading-tight">Documentos</h1>
-          <p className="text-xs text-neutral-400">Gestión centralizada de archivos</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-primary leading-tight">Documentos</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Gestión centralizada de archivos</p>
         </div>
         <div className="flex gap-2 items-center w-full sm:w-auto">
           <input
@@ -335,7 +335,7 @@ export default function DocumentosBackoffice() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, cliente…"
-            className="flex-1 sm:w-56 border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="flex-1 sm:w-56 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
           />
           <button
             onClick={cargar}

@@ -1,11 +1,18 @@
+function initials(user) {
+  if (!user) return "IL";
+  if (user.nombre) {
+    return user.nombre.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  }
+  return (user.email || "IL").slice(0, 2).toUpperCase();
+}
+
 export default function Topbar({ user, onLogout, onMenuToggle }) {
   return (
     <header
       style={{ zIndex: 50 }}
-      className="relative w-full bg-white border-b border-neutral-200 px-4 py-3 flex justify-between items-center shrink-0"
+      className="relative w-full bg-white border-b border-neutral-200 px-4 py-2.5 flex justify-between items-center shrink-0"
     >
       <div className="flex items-center gap-3">
-        {/* Hamburguesa — siempre igual, abre/cierra el sidebar */}
         <button
           onClick={onMenuToggle}
           aria-label="Menú"
@@ -16,18 +23,22 @@ export default function Topbar({ user, onLogout, onMenuToggle }) {
           </svg>
         </button>
 
-        <span className="text-primary font-semibold text-sm">Panel interno</span>
+        <span className="text-primary font-semibold text-sm hidden sm:block">Inspira Backoffice</span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-neutral-500 hidden sm:block">
-          {user?.email} · <b>{user?.rol}</b>
-        </span>
-        <span className="text-xs text-neutral-500 sm:hidden font-medium">{user?.rol}</span>
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex flex-col items-end leading-tight">
+          <span className="text-xs font-semibold text-neutral-700">{user?.nombre || user?.email || "Usuario"}</span>
+          <span className="text-[10px] text-neutral-400 capitalize">{user?.rol || "—"}</span>
+        </div>
+
+        <div className="w-8 h-8 rounded-full bg-[#1a5c3a] text-white text-xs font-bold flex items-center justify-center shrink-0 select-none">
+          {initials(user)}
+        </div>
 
         <button
           onClick={onLogout}
-          className="px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent-dark transition text-sm font-medium"
+          className="px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition text-sm font-medium"
         >
           Salir
         </button>

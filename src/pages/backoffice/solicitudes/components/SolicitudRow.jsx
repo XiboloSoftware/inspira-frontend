@@ -13,10 +13,10 @@ export default function SolicitudRow({ s, isAdmin, onVer, onEliminar }) {
         </div>
       </td>
       <td className="px-3 py-2 text-xs max-w-[140px]">
-        {s.tipo ? <span className="inline-flex px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 whitespace-normal">{s.tipo}</span> : "—"}
+        {s.tipo ? <span className="inline-flex px-2 py-0.5 rounded bg-[#e8f5ee] text-[#1a5c3a] text-[11px] font-semibold whitespace-normal">{s.tipo}</span> : "—"}
       </td>
       <td className="px-3 py-2 text-xs">
-        {s.estado ? <span className="inline-flex px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">{s.estado}</span> : "—"}
+        {s.estado ? <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold whitespace-nowrap">{s.estado}</span> : "—"}
       </td>
       <td className="px-3 py-2 text-xs text-neutral-500 whitespace-nowrap">{s.origen || "—"}</td>
       <td className="px-3 py-2 text-xs text-neutral-500 whitespace-nowrap">
@@ -52,10 +52,10 @@ export function SolicitudCard({ s, isAdmin, onVer, onEliminar }) {
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
         <span className="text-xs font-bold text-neutral-400">#{s.id_solicitud}</span>
         {s.tipo && (
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 leading-none">{s.tipo}</span>
+          <span className="text-[11px] px-2 py-0.5 rounded bg-[#e8f5ee] text-[#1a5c3a] font-semibold leading-none">{s.tipo}</span>
         )}
         {s.estado && (
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 leading-none">{s.estado}</span>
+          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold leading-none">{s.estado}</span>
         )}
         {totalPagado > 0 && (
           <span className="ml-auto text-xs text-emerald-600 font-semibold">{totalPagado} {moneda}</span>

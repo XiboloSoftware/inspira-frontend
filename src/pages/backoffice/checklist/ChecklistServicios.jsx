@@ -67,16 +67,16 @@ export default function ChecklistServicios() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-semibold text-primary mb-1">Checklist de Servicios</h1>
-      <p className="text-sm text-neutral-600 mb-6">
-        Define los documentos requeridos para cada servicio.
-      </p>
+    <div className="p-4 sm:p-6 space-y-5 max-w-6xl mx-auto">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-primary">Checklist de Servicios</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">Define los documentos requeridos para cada servicio.</p>
+      </div>
 
       {/* Selector de servicio */}
-      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm mb-6">
-        <label className="text-xs text-neutral-500 mb-1 block">Selecciona un servicio</label>
-        <select className="border rounded-lg px-2 py-1.5 text-sm w-full max-w-md" value={selectedServicio || ""} onChange={manejarCambioServicio}>
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2 block">Selecciona un servicio</label>
+        <select className="border border-neutral-200 rounded-lg px-3 py-2 text-sm w-full max-w-md focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white" value={selectedServicio || ""} onChange={manejarCambioServicio}>
           <option value="">-- Selecciona --</option>
           {servicios.map((s) => (
             <option key={s.id_servicio} value={s.id_servicio}>

@@ -27,7 +27,7 @@ function ThSort({ label, campo, center, sortKey, sortDir, onSort }) {
     <th
       onClick={() => onSort(campo)}
       title={label}
-      className={`px-3 py-3 font-semibold whitespace-nowrap cursor-pointer select-none hover:bg-primary/10 transition overflow-hidden ${center ? "text-center" : ""}`}
+      className={`px-3 py-3 font-bold text-xs uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:bg-[#d0ecdf] transition overflow-hidden ${center ? "text-center" : ""}`}
     >
       {label}<SortIcon active={sortKey === campo} dir={sortDir} />
     </th>
@@ -458,20 +458,20 @@ export default function LeadsCalculadora({ user }) {
             <col style={{ width: "62px"  }} /> {/* Acc. */}
           </colgroup>
           <thead>
-            <tr className="bg-secondary-light text-primary text-left">
+            <tr className="bg-[#e8f5ee] text-[#1a5c3a] text-left">
               <ThSort label="Fecha / Hora" campo="fecha_creacion" {...sp} />
               <ThSort label="Nombre"       campo="nombre"          {...sp} />
               <ThSort label="País"         campo="pais"            {...sp} />
               <ThSort label="Nota ES"      campo="nota_espana"     center {...sp} />
               <ThSort label="Área / Universidad" campo="area"       {...sp} />
               <ThSort label="Presup."      campo="presupuesto"     {...sp} />
-              <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">AUIP</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">CyL</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Email</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">WhatsApp</th>
-              <th className="px-3 py-3 font-semibold">Becas</th>
-              <th className="px-3 py-3 font-semibold">Notas</th>
-              <th className="px-3 py-3 font-semibold text-center whitespace-nowrap">Acc.</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide text-center whitespace-nowrap">AUIP</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide whitespace-nowrap">CyL</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide whitespace-nowrap">Email</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide whitespace-nowrap">WhatsApp</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide">Becas</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide">Notas</th>
+              <th className="px-3 py-3 font-bold text-xs uppercase tracking-wide text-center whitespace-nowrap">Acc.</th>
             </tr>
           </thead>
           <tbody>
@@ -480,7 +480,7 @@ export default function LeadsCalculadora({ user }) {
             {!loading && sortedLeads.map((l, i) => {
               const notas = Array.isArray(l.notas) ? l.notas : [];
               return (
-                <tr key={l.id_lead} className={`border-t border-neutral-100 transition ${i % 2 === 0 ? "hover:bg-secondary-light/50" : "bg-neutral-50/40 hover:bg-secondary-light/50"}`}>
+                <tr key={l.id_lead} className="border-t border-neutral-100 hover:bg-neutral-50 transition cursor-pointer">
 
                   <td className="px-3 py-2.5">
                     <span className="block text-neutral-700 text-xs whitespace-nowrap">{fmtFecha(l.fecha_creacion)}</span>
@@ -630,8 +630,8 @@ export default function LeadsCalculadora({ user }) {
         <div className="flex items-center gap-3 justify-between text-sm">
           <span className="text-neutral-400 text-xs">Pág. {page} de {totalPages} · {total} registros</span>
           <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-4 py-2 rounded-lg border border-neutral-200 disabled:opacity-40 hover:bg-secondary-light transition text-sm">← Anterior</button>
-            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-4 py-2 rounded-lg border border-neutral-200 disabled:opacity-40 hover:bg-secondary-light transition text-sm">Siguiente →</button>
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-4 py-2 rounded-lg border border-neutral-200 disabled:opacity-40 hover:bg-[#e8f5ee] transition text-sm">← Anterior</button>
+            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-4 py-2 rounded-lg border border-neutral-200 disabled:opacity-40 hover:bg-[#e8f5ee] transition text-sm">Siguiente →</button>
           </div>
         </div>
       )}

@@ -17,13 +17,13 @@ export default function UsuariosTable({ usuarios, loading, onToggleActivo, onEdi
           {/* Desktop: tabla */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 border-b">
-                <tr className="text-left text-xs text-neutral-400">
-                  <th className="px-4 py-2 font-medium">Nombre</th>
-                  <th className="px-4 py-2 font-medium">Email</th>
-                  <th className="px-4 py-2 font-medium">Rol</th>
-                  <th className="px-4 py-2 font-medium">Estado</th>
-                  <th className="px-4 py-2 font-medium text-right">Acciones</th>
+              <thead>
+                <tr className="bg-[#e8f5ee] text-[#1a5c3a] text-left text-xs font-bold uppercase tracking-wide">
+                  <th className="px-4 py-3">Nombre</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Rol</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>

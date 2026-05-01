@@ -198,12 +198,12 @@ export default function ClientesTable({ clientes, loading, onEditar, onVerServic
           {/* ── Desktop: tabla ── */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="border-b bg-white">
-                <tr className="text-left text-xs text-neutral-400">
+              <thead>
+                <tr className="bg-[#e8f5ee] text-[#1a5c3a] text-left text-xs font-bold uppercase tracking-wide">
                   {["Nombre y apellidos", "Correo", "Celular", "DNI", "Servicio", "Fecha"].map((h) => (
-                    <th key={h} className="py-2 px-3 font-medium">{h}</th>
+                    <th key={h} className="py-3 px-3">{h}</th>
                   ))}
-                  {isAdmin && <th className="py-2 px-3 text-right font-medium">Acciones</th>}
+                  {isAdmin && <th className="py-3 px-3 text-right">Acciones</th>}
                 </tr>
               </thead>
               <tbody>

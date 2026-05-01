@@ -152,42 +152,28 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-semibold text-primary mb-1">
-        Precios / Servicios
-      </h1>
-      <p className="text-sm text-neutral-600 mb-6">
-        Gestiona los servicios (por ejemplo, la reserva de diagnóstico) y sus
-        precios actuales.
-      </p>
+    <div className="p-4 sm:p-6 space-y-5 max-w-6xl mx-auto">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-primary">Precios / Servicios</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">Gestiona los servicios y sus precios actuales.</p>
+      </div>
 
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setFiltro("todos")}
-          className={`px-3 py-1.5 text-xs rounded-lg border ${
-            filtro === "todos" ? "bg-primary text-white" : "bg-white"
-          }`}
-        >
-          Todos
-        </button>
-
-        <button
-          onClick={() => setFiltro("activos")}
-          className={`px-3 py-1.5 text-xs rounded-lg border ${
-            filtro === "activos" ? "bg-primary text-white" : "bg-white"
-          }`}
-        >
-          Activos
-        </button>
-
-        <button
-          onClick={() => setFiltro("inactivos")}
-          className={`px-3 py-1.5 text-xs rounded-lg border ${
-            filtro === "inactivos" ? "bg-red-600 text-white" : "bg-white"
-          }`}
-        >
-          Inactivos
-        </button>
+      <div className="flex gap-1 bg-neutral-100 rounded-lg p-1 w-fit">
+        {[
+          { value: "todos", label: "Todos" },
+          { value: "activos", label: "Activos" },
+          { value: "inactivos", label: "Inactivos" },
+        ].map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setFiltro(opt.value)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap ${
+              filtro === opt.value ? "bg-white text-[#1a5c3a] shadow-sm" : "text-neutral-500 hover:text-neutral-700"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

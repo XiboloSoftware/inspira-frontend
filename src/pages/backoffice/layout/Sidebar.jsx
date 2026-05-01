@@ -1,21 +1,41 @@
 import { useRef, useState } from "react";
 import { navigate } from "../../../services/navigate";
 
-const NAV_ITEMS = [
-  { label: "Dashboard",            href: "/backoffice/dashboard" },
-  { label: "Agenda",               href: "/backoffice/agenda" },
-  { label: "Solicitudes",          href: "/backoffice/solicitudes" },
-  { label: "Presupuestos Portal",  href: "/backoffice/presupuestos" },
-  { label: "Documentos",           href: "/backoffice/documentos" },
-  { label: "Calculadora — Leads",  href: "/backoffice/calculadora" },
-  { label: "Clientes",             href: "/backoffice/clientes" },
-  { label: "Precios/Servicios",    href: "/backoffice/precios" },
-  { label: "Checklist Servicios",  href: "/backoffice/checklist-servicios" },
-  { label: "Instructivos",         href: "/backoffice/instructivos" },
-  { label: "Panel Asesoras",       href: "/backoffice/panel-asesoras" },
-  { label: "Correos",              href: "/backoffice/correos" },
-  { label: "Media",                href: "/backoffice/media" },
-  { label: "Settings",             href: "/backoffice/settings" },
+const NAV_SECTIONS = [
+  {
+    label: "Principal",
+    items: [
+      { label: "Dashboard",   href: "/backoffice/dashboard" },
+      { label: "Agenda",      href: "/backoffice/agenda" },
+      { label: "Solicitudes", href: "/backoffice/solicitudes" },
+    ],
+  },
+  {
+    label: "Comercial",
+    items: [
+      { label: "Presupuestos Portal", href: "/backoffice/presupuestos" },
+      { label: "Calculadora — Leads", href: "/backoffice/calculadora" },
+      { label: "Clientes",            href: "/backoffice/clientes" },
+    ],
+  },
+  {
+    label: "Operación",
+    items: [
+      { label: "Documentos",          href: "/backoffice/documentos" },
+      { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
+      { label: "Instructivos",        href: "/backoffice/instructivos" },
+      { label: "Panel Asesoras",      href: "/backoffice/panel-asesoras" },
+    ],
+  },
+  {
+    label: "Configuración",
+    items: [
+      { label: "Precios/Servicios", href: "/backoffice/precios" },
+      { label: "Correos",           href: "/backoffice/correos" },
+      { label: "Media",             href: "/backoffice/media" },
+      { label: "Settings",          href: "/backoffice/settings" },
+    ],
+  },
 ];
 
 const MIN_W = 150;
@@ -130,25 +150,34 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
-          {NAV_ITEMS.map((it) => {
-            const active = path === it.href || path.startsWith(it.href + "/");
-            return (
-              <a
-                key={it.href}
-                href={it.href}
-                onClick={(e) => handleNavClick(it.href, e)}
-                className={[
-                  "block w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm no-underline",
-                  active
-                    ? "bg-white/15 font-semibold text-white"
-                    : "text-white/75 hover:bg-white/10 hover:text-white",
-                ].join(" ")}
-              >
-                {it.label}
-              </a>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-4">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-white/35 select-none">
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((it) => {
+                  const active = path === it.href || path.startsWith(it.href + "/");
+                  return (
+                    <a
+                      key={it.href}
+                      href={it.href}
+                      onClick={(e) => handleNavClick(it.href, e)}
+                      className={[
+                        "block w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm no-underline",
+                        active
+                          ? "bg-white/15 font-semibold text-white"
+                          : "text-white/75 hover:bg-white/10 hover:text-white",
+                      ].join(" ")}
+                    >
+                      {it.label}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Handle de resize */}

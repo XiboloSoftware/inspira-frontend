@@ -17,15 +17,17 @@ export default function InstructivosServicios() {
   useEffect(() => { cargarServicios(); }, []);
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-primary mb-2">Instructivos y plantillas por servicio</h1>
-      <p className="text-sm text-neutral-600 mb-4">Configura los instructivos que verán los clientes en cada servicio.</p>
+    <div className="p-4 sm:p-6 space-y-5">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-primary">Instructivos y plantillas</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">Configura los instructivos que verán los clientes en cada servicio.</p>
+      </div>
 
       {/* Selector de servicio */}
-      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm mb-4">
-        <label className="text-xs text-neutral-500 mb-1 block">Selecciona un servicio</label>
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2 block">Selecciona un servicio</label>
         <select
-          className="border rounded-lg px-2 py-1.5 text-sm w-full max-w-md"
+          className="border border-neutral-200 rounded-lg px-3 py-2 text-sm w-full max-w-md focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
           value={selectedServicio || ""}
           onChange={manejarCambioServicio}
         >

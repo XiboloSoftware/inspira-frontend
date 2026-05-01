@@ -137,19 +137,18 @@ export default function Dashboard() {
 
 /* ── KPI Card ─────────────────────────────────────────────────── */
 const ACCENT = {
-  blue:   { bg: "bg-blue-50",   text: "text-blue-700",   num: "text-blue-800" },
-  teal:   { bg: "bg-teal-50",   text: "text-teal-700",   num: "text-teal-800" },
-  amber:  { bg: "bg-amber-50",  text: "text-amber-700",  num: "text-amber-800" },
-  violet: { bg: "bg-violet-50", text: "text-violet-700", num: "text-violet-800" },
+  blue:   "border-t-blue-500",
+  teal:   "border-t-teal-500",
+  amber:  "border-t-amber-500",
+  violet: "border-t-violet-500",
 };
 
 function KpiCard({ title, value, sub, accent = "blue" }) {
-  const { bg, text, num } = ACCENT[accent] || ACCENT.blue;
   return (
-    <div className={`${bg} border border-neutral-200 rounded-xl p-4`}>
-      <div className={`text-xs font-medium ${text} uppercase tracking-wide`}>{title}</div>
-      <div className={`text-4xl font-bold ${num} mt-2 leading-none`}>{value ?? "—"}</div>
-      <div className="text-xs text-neutral-500 mt-1">{sub}</div>
+    <div className={`bg-white rounded-xl border border-neutral-200 border-t-4 ${ACCENT[accent] || ACCENT.blue} p-4 shadow-sm`}>
+      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">{title}</p>
+      <p className="font-['Fraunces'] text-3xl font-bold text-[#0d3320] leading-none">{value ?? "—"}</p>
+      {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
     </div>
   );
 }
