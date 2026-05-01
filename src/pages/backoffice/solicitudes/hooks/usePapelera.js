@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { boGET, boPATCH } from "../../../../../services/backofficeApi";
+import { boGET, boPATCH } from "../../../../services/backofficeApi";
 
 export function usePapelera({ activo }) {
   const [solicitudes, setSolicitudes] = useState([]);
