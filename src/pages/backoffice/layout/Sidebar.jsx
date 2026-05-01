@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { label: "Dashboard",            href: "/backoffice/dashboard" },
   { label: "Agenda",               href: "/backoffice/agenda" },
   { label: "Solicitudes",          href: "/backoffice/solicitudes" },
+  { label: "Presupuestos Portal",  href: "/backoffice/presupuestos" },
   { label: "Documentos",           href: "/backoffice/documentos" },
   { label: "Calculadora — Leads",  href: "/backoffice/calculadora" },
   { label: "Clientes",             href: "/backoffice/clientes" },

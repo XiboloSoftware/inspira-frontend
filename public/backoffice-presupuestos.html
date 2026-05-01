@@ -1,0 +1,549 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspira · Backoffice — Solicitudes de Presupuesto</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --v:#1a5c3a; --vm:#2d7a52; --vd:#0d3320; --vl:#e8f5ee;
+  --d:#c9922a; --dl:#fdf3e3;
+  --bg:#f4f6f4; --paper:#ffffff;
+  --dark:#1c1c1c; --gray:#64748b; --light-gray:#e2e8f0; --border:#e5e7eb;
+  --status-new:#3b82f6; --status-progress:#f59e0b; --status-done:#10b981; --status-cancel:#ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+
+/* TOP BAR */
+.topbar{background:var(--vd);color:white;padding:12px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--d);}
+.tb-left{display:flex;align-items:center;gap:14px;}
+.tb-logo{font-family:'Fraunces',serif;font-size:1.3em;font-weight:700;}
+.tb-logo span{color:#f5c842;}
+.tb-divider{width:1px;height:22px;background:rgba(255,255,255,.2);}
+.tb-tag{background:var(--d);color:white;padding:3px 10px;border-radius:4px;font-size:.7em;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.tb-right{display:flex;align-items:center;gap:14px;font-size:.85em;}
+.tb-user{display:flex;align-items:center;gap:8px;}
+.tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--d);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:white;}
+
+/* SIDEBAR + CONTENT */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 53px);}
+.sidebar{background:white;border-right:1px solid var(--border);padding:18px 0;}
+.menu-section{padding:0 18px;margin-bottom:8px;}
+.menu-label{font-size:.7em;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.2px;padding:10px 12px 6px;}
+.menu-item{display:flex;align-items:center;gap:11px;padding:10px 14px;color:var(--dark);text-decoration:none;font-size:.88em;font-weight:500;border-radius:7px;cursor:pointer;transition:all .15s;margin-bottom:2px;}
+.menu-item:hover{background:var(--vl);color:var(--v);}
+.menu-item.active{background:var(--v);color:white;font-weight:600;}
+.menu-item.active .menu-badge{background:rgba(255,255,255,.25);color:white;}
+.menu-icon{font-size:1.05em;width:18px;text-align:center;}
+.menu-badge{background:var(--vl);color:var(--v);padding:1px 7px;border-radius:10px;font-size:.72em;font-weight:700;margin-left:auto;}
+
+/* MAIN CONTENT */
+.main{padding:26px 32px;overflow-y:auto;}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:14px;}
+.page-title{font-family:'Fraunces',serif;font-size:1.85em;font-weight:700;color:var(--vd);line-height:1.1;}
+.page-sub{color:var(--gray);font-size:.92em;margin-top:3px;}
+.page-actions{display:flex;gap:8px;}
+.btn{padding:8px 16px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85em;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .15s;text-decoration:none;}
+.btn-primary{background:var(--v);color:white;}
+.btn-primary:hover{background:var(--vm);}
+.btn-outline{background:white;color:var(--dark);border:1.5px solid var(--border);}
+.btn-outline:hover{border-color:var(--v);color:var(--v);}
+.btn-icon{padding:7px 11px;}
+
+/* STATS GRID */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.stat{background:white;border-radius:10px;padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.stat-label{font-size:.74em;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.stat-value{font-family:'Fraunces',serif;font-size:1.85em;font-weight:700;color:var(--vd);line-height:1;}
+.stat-trend{font-size:.76em;color:var(--gray);margin-top:4px;}
+.stat-trend.up{color:#10b981;}
+.stat-icon{position:absolute;right:14px;top:14px;font-size:1.4em;opacity:.18;}
+.stat.accent{border-top:3px solid var(--d);}
+.stat.accent-v{border-top:3px solid var(--v);}
+.stat.accent-orange{border-top:3px solid #f59e0b;}
+.stat.accent-blue{border-top:3px solid #3b82f6;}
+
+/* FILTERS */
+.filters{background:white;border-radius:10px;padding:14px 18px;border:1px solid var(--border);margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.search-box{flex:1;min-width:220px;position:relative;}
+.search-box input{width:100%;padding:8px 14px 8px 36px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.88em;}
+.search-box input:focus{outline:none;border-color:var(--v);}
+.search-box::before{content:'🔍';position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.85em;}
+.filter-select{padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.85em;background:white;cursor:pointer;}
+.filter-select:focus{outline:none;border-color:var(--v);}
+.filter-tabs{display:flex;gap:4px;background:var(--bg);padding:3px;border-radius:8px;}
+.filter-tab{padding:6px 14px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:.8em;font-weight:600;cursor:pointer;border-radius:6px;color:var(--gray);transition:all .15s;}
+.filter-tab.active{background:white;color:var(--v);box-shadow:0 1px 2px rgba(0,0,0,.06);}
+
+/* REQUESTS TABLE */
+.table-wrap{background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.table-row{display:grid;grid-template-columns:30px 1.4fr 1.6fr .8fr 1.4fr 1fr 100px;gap:14px;padding:14px 18px;align-items:center;border-bottom:1px solid var(--border);transition:background .12s;}
+.table-row.header{background:#fafbfa;font-size:.74em;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.7px;border-bottom:2px solid var(--border);}
+.table-row.body{cursor:pointer;font-size:.88em;}
+.table-row.body:hover{background:#fafbfa;}
+.table-row.body:last-child{border-bottom:none;}
+.req-num{font-family:'Fraunces',serif;font-weight:700;color:var(--d);font-size:.85em;}
+.req-name{font-weight:600;color:var(--dark);}
+.req-contact{font-size:.78em;color:var(--gray);margin-top:2px;}
+.req-coms{display:flex;flex-wrap:wrap;gap:3px;}
+.req-com-tag{background:var(--vl);color:var(--v);padding:2px 7px;border-radius:4px;font-size:.7em;font-weight:600;}
+.req-com-more{color:var(--gray);font-size:.7em;font-weight:600;padding:2px 4px;}
+.req-unis{color:var(--dark);font-size:.85em;font-weight:500;}
+.req-services{font-size:.78em;color:var(--gray);}
+.req-est{font-family:'Fraunces',serif;font-weight:700;color:var(--vd);font-size:.95em;}
+.req-est-cur{color:var(--gray);font-size:.7em;font-weight:500;}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:14px;font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.status-pill::before{content:'';width:6px;height:6px;border-radius:50%;}
+.status-new{background:#dbeafe;color:#1e40af;}
+.status-new::before{background:#3b82f6;}
+.status-progress{background:#fef3c7;color:#92400e;}
+.status-progress::before{background:#f59e0b;}
+.status-done{background:#d1fae5;color:#065f46;}
+.status-done::before{background:#10b981;}
+.status-cancel{background:#fee2e2;color:#991b1b;}
+.status-cancel::before{background:#ef4444;}
+.req-date{font-size:.78em;color:var(--gray);}
+.req-time{font-size:.7em;color:var(--gray);}
+.row-check{accent-color:var(--v);width:15px;height:15px;cursor:pointer;}
+
+/* DETAIL MODAL */
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,51,32,.5);display:none;align-items:flex-start;justify-content:center;z-index:1000;padding:30px 20px;backdrop-filter:blur(3px);overflow-y:auto;}
+.modal-bg.active{display:flex;}
+.modal{background:white;border-radius:14px;max-width:840px;width:100%;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,.18);animation:modal-in .25s ease-out;}
+@keyframes modal-in{from{opacity:0;transform:translateY(20px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+.modal-head{background:linear-gradient(135deg,var(--vd),var(--v));color:white;padding:22px 26px;display:flex;justify-content:space-between;align-items:flex-start;}
+.modal-head h2{font-family:'Fraunces',serif;font-size:1.4em;font-weight:700;margin-bottom:3px;}
+.modal-head .req-id{font-size:.78em;opacity:.8;}
+.modal-close{background:rgba(255,255,255,.15);color:white;border:none;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:1.1em;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.modal-close:hover{background:rgba(255,255,255,.25);}
+.modal-body{padding:24px 26px;}
+.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:22px;}
+.detail-block{background:var(--bg);border-radius:8px;padding:14px;}
+.detail-block.full{grid-column:1/-1;}
+.detail-label{font-size:.7em;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.detail-value{font-size:.95em;color:var(--dark);font-weight:500;line-height:1.5;}
+.com-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.com-tag{background:var(--vl);color:var(--v);padding:4px 10px;border-radius:5px;font-size:.78em;font-weight:600;}
+.svc-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.svc-tag{background:var(--dl);color:#7c4a00;padding:4px 10px;border-radius:5px;font-size:.78em;font-weight:600;}
+.note-text{background:white;padding:12px;border-radius:6px;font-size:.88em;color:var(--dark);line-height:1.55;border-left:3px solid var(--v);}
+.modal-foot{padding:16px 26px;background:#fafbfa;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.status-update{display:flex;align-items:center;gap:8px;}
+.status-update label{font-size:.82em;font-weight:600;color:var(--gray);}
+.status-update select{padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.85em;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.modal-actions{display:flex;gap:6px;}
+
+/* TIMELINE */
+.timeline{margin-top:14px;}
+.timeline-item{display:flex;gap:10px;padding:8px 0;font-size:.82em;}
+.timeline-dot{flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--v);margin-top:6px;}
+.timeline-text{color:var(--dark);}
+.timeline-time{color:var(--gray);font-size:.85em;}
+
+/* CONTACT QUICK */
+.contact-row{display:flex;align-items:center;gap:8px;}
+.contact-icon{width:24px;height:24px;border-radius:5px;background:var(--vl);color:var(--v);display:flex;align-items:center;justify-content:center;font-size:.75em;}
+.contact-link{color:var(--v);font-weight:600;text-decoration:none;font-size:.88em;}
+.contact-link:hover{text-decoration:underline;}
+
+@media(max-width:1100px){
+  .table-row{grid-template-columns:30px 1.5fr 1.5fr 1fr 90px;}
+  .col-services,.col-est{display:none;}
+}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .main{padding:18px 16px;}
+  .table-row{grid-template-columns:1fr 80px;font-size:.82em;}
+  .col-num,.col-coms,.col-services,.col-est,.col-date{display:none;}
+  .detail-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-logo">Inspira<span>✈</span></div>
+    <div class="tb-divider"></div>
+    <span class="tb-tag">Backoffice</span>
+  </div>
+  <div class="tb-right">
+    <span style="opacity:.7;font-size:.78em;">Última sincronización · hace 2 min</span>
+    <div class="tb-divider"></div>
+    <div class="tb-user">
+      <div class="tb-avatar">IL</div>
+      <span>Inspira Legal</span>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="menu-section">
+      <div class="menu-label">Principal</div>
+      <a class="menu-item"><span class="menu-icon">📊</span> Dashboard</a>
+      <a class="menu-item active"><span class="menu-icon">💬</span> Solicitudes <span class="menu-badge">12</span></a>
+      <a class="menu-item"><span class="menu-icon">👥</span> Clientes</a>
+      <a class="menu-item"><span class="menu-icon">📅</span> Calendly</a>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Gestión</div>
+      <a class="menu-item"><span class="menu-icon">✅</span> Paquetes activos</a>
+      <a class="menu-item"><span class="menu-icon">📄</span> Documentación</a>
+      <a class="menu-item"><span class="menu-icon">🏫</span> Postulaciones</a>
+      <a class="menu-item"><span class="menu-icon">💸</span> Pagos</a>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Catálogo</div>
+      <a class="menu-item"><span class="menu-icon">📦</span> Servicios</a>
+      <a class="menu-item"><span class="menu-icon">🏛️</span> Universidades</a>
+      <a class="menu-item"><span class="menu-icon">⚙️</span> Configuración</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Solicitudes de Presupuesto Personalizado</h1>
+        <p class="page-sub">Gestiona y responde las solicitudes recibidas a través del portal</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-outline">📤 Exportar</button>
+        <button class="btn btn-primary">+ Nueva solicitud</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat accent-blue">
+        <div class="stat-icon">🆕</div>
+        <div class="stat-label">Nuevas hoy</div>
+        <div class="stat-value">4</div>
+        <div class="stat-trend up">▲ +2 vs ayer</div>
+      </div>
+      <div class="stat accent-orange">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-label">En proceso</div>
+        <div class="stat-value">7</div>
+        <div class="stat-trend">3 esperan respuesta</div>
+      </div>
+      <div class="stat accent-v">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Convertidas (mes)</div>
+        <div class="stat-value">18</div>
+        <div class="stat-trend up">▲ 23% conversión</div>
+      </div>
+      <div class="stat accent">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Estimado pendiente</div>
+        <div class="stat-value">€4.870</div>
+        <div class="stat-trend">12 solicitudes activas</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <div class="search-box">
+        <input type="text" placeholder="Buscar por nombre, email, teléfono o nº de solicitud..." id="searchBox" oninput="filterTable()">
+      </div>
+      <select class="filter-select" id="filterCom" onchange="filterTable()">
+        <option value="">Todas las comunidades</option>
+        <option>Andalucía</option><option>Madrid</option><option>Cataluña</option>
+        <option>Valencia</option><option>País Vasco</option><option>Galicia</option>
+      </select>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterStatus('',this)">Todas (12)</button>
+        <button class="filter-tab" onclick="filterStatus('new',this)">🆕 Nuevas (4)</button>
+        <button class="filter-tab" onclick="filterStatus('progress',this)">⏳ En proceso (7)</button>
+        <button class="filter-tab" onclick="filterStatus('done',this)">✅ Convertidas (1)</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-row header">
+        <div></div>
+        <div class="col-num">Nº · Cliente</div>
+        <div class="col-coms">Comunidades</div>
+        <div class="col-est">Estimación</div>
+        <div class="col-services">Servicios</div>
+        <div class="col-date">Fecha</div>
+        <div>Estado</div>
+      </div>
+      <div id="rowsContainer"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="m-name">Nombre del cliente</h2>
+        <div class="req-id" id="m-id">SOL-0000</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="detail-block">
+          <div class="detail-label">📞 Contacto</div>
+          <div class="detail-value" id="m-contact">+51 999...</div>
+          <div style="margin-top:8px;display:flex;gap:5px;">
+            <a class="btn btn-outline btn-icon" id="m-wa" target="_blank" style="font-size:.78em;">💬 WhatsApp</a>
+            <a class="btn btn-outline btn-icon" id="m-email" style="font-size:.78em;">✉ Email</a>
+          </div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">📅 Recibida</div>
+          <div class="detail-value" id="m-date">--</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">🗺️ Comunidades de interés</div>
+          <div class="com-grid" id="m-coms"></div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">🏫 Cantidad de universidades</div>
+          <div class="detail-value" id="m-unis">--</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">🔧 Servicios solicitados</div>
+          <div class="svc-grid" id="m-svcs"></div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">💰 Estimación orientativa</div>
+          <div class="detail-value" id="m-est" style="font-family:'Fraunces',serif;font-size:1.2em;color:var(--vd);font-weight:700;">--</div>
+        </div>
+        <div class="detail-block full">
+          <div class="detail-label">📝 Situación del cliente</div>
+          <div class="note-text" id="m-note">--</div>
+        </div>
+        <div class="detail-block full">
+          <div class="detail-label">⏱️ Historial</div>
+          <div class="timeline" id="m-timeline"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="status-update">
+        <label>Cambiar estado:</label>
+        <select id="m-status-select" onchange="updateStatus()">
+          <option value="new">🆕 Nueva</option>
+          <option value="progress">⏳ En proceso</option>
+          <option value="done">✅ Convertida</option>
+          <option value="cancel">✕ Cancelada</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline">📤 Enviar propuesta</button>
+        <button class="btn btn-primary">💬 Responder por WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── AUTH ───
+function getToken() { return localStorage.getItem('bo_token'); }
+function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }; }
+
+// ─── ESTADO ───
+let REQUESTS = [];
+let currentFilter = '';
+let activeReqId = null;
+
+const STATUS_LABELS = {new:'🆕 Nueva', progress:'⏳ En proceso', done:'✅ Convertida', cancel:'✕ Cancelada'};
+const STATUS_CLASSES = {new:'status-new', progress:'status-progress', done:'status-done', cancel:'status-cancel'};
+
+function fmt(n){ return '€' + (n || 0).toLocaleString('es-ES'); }
+
+function mapRecord(r) {
+  const fecha = new Date(r.fecha_creacion);
+  const contacto = r.contacto || '';
+  const emailMatch = contacto.match(/[\w.+-]+@[\w.-]+\.\w+/);
+  const email = emailMatch ? emailMatch[0] : '';
+  return {
+    id: r.id,
+    numero: r.numero,
+    name: r.nombre,
+    contact: contacto,
+    email: email,
+    coms: Array.isArray(r.comunidades) ? r.comunidades : [],
+    unis: r.cant_unis || '—',
+    services: Array.isArray(r.servicios) ? r.servicios : [],
+    est: r.estimacion_eur || 0,
+    status: r.estado,
+    date: fecha.toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' }),
+    time: fecha.toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' }),
+    note: r.situacion || '',
+  };
+}
+
+async function loadData() {
+  if (!getToken()) { window.location.href = '/backoffice/login'; return; }
+  document.getElementById('rowsContainer').innerHTML =
+    '<div style="padding:30px;text-align:center;color:var(--gray);font-size:.9em;">Cargando...</div>';
+  try {
+    const res = await fetch('/backoffice/presupuestos', { headers: authHeaders() });
+    if (res.status === 401) { window.location.href = '/backoffice/login'; return; }
+    const data = await res.json();
+    if (data.ok) {
+      REQUESTS = (data.solicitudes || []).map(mapRecord);
+      updateStats();
+      updateFilterTabs();
+      renderRows();
+    }
+  } catch(e) {
+    console.error('Error cargando presupuestos', e);
+    document.getElementById('rowsContainer').innerHTML =
+      '<div style="padding:30px;text-align:center;color:#c33;">Error al cargar datos. Verifica tu conexión.</div>';
+  }
+}
+
+function updateStats() {
+  const nuevas    = REQUESTS.filter(r => r.status === 'new').length;
+  const enProceso = REQUESTS.filter(r => r.status === 'progress').length;
+  const convertidas = REQUESTS.filter(r => r.status === 'done').length;
+  const estimado  = REQUESTS.filter(r => r.status !== 'done' && r.status !== 'cancel')
+                            .reduce((s, r) => s + (r.est || 0), 0);
+  const vals = document.querySelectorAll('.stat-value');
+  if(vals[0]) vals[0].textContent = nuevas;
+  if(vals[1]) vals[1].textContent = enProceso;
+  if(vals[2]) vals[2].textContent = convertidas;
+  if(vals[3]) vals[3].textContent = '€' + Math.round(estimado).toLocaleString('es-ES');
+}
+
+function updateFilterTabs() {
+  const tabs = document.querySelectorAll('.filter-tab');
+  const counts = ['', 'new', 'progress', 'done'].map(s =>
+    s ? REQUESTS.filter(r => r.status === s).length : REQUESTS.length
+  );
+  const labels = ['Todas', '🆕 Nuevas', '⏳ En proceso', '✅ Convertidas'];
+  tabs.forEach((t, i) => { if(labels[i]) t.textContent = labels[i] + ' (' + counts[i] + ')'; });
+}
+
+function renderRows() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const com = document.getElementById('filterCom').value;
+  const rows = REQUESTS.filter(r => {
+    if(currentFilter && r.status !== currentFilter) return false;
+    if(com && !r.coms.includes(com)) return false;
+    if(search && !(r.name + ' ' + r.email + ' ' + r.contact + ' ' + r.numero).toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const html = rows.map(r => `
+    <div class="table-row body" onclick="openDetail(${r.id})">
+      <input type="checkbox" class="row-check" onclick="event.stopPropagation()">
+      <div class="col-num">
+        <div class="req-num">${r.numero}</div>
+        <div class="req-name">${r.name}</div>
+        <div class="req-contact">${r.contact}</div>
+      </div>
+      <div class="col-coms">
+        <div class="req-coms">
+          ${r.coms.slice(0,3).map(c => '<span class="req-com-tag">' + c + '</span>').join('')}
+          ${r.coms.length > 3 ? '<span class="req-com-more">+' + (r.coms.length-3) + '</span>' : ''}
+        </div>
+      </div>
+      <div class="col-est">
+        <div class="req-est">${fmt(r.est)}</div>
+        <div class="req-est-cur">≈ S/ ${Math.round(r.est * 4.10).toLocaleString('es-ES')}</div>
+      </div>
+      <div class="col-services">
+        <div class="req-unis">${r.unis}</div>
+        <div class="req-services">${r.services.join(' · ') || '—'}</div>
+      </div>
+      <div class="col-date">
+        <div class="req-date">${r.date}</div>
+        <div class="req-time">${r.time}</div>
+      </div>
+      <div>
+        <span class="status-pill ${STATUS_CLASSES[r.status]}">${STATUS_LABELS[r.status].split(' ').slice(1).join(' ')}</span>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('rowsContainer').innerHTML = html ||
+    '<div style="padding:30px;text-align:center;color:var(--gray);font-size:.9em;">No se encontraron solicitudes con esos filtros.</div>';
+}
+
+function filterStatus(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRows();
+}
+
+function filterTable(){ renderRows(); }
+
+function openDetail(id) {
+  const r = REQUESTS.find(x => x.id === id);
+  if(!r) return;
+  activeReqId = id;
+  document.getElementById('m-name').textContent = r.name;
+  document.getElementById('m-id').textContent = r.numero + ' · ' + STATUS_LABELS[r.status];
+  const contactDisplay = r.contact + (r.email && r.email !== r.contact ? ' · ' + r.email : '');
+  document.getElementById('m-contact').textContent = contactDisplay;
+  const digits = r.contact.replace(/\D/g, '');
+  document.getElementById('m-wa').href = digits.length >= 7 ? 'https://wa.me/' + digits : '#';
+  document.getElementById('m-email').href = r.email ? 'mailto:' + r.email : '#';
+  document.getElementById('m-date').textContent = r.date + ' a las ' + r.time;
+  document.getElementById('m-coms').innerHTML = r.coms.map(c => '<span class="com-tag">' + c + '</span>').join('') || '—';
+  document.getElementById('m-unis').textContent = r.unis;
+  document.getElementById('m-svcs').innerHTML = r.services.map(s => '<span class="svc-tag">' + s + '</span>').join('') || '—';
+  const estEur = r.est || 0;
+  document.getElementById('m-est').textContent =
+    fmt(estEur) + '  ·  ≈ S/ ' + Math.round(estEur * 4.10).toLocaleString('es-ES') +
+    '  ·  ≈ $' + Math.round(estEur * 1.09).toLocaleString('es-ES');
+  document.getElementById('m-note').textContent = r.note || '(Sin descripción)';
+  document.getElementById('m-status-select').value = r.status;
+  const tl = [{t:'Solicitud recibida desde el portal', d: r.date + ' ' + r.time}];
+  if(r.status !== 'new') tl.push({t:'Solicitud asignada para gestión', d:'(en proceso)'});
+  if(r.status === 'done') tl.push({t:'Cliente convertido a paquete', d:'(completado)'});
+  document.getElementById('m-timeline').innerHTML = tl.map(x =>
+    '<div class="timeline-item"><div class="timeline-dot"></div>' +
+    '<div><span class="timeline-text">' + x.t + '</span> · <span class="timeline-time">' + x.d + '</span></div></div>'
+  ).join('');
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  activeReqId = null;
+}
+
+async function updateStatus() {
+  const newStatus = document.getElementById('m-status-select').value;
+  const r = REQUESTS.find(x => x.id === activeReqId);
+  if(!r) return;
+  try {
+    const res = await fetch('/backoffice/presupuestos/' + r.id + '/estado', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ estado: newStatus }),
+    });
+    const data = await res.json();
+    if(data.ok) {
+      r.status = newStatus;
+      document.getElementById('m-id').textContent = r.numero + ' · ' + STATUS_LABELS[newStatus];
+      updateStats();
+      updateFilterTabs();
+      renderRows();
+    }
+  } catch(e) { console.error('Error actualizando estado', e); }
+}
+
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+loadData();
+</script>
+</body>
+</html>

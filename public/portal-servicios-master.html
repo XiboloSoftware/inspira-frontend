@@ -533,7 +533,7 @@ footer { background:var(--dark); color:rgba(255,255,255,.65); text-align:center;
     </div>
     <div class="fg">
       <label class="fl">¿Qué necesitas?</label>
-      <div class="checks">
+      <div class="checks" id="c-servicios">
         <label class="chk" onclick="tog(this)"><input>Todo incluido</label>
         <label class="chk" onclick="tog(this)"><input>Solo búsqueda</label>
         <label class="chk" onclick="tog(this)"><input>Solo documentación</label>
@@ -998,11 +998,51 @@ function calcBudget() {
   document.getElementById('bcard').style.display = 'block';
 }
 
-function enviar() {
-  const n = document.getElementById('c-nom').value;
-  const c = document.getElementById('c-con').value;
+async function enviar() {
+  const n = document.getElementById('c-nom').value.trim();
+  const c = document.getElementById('c-con').value.trim();
   if(!n || !c) { alert('Por favor completa tu nombre y contacto.'); return; }
-  alert(`✅ ¡Listo, ${n}!\nTe contactaremos en menos de 24 horas a: ${c}`);
+
+  const comunidades = [...document.querySelectorAll('#c-comunidades .on')].map(el => el.textContent.trim());
+  const servicios   = [...document.querySelectorAll('#c-servicios .on')].map(el => el.textContent.trim());
+  const cant_unis   = document.getElementById('c-cant').value || null;
+  const situacion   = document.getElementById('c-sit').value.trim() || null;
+
+  // Estimación basada en el valor del select
+  const base = +document.getElementById('c-cant').value;
+  let estimacion_eur = base || null;
+  if(estimacion_eur && comunidades.filter(x => !['Andalucía','Cantabria','Asturias','Castilla-La Mancha','Galicia','Castilla y León','Navarra'].includes(x)).length > 4) {
+    estimacion_eur = Math.max(estimacion_eur, 700);
+  }
+
+  const btn = document.querySelector('.sub-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const res = await fetch('/api/presupuesto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: n, contacto: c, comunidades, cant_unis, servicios, estimacion_eur, situacion })
+    });
+    const data = await res.json();
+    if(data.ok) {
+      alert(`✅ ¡Listo, ${n}! Tu solicitud fue registrada con el número ${data.numero}.\nTe contactaremos en menos de 24 horas a: ${c}`);
+      document.getElementById('c-nom').value = '';
+      document.getElementById('c-con').value = '';
+      document.getElementById('c-sit').value = '';
+      document.getElementById('c-cant').value = '';
+      document.querySelectorAll('.chk.on').forEach(el => el.classList.remove('on'));
+      document.getElementById('bcard').style.display = 'none';
+    } else {
+      alert('Hubo un problema al enviar la solicitud. Por favor escríbenos directamente.');
+    }
+  } catch(e) {
+    alert('Error de conexión. Por favor escríbenos directamente por WhatsApp.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📩 Solicitar presupuesto personalizado';
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────

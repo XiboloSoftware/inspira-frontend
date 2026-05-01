@@ -74,6 +74,19 @@ export default function BackofficeApp() {
     return <BackofficeLogin onLogin={setUser} />;
   }
 
+  // Página de presupuestos: HTML standalone con su propio layout, sin wrapper React
+  if (path === "/backoffice/presupuestos") {
+    return (
+      <div style={{ width: "100%", height: "100vh" }}>
+        <iframe
+          src="/backoffice-presupuestos.html"
+          title="Solicitudes de Presupuesto — Inspira Backoffice"
+          style={{ width: "100%", height: "100%", border: "none" }}
+        />
+      </div>
+    );
+  }
+
   // ¿Estamos en /backoffice/solicitudes/:id ?
   const isDetalleSolicitud = path.startsWith("/backoffice/solicitudes/");
   let idSolicitudDetalle = null;
