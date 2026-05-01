@@ -1020,7 +1020,7 @@ async function enviar() {
   btn.textContent = 'Enviando...';
 
   try {
-    const res = await fetch('/api/presupuesto', {
+    const res = await fetch('https://api.inspira-legal.cloud/api/presupuesto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: n, contacto: c, comunidades, cant_unis, servicios, estimacion_eur, situacion })

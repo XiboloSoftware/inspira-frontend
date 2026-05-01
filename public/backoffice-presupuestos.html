@@ -354,6 +354,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min
 
 <script>
 // ─── AUTH ───
+const API_BASE = "https://api.inspira-legal.cloud";
 function getToken() { return localStorage.getItem('bo_token'); }
 function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }; }
 
@@ -394,7 +395,7 @@ async function loadData() {
   document.getElementById('rowsContainer').innerHTML =
     '<div style="padding:30px;text-align:center;color:var(--gray);font-size:.9em;">Cargando...</div>';
   try {
-    const res = await fetch('/backoffice/presupuestos', { headers: authHeaders() });
+    const res = await fetch(API_BASE + '/backoffice/presupuestos', { headers: authHeaders() });
     if (res.status === 401) { window.location.href = '/backoffice/login'; return; }
     const data = await res.json();
     if (data.ok) {
@@ -526,7 +527,7 @@ async function updateStatus() {
   const r = REQUESTS.find(x => x.id === activeReqId);
   if(!r) return;
   try {
-    const res = await fetch('/backoffice/presupuestos/' + r.id + '/estado', {
+    const res = await fetch(API_BASE + '/backoffice/presupuestos/' + r.id + '/estado', {
       method: 'PUT',
       headers: authHeaders(),
       body: JSON.stringify({ estado: newStatus }),
