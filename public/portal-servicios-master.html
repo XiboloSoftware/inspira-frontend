@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspira – Máster en España 2026/2027</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --v: #1a5c3a; --vm: #2d7a52; --vl: #e8f5ee;
+  --d: #c9922a; --dl: #fdf3e3;
+  --bg: #f7f7f5; --dark: #1c1c1c; --gray: #555; --border: #ddd;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--dark); }
+
+/* HERO */
+.hero { background:linear-gradient(135deg,#0d3320,#1a5c3a); color:white; padding:50px 20px 40px; text-align:center; }
+.hero h1 { font-family:'Fraunces',serif; font-size:2.4em; font-weight:700; margin-bottom:6px; }
+.hero h1 span { color:#f5c842; }
+.hero p { opacity:.85; font-size:.95em; margin-bottom:22px; }
+.hero-badges { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+.badge { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); padding:5px 14px; border-radius:20px; font-size:.8em; }
+
+/* CURRENCY */
+.cur-bar { background:white; border-bottom:2px solid var(--vl); padding:12px 20px; display:flex; justify-content:center; align-items:center; gap:10px; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+.cur-bar span { font-size:.82em; color:var(--gray); font-weight:500; }
+.cur-btn { padding:6px 18px; border-radius:20px; border:2px solid var(--border); background:white; font-weight:600; cursor:pointer; font-size:.82em; font-family:'DM Sans',sans-serif; transition:all .2s; }
+.cur-btn.active { background:var(--v); border-color:var(--v); color:white; }
+
+/* NAV */
+.nav { background:white; padding:0 20px; border-bottom:2px solid var(--border); display:flex; overflow-x:auto; scrollbar-width:none; }
+.nav::-webkit-scrollbar { display:none; }
+.nav-btn { padding:14px 18px; border:none; background:none; font-family:'DM Sans',sans-serif; font-weight:500; font-size:.88em; color:var(--gray); border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap; cursor:pointer; transition:all .2s; }
+.nav-btn.active { color:var(--v); border-bottom-color:var(--v); font-weight:600; }
+.nav-btn:hover { color:var(--v); }
+
+/* PANELS */
+.panel { display:none; padding:36px 20px; max-width:1200px; margin:0 auto; }
+.panel.active { display:block; }
+
+/* SECTION HEADER */
+.sec-h { margin-bottom:24px; }
+.sec-h h2 { font-family:'Fraunces',serif; font-size:1.7em; color:var(--v); margin-bottom:4px; }
+.sec-h p { color:var(--gray); font-size:.9em; line-height:1.5; }
+
+/* NOTE BOX */
+.note { background:var(--vl); border-left:4px solid var(--v); padding:12px 16px; border-radius:0 8px 8px 0; font-size:.84em; color:var(--v); margin-bottom:26px; line-height:1.6; }
+.note-warn { background:#fff5f0; border-left:4px solid #e07020; color:#a04010; }
+.note-orange { background:var(--dl); border-left:4px solid var(--d); color:#7c4a00; }
+
+/* ASESORÍA BANNER */
+.ases-box { background:linear-gradient(135deg,var(--dl),#fff9ee); border:2px solid var(--d); border-radius:14px; padding:24px 26px; margin-bottom:30px; display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+.ases-left { flex:1; min-width:200px; }
+.ases-left h3 { font-family:'Fraunces',serif; font-size:1.25em; color:var(--d); margin-bottom:8px; }
+.ases-left p { font-size:.86em; color:#555; line-height:1.6; margin-bottom:6px; }
+.ases-options { display:flex; flex-direction:column; gap:8px; min-width:220px; }
+.ases-opt { background:white; border:1.5px solid #e8c87a; border-radius:10px; padding:10px 14px; }
+.ases-opt-label { font-size:.7em; color:var(--d); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.ases-opt-price { font-family:'Fraunces',serif; font-size:1.7em; color:var(--d); font-weight:700; line-height:1; }
+.ases-opt-desc { font-size:.75em; color:#777; margin-top:3px; }
+.ases-btn { width:100%; margin-top:10px; padding:10px; background:var(--d); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:.9em; transition:all .2s; }
+.ases-btn:hover { background:#a07020; }
+
+/* GRID */
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:20px; margin-bottom:48px; }
+
+/* CARD */
+.card { background:white; border-radius:14px; border:2px solid var(--border); overflow:hidden; transition:transform .25s,box-shadow .25s,border-color .25s; }
+.card:hover { transform:translateY(-6px); box-shadow:0 14px 36px rgba(26,92,58,.13); border-color:var(--vm); }
+.card.featured { border-color:var(--d); box-shadow:0 6px 24px rgba(201,146,42,.15); }
+.card-ribbon { background:var(--d); color:white; text-align:center; font-size:.72em; font-weight:600; padding:4px; text-transform:uppercase; letter-spacing:1px; }
+.card-top { background:linear-gradient(135deg,var(--v),var(--vm)); color:white; padding:22px 20px 18px; }
+.card-top.gold { background:linear-gradient(135deg,#7c5200,var(--d)); }
+.card-top.soft { background:linear-gradient(135deg,#2a6048,#3d8a60); }
+.card-top.amber { background:linear-gradient(135deg,#5a3800,#a06010); }
+.card-name { font-family:'Fraunces',serif; font-size:1.25em; font-weight:700; margin-bottom:3px; }
+.card-tag { font-size:.8em; opacity:.85; margin-bottom:14px; font-style:italic; }
+.card-price { font-family:'Fraunces',serif; font-size:2.2em; font-weight:700; color:#f5c842; }
+.card-price-note { font-size:.78em; opacity:.7; }
+.card-body { padding:20px; }
+.card-for { background:var(--vl); border-left:3px solid var(--v); padding:9px 12px; border-radius:0 7px 7px 0; font-size:.82em; color:var(--v); font-weight:500; margin-bottom:16px; line-height:1.4; }
+.card-for.amber { background:#fdf3e3; border-left-color:var(--d); color:#7c4a00; }
+.feats { list-style:none; margin-bottom:14px; }
+.feats li { display:flex; gap:9px; padding:6px 0; font-size:.84em; color:#444; border-bottom:1px solid #f0f0f0; line-height:1.35; }
+.feats li:last-child { border:none; }
+.fi { flex-shrink:0; width:16px; text-align:center; }
+.card-warn { background:#fff5f5; border-left:3px solid #e55; padding:7px 11px; border-radius:0 6px 6px 0; font-size:.78em; color:#c33; margin-bottom:12px; }
+.card-btn { width:100%; padding:11px; border-radius:8px; border:none; font-family:'DM Sans',sans-serif; font-weight:600; font-size:.9em; cursor:pointer; transition:all .2s; }
+.card-btn.green { background:var(--v); color:white; }
+.card-btn.green:hover { background:var(--vm); }
+.card-btn.gold { background:var(--d); color:white; }
+.card-btn.gold:hover { background:#a07020; }
+.card-btn.out { background:white; color:var(--v); border:2px solid var(--v); }
+.card-btn.out:hover { background:var(--vl); }
+
+/* REGION CARDS */
+.rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:16px; margin-bottom:40px; }
+.rcard { background:white; border:2px solid var(--border); border-radius:12px; overflow:hidden; transition:all .2s; }
+.rcard:hover { border-color:var(--vm); box-shadow:0 6px 18px rgba(0,0,0,.08); }
+.rhead { padding:13px 16px; display:flex; justify-content:space-between; align-items:center; }
+.rhead.eco { background:#1a5c3a; color:white; }
+.rhead.int { background:#5a2d9e; color:white; }
+.rhead.pre { background:#9e3a1a; color:white; }
+.rname { font-family:'Fraunces',serif; font-size:1.05em; font-weight:700; }
+.rtag { font-size:.72em; font-weight:600; padding:2px 9px; border-radius:10px; background:rgba(255,255,255,.2); }
+.rbody { padding:13px 16px; }
+.ulist { list-style:none; margin-bottom:10px; }
+.ulist li { display:flex; gap:7px; padding:5px 0; font-size:.82em; border-bottom:1px dashed #eee; color:#444; }
+.ulist li:last-child { border:none; }
+.utag { flex-shrink:0; background:var(--vl); color:var(--v); padding:1px 6px; border-radius:8px; font-size:.72em; font-weight:600; margin-top:1px; }
+.rfooter { font-size:.77em; color:var(--gray); padding-top:8px; border-top:1px solid #eee; display:flex; flex-direction:column; gap:3px; }
+.rfooter strong { color:var(--dark); }
+
+/* LEGEND */
+.legend { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.leg { font-size:.8em; font-weight:600; padding:5px 12px; border-radius:10px; }
+.leg.eco { background:#e8f5ee; color:#1a5c3a; }
+.leg.int { background:#ede8f5; color:#5a2d9e; }
+.leg.pre { background:#f5e8e0; color:#9e3a1a; }
+
+/* BUDGET FORM */
+.bwrap { max-width:680px; margin:0 auto; }
+.fg { margin-bottom:18px; }
+.fl { font-weight:600; font-size:.88em; margin-bottom:7px; display:block; }
+.fc { width:100%; padding:11px 14px; border:2px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:.88em; }
+.fc:focus { outline:none; border-color:var(--v); }
+.fta { min-height:90px; resize:vertical; }
+.checks { display:flex; flex-wrap:wrap; gap:8px; }
+.chk { display:flex; align-items:center; gap:7px; padding:7px 14px; border:2px solid var(--border); border-radius:7px; cursor:pointer; font-size:.84em; transition:all .2s; user-select:none; }
+.chk:hover { border-color:var(--v); background:var(--vl); }
+.chk.on { border-color:var(--v); background:var(--vl); color:var(--v); font-weight:600; }
+.chk input { display:none; }
+.bcard { background:var(--vl); border:2px solid var(--v); border-radius:14px; padding:24px; margin-top:24px; display:none; }
+.bcard h3 { font-family:'Fraunces',serif; color:var(--v); margin-bottom:14px; }
+.brow { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid rgba(26,92,58,.12); font-size:.86em; }
+.btotal { font-size:1.05em; font-weight:700; color:var(--v); padding-top:10px; }
+.sub-btn { width:100%; padding:14px; background:var(--v); color:white; border:none; border-radius:10px; font-size:.95em; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; margin-top:18px; transition:all .2s; }
+.sub-btn:hover { background:var(--vm); transform:translateY(-2px); }
+
+footer { background:var(--dark); color:rgba(255,255,255,.65); text-align:center; padding:18px; font-size:.8em; }
+
+@media(max-width:640px) {
+  .hero h1 { font-size:1.7em; }
+  .ases-box { flex-direction:column; }
+  .grid { grid-template-columns:1fr; }
+  .panel { padding:24px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Inspira<span>✈</span></h1>
+  <p>Programa <em>Estudia y Trabaja en España 360°</em> · Máster 2026/2027</p>
+  <div class="hero-badges">
+    <span class="badge">98% admitidos</span>
+    <span class="badge">Especialistas en Extranjería</span>
+    <span class="badge">Todas las universidades españolas</span>
+  </div>
+</div>
+
+<div class="cur-bar">
+  <span>Ver precios en:</span>
+  <button class="cur-btn active" onclick="setCur('eur',this)">🇪🇺 EUR €</button>
+  <button class="cur-btn" onclick="setCur('usd',this)">🇺🇸 USD $</button>
+  <button class="cur-btn" onclick="setCur('pen',this)">🇵🇪 PEN S/</button>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="go('asesorias',this)">🔒 Asesorías</button>
+  <button class="nav-btn" onclick="go('completos',this)">✅ Paquetes Completos</button>
+  <button class="nav-btn" onclick="go('parciales',this)">🔶 Paquetes Parciales</button>
+  <button class="nav-btn" onclick="go('individuales',this)">🔍 Servicios Individuales</button>
+  <button class="nav-btn" onclick="go('universidades',this)">🏛️ Universidades</button>
+  <button class="nav-btn" onclick="go('presupuesto',this)">💬 Presupuesto</button>
+</div>
+
+<!-- ── ASESORÍAS ── -->
+<div id="p-asesorias" class="panel active">
+
+  <!-- CAMINO NORMAL BANNER -->
+  <div style="background:linear-gradient(135deg,#0d3320,#1a5c3a);color:white;border-radius:14px;padding:26px 28px;margin-bottom:32px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="font-size:2.5em;">🧭</div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-family:'Fraunces',serif;font-size:1.3em;font-weight:700;margin-bottom:6px;">El camino recomendado</div>
+      <div style="font-size:.88em;opacity:.9;line-height:1.6;">
+        <strong>Paso 1:</strong> Reserva tu Diagnóstico 1:1 (€25 / S/ 100) → <strong>Paso 2:</strong> Elige y contrata tu paquete.<br>
+        <span style="color:#f5c842;">💡 Si contratas un paquete completo directamente, el Diagnóstico ya está incluido.</span>
+      </div>
+    </div>
+    <a href="https://calendly.com/administracion-inspira-legal/30min" target="_blank"
+       style="background:#f5c842;color:#1c1c1c;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;font-size:.9em;white-space:nowrap;">
+      📅 Reservar ahora →
+    </a>
+  </div>
+
+  <!-- 3 TARJETAS -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;margin-bottom:36px;">
+
+    <!-- DIAGNÓSTICO -->
+    <div style="background:white;border:2px solid #e8c87a;border-radius:14px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#7c5200,#c9922a);color:white;padding:18px 20px;">
+        <div style="font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.85;margin-bottom:4px;">Paso 1 recomendado · Previo al paquete</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3em;font-weight:700;margin-bottom:10px;">Diagnóstico 1:1</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span style="font-family:'Fraunces',serif;font-size:2em;font-weight:700;color:#f5e09a;" id="p-diag">€25</span>
+          <span style="font-size:.8em;opacity:.75;">/ S/ 100</span>
+        </div>
+        <div style="font-size:.78em;opacity:.8;margin-top:2px;">30 minutos · Sesión 1:1</div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:.83em;color:#444;line-height:1.65;margin-bottom:14px;">
+          Sesión de diagnóstico <strong>previa a contratar cualquier paquete</strong>. Analizamos tu perfil, situación académica y objetivos para recomendarte el paquete más adecuado para ti.
+        </div>
+        <ul style="list-style:none;font-size:.82em;color:#444;margin-bottom:14px;">
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Revisión de título de acceso y expediente</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Análisis de viabilidad de tu perfil</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Evaluación de requisitos y plazos</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Recomendación del paquete más adecuado</li>
+          <li style="padding:5px 0;">✔ Su valor (€25) se aplica al paquete que contrates</li>
+        </ul>
+        <div style="background:#fdf3e3;border-left:3px solid var(--d);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.78em;color:#7c4a00;margin-bottom:14px;">
+          💡 Si después contratas un paquete completo, los €25 se descuentan del total.
+        </div>
+        <a href="https://calendly.com/administracion-inspira-legal/30min" target="_blank"
+           style="display:block;text-align:center;padding:11px;background:var(--d);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88em;">
+          📅 Reservar Diagnóstico →
+        </a>
+      </div>
+    </div>
+
+    <!-- CONSULTA PUNTUAL -->
+    <div style="background:white;border:2px solid #d0e8d8;border-radius:14px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#1a5c3a,#2d7a52);color:white;padding:18px 20px;">
+        <div style="font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.85;margin-bottom:4px;">En proceso · Dudas puntuales</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3em;font-weight:700;margin-bottom:10px;">Consulta Puntual Acompañada</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span style="font-family:'Fraunces',serif;font-size:2em;font-weight:700;color:#f5c842;" id="p-punt">€29</span>
+          <span style="font-size:.8em;opacity:.75;">orientación estratégica</span>
+        </div>
+        <div style="font-size:.78em;opacity:.8;margin-top:2px;">30 minutos · Sesión 1:1</div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:.83em;color:#444;line-height:1.65;margin-bottom:14px;">
+          Para quienes <strong>ya están en proceso</strong> y tienen dudas puntuales. No sabes si lo que estás haciendo es correcto, o quieres confirmar tus próximos pasos antes de postular.
+        </div>
+        <ul style="list-style:none;font-size:.82em;color:#444;margin-bottom:14px;">
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Revisión rápida de tu situación actual</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Explicación clara de etapas del proceso</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Orientación sobre plazos, decisiones y errores frecuentes</li>
+          <li style="padding:5px 0;">✔ Recomendaciones prácticas para tu caso</li>
+        </ul>
+        <div style="background:#fff5f0;border-left:3px solid #e07020;padding:8px 12px;border-radius:0 6px 6px 0;font-size:.78em;color:#a04010;margin-bottom:14px;">
+          ⚠️ No incluye revisión documentaria ni postulación.
+        </div>
+        <a href="https://calendly.com/administracion-inspira-legal/30min" target="_blank"
+           style="display:block;text-align:center;padding:11px;background:var(--v);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88em;">
+          📅 Reservar Consulta →
+        </a>
+      </div>
+    </div>
+
+    <!-- SESIÓN ACOMPAÑADA -->
+    <div style="background:white;border:2px solid #d8d0e8;border-radius:14px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#3a1a7c,#6a3aae);color:white;padding:18px 20px;">
+        <div style="font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.85;margin-bottom:4px;">En vivo · Pantalla compartida</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3em;font-weight:700;margin-bottom:10px;">Sesión Acompañada</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span style="font-family:'Fraunces',serif;font-size:2em;font-weight:700;color:#f5c842;" id="p-acomp">€45</span>
+          <span style="font-size:.8em;opacity:.75;">revisión o postulación en vivo</span>
+        </div>
+        <div style="font-size:.78em;opacity:.8;margin-top:2px;">30 minutos · Pantalla compartida</div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:.83em;color:#444;line-height:1.65;margin-bottom:14px;">
+          Sesión en vivo con <strong>pantalla compartida</strong>. El especialista te guía en tiempo real mientras revisas documentos, navegas portales universitarios o completas una postulación en ese momento.
+        </div>
+        <ul style="list-style:none;font-size:.82em;color:#444;margin-bottom:14px;">
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Revisión de documentos en tiempo real</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Navegación guiada por portales universitarios</li>
+          <li style="padding:5px 0;border-bottom:1px solid #f0f0f0;">✔ Postulación asistida en vivo si es necesario</li>
+          <li style="padding:5px 0;">✔ Resolución de dudas operativas al momento</li>
+        </ul>
+        <div style="background:#f3f0ff;border-left:3px solid #6a3aae;padding:8px 12px;border-radius:0 6px 6px 0;font-size:.78em;color:#3a1a7c;margin-bottom:14px;">
+          💡 Ideal si quieres revisar algo urgente o postular en ese momento con guía.
+        </div>
+        <a href="https://calendly.com/administracion-inspira-legal/30min" target="_blank"
+           style="display:block;text-align:center;padding:11px;background:#6a3aae;color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:.88em;">
+          📅 Reservar Sesión →
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MEDIOS DE PAGO -->
+  <div style="background:white;border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+    <div style="background:var(--v);color:white;padding:14px 22px;">
+      <span style="font-family:'Fraunces',serif;font-size:1.15em;font-weight:700;">💸 Medios de Pago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0;">
+
+      <div style="padding:20px 22px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">🏦 Interbank — Transferencia</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          <strong>Proyecta Producciones Group</strong><br>
+          Cuenta Corriente Soles<br>
+          N° Cuenta: <strong>200 300 532 988 2</strong><br>
+          CCI: <strong>003 200 0030 0532 9882 31</strong>
+        </div>
+      </div>
+
+      <div style="padding:20px 22px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">📱 Plin</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          Enviar al número:<br>
+          <strong style="font-size:1.1em;">908 945 354</strong><br>
+          <span style="color:#888;font-size:.9em;">Disponible desde cualquier banco</span>
+        </div>
+      </div>
+
+      <div style="padding:20px 22px;border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">🌎 Desde el extranjero</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          Paga vía <strong>PayPal</strong> o solicita un <strong>link de pago</strong> personalizado.<br>
+          <span style="color:#888;font-size:.9em;">Escríbenos para generarte el link.</span>
+        </div>
+      </div>
+
+      <div style="padding:20px 22px;">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">📅 Separa tu asesoría</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;margin-bottom:10px;">
+          Reserva directamente tu sesión de 30 minutos en el calendario de Inspira.
+        </div>
+        <a href="https://calendly.com/administracion-inspira-legal/30min" target="_blank"
+           style="display:inline-block;padding:9px 18px;background:var(--v);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:.84em;">
+          Reservar en Calendly →
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FACILIDADES DE PAGO -->
+  <div style="background:white;border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-top:20px;">
+    <div style="background:linear-gradient(135deg,#1a5c3a,#2d7a52);color:white;padding:14px 22px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.2em;">💳</span>
+      <span style="font-family:'Fraunces',serif;font-size:1.15em;font-weight:700;">Facilidades de Pago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0;">
+
+      <div style="padding:20px 22px;border-right:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">✂️ Fraccionamiento en 2 partes</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          Paga el <strong>50% al contratar</strong> y el 50% restante al inicio del proceso de postulación.<br>
+          <span style="color:#888;font-size:.9em;">Disponible para todos los paquetes.</span>
+        </div>
+      </div>
+
+      <div style="padding:20px 22px;border-right:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">💳 3 cuotas sin intereses</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          Pago al contado en <strong>3 cuotas sin intereses</strong> mediante <strong>Mercado Pago</strong>.<br>
+          Con cualquier tarjeta de crédito.<br>
+          <span style="color:#888;font-size:.9em;">Solicita tu link de pago.</span>
+        </div>
+      </div>
+
+      <div style="padding:20px 22px;">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">🔼 Upgrade de paquete</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">
+          Empieza con un paquete base y <strong>amplía pagando solo la diferencia</strong>. Tu inversión inicial siempre se aplica al plan superior.<br>
+          <span style="color:#888;font-size:.9em;">Sin penalización por cambiar.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FACILIDADES DE PAGO -->
+  <div style="background:white;border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-top:20px;">
+    <div style="background:linear-gradient(135deg,#1a5c3a,#2d7a52);color:white;padding:14px 22px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.2em;">💳</span>
+      <span style="font-family:'Fraunces',serif;font-size:1.15em;font-weight:700;">Facilidades de Pago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0;">
+      <div style="padding:20px 22px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">✂️ Fraccionamiento en 2 partes</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">Paga el <strong>50% al contratar</strong> y el 50% restante al inicio del proceso de postulación.<br><span style="color:#888;font-size:.9em;">Disponible para todos los paquetes.</span></div>
+      </div>
+      <div style="padding:20px 22px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">💳 3 cuotas sin intereses</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">Pago en <strong>3 cuotas sin intereses</strong> mediante <strong>Mercado Pago</strong>. Con cualquier tarjeta de crédito.<br><span style="color:#888;font-size:.9em;">Solicita tu link de pago.</span></div>
+      </div>
+      <div style="padding:20px 22px;border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;color:var(--v);margin-bottom:8px;font-size:.92em;">🔼 Upgrade sin penalización</div>
+        <div style="font-size:.83em;color:#444;line-height:1.7;">Empieza con un paquete base y <strong>amplía pagando solo la diferencia</strong>. Tu inversión inicial siempre se aplica al plan superior.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── COMPLETOS ── -->
+<div id="p-completos" class="panel">
+
+  <div class="note">
+    💡 <strong>Todos los paquetes completos incluyen:</strong> Asesoría inicial 1:1 · Búsqueda personalizada · Documentación PRO · Postulación a becas · Nosotros postulamos en <strong>todas las fases</strong> (enero a septiembre, o hasta obtener admisión) · Matrícula y carta de admisión oficial.
+  </div>
+
+  <div class="sec-h">
+    <h2>Paquetes Completos</h2>
+    <p>Todo el proceso de principio a fin, acompañamiento hasta tu carta de admisión. Solo varía la cobertura geográfica. <strong>Siempre puedes añadir comunidades</strong> pagando la diferencia al plan superior.</p>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#fdf3e3,#fff9ee);border:2px solid var(--d);border-radius:12px;padding:18px 22px;margin-bottom:26px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+    <div style="font-size:1.8em;">🔼</div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-family:'Fraunces',serif;font-size:1.05em;font-weight:700;color:var(--d);margin-bottom:6px;">Flexibilidad total — amplía cuando quieras</div>
+      <div style="font-size:.84em;color:#7c4a00;line-height:1.6;">
+        ¿Empezaste con un paquete y quieres más comunidades? <strong>Puedes añadirlas en cualquier momento pagando solo la diferencia</strong> al plan superior. Tu inversión nunca se pierde.<br>
+        <span style="margin-top:4px;display:inline-block;color:#a06000;">Ej: tienes Full Económico (€359) y quieres añadir Madrid → pagas diferencia al plan Premium o Madrid+Cataluña.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="g-completos"></div>
+</div>
+
+<!-- ── PARCIALES ── -->
+<div id="p-parciales" class="panel">
+  <div class="sec-h">
+    <h2>Paquetes Parciales</h2>
+    <p>Para quienes ya tienen parte del proceso avanzada. Exclusivos para Andalucía.</p>
+  </div>
+  <div class="note note-warn">
+    🏰 <strong>Solo aplican para Andalucía.</strong> Para otras comunidades, revisa los Paquetes Completos. No incluyen todas las etapas — solo las indicadas en cada pack.
+  </div>
+  <div class="grid" id="g-parciales"></div>
+</div>
+
+<!-- ── INDIVIDUALES ── -->
+<div id="p-individuales" class="panel">
+  <div class="sec-h">
+    <h2>Servicios Individuales</h2>
+    <p>Servicios a la carta, sin paquete. Para quien ya tiene parte del proceso avanzado o quiere un servicio específico.</p>
+  </div>
+  <div class="note note-warn">
+    ⚠️ Estos servicios son <strong>independientes</strong>. No se descuentan si luego contratas un paquete completo.
+  </div>
+
+  <!-- SUB-TABS -->
+  <div style="display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;">
+    <button id="st-combo" onclick="showSub('combo')"
+      style="padding:10px 22px;border-radius:8px;border:2px solid var(--v);background:var(--v);color:white;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88em;transition:all .2s;">
+      🎯 Servicios Combo
+    </button>
+    <button id="st-solo" onclick="showSub('solo')"
+      style="padding:10px 22px;border-radius:8px;border:2px solid var(--border);background:white;color:var(--gray);font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88em;transition:all .2s;">
+      🔧 Servicios Individuales
+    </button>
+  </div>
+
+  <!-- COMBOS -->
+  <div id="sub-combo">
+    <div style="background:var(--vl);border-left:4px solid var(--v);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.84em;color:var(--v);margin-bottom:22px;line-height:1.6;">
+      💡 Los combos agrupan varios servicios a mejor precio. Puedes contratar <strong>Solo Búsqueda primero</strong> y con el informe decidir qué combo necesitas, o ir directo al que más se ajusta.
+    </div>
+    <div class="grid" id="g-combos"></div>
+  </div>
+
+  <!-- INDIVIDUALES SOLOS -->
+  <div id="sub-solo" style="display:none;">
+    <div style="background:#fff5f0;border-left:4px solid #e07020;padding:12px 16px;border-radius:0 8px 8px 0;font-size:.84em;color:#a04010;margin-bottom:22px;line-height:1.6;">
+      ⚙️ Un servicio específico solo. Aplica a <strong>1 universidad</strong> (2 según complejidad). Si necesitas más, se presupuesta aparte.
+    </div>
+    <div class="grid" id="g-solos"></div>
+  </div>
+</div>
+
+<!-- ── UNIVERSIDADES ── -->
+<div id="p-universidades" class="panel">
+  <div class="sec-h">
+    <h2>Universidades por Comunidad</h2>
+    <p>Consulta las universidades, tasas reales y fases de postulación en cada comunidad.</p>
+  </div>
+  <div class="legend">
+    <span class="leg eco">🟢 Económicas: Andalucía · Galicia · Castilla y León · Cantabria · Asturias · Castilla-La Mancha · Navarra</span>
+    <span class="leg int">🟣 Intermedias: La Rioja · País Vasco · Murcia · Extremadura · Valencia · Aragón</span>
+    <span class="leg pre">🟠 Premium: Madrid · Cataluña</span>
+  </div>
+  <div class="rgrid" id="g-regiones"></div>
+</div>
+
+<!-- ── PRESUPUESTO ── -->
+<div id="p-presupuesto" class="panel">
+  <div class="sec-h">
+    <h2>Presupuesto Personalizado</h2>
+    <p>Cuéntanos qué necesitas y te enviamos una propuesta a medida en menos de 24 horas.</p>
+  </div>
+  <div class="bwrap">
+    <div class="fg">
+      <label class="fl">¿En qué comunidades quieres postular?</label>
+      <div class="checks" id="c-comunidades">
+        <label class="chk" onclick="tog(this)"><input>Andalucía</label>
+        <label class="chk" onclick="tog(this)"><input>Madrid</label>
+        <label class="chk" onclick="tog(this)"><input>Cataluña</label>
+        <label class="chk" onclick="tog(this)"><input>Valencia</label>
+        <label class="chk" onclick="tog(this)"><input>País Vasco</label>
+        <label class="chk" onclick="tog(this)"><input>Galicia</label>
+        <label class="chk" onclick="tog(this)"><input>Castilla y León</label>
+        <label class="chk" onclick="tog(this)"><input>Murcia</label>
+        <label class="chk" onclick="tog(this)"><input>Aragón</label>
+        <label class="chk" onclick="tog(this)"><input>Extremadura</label>
+        <label class="chk" onclick="tog(this)"><input>Asturias</label>
+        <label class="chk" onclick="tog(this)"><input>Cantabria</label>
+        <label class="chk" onclick="tog(this)"><input>La Rioja</label>
+        <label class="chk" onclick="tog(this)"><input>Navarra</label>
+        <label class="chk" onclick="tog(this)"><input>No sé, oriéntenme</label>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">¿Cuántas universidades aproximadamente?</label>
+      <select class="fc" id="c-cant" onchange="calcBudget()">
+        <option value="">Selecciona...</option>
+        <option value="219">1 a 5 universidades</option>
+        <option value="310">6 a 12 universidades</option>
+        <option value="449">13 a 25 universidades</option>
+        <option value="700">26 a 50 universidades</option>
+        <option value="1100">Más de 50 (Todo España)</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">¿Qué necesitas?</label>
+      <div class="checks">
+        <label class="chk" onclick="tog(this)"><input>Todo incluido</label>
+        <label class="chk" onclick="tog(this)"><input>Solo búsqueda</label>
+        <label class="chk" onclick="tog(this)"><input>Solo documentación</label>
+        <label class="chk" onclick="tog(this)"><input>Solo postulación</label>
+        <label class="chk" onclick="tog(this)"><input>Subsanaciones</label>
+        <label class="chk" onclick="tog(this)"><input>Matrícula/visado</label>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Tu nombre</label><input class="fc" id="c-nom" placeholder="Nombre completo"></div>
+    <div class="fg"><label class="fl">WhatsApp o email</label><input class="fc" id="c-con" placeholder="+51 999... o tu@email.com"></div>
+    <div class="fg"><label class="fl">Cuéntanos tu situación (opcional)</label><textarea class="fc fta" id="c-sit" placeholder="Ej: Ya tengo mi título apostillado, sé qué máster quiero..."></textarea></div>
+    <div class="bcard" id="bcard">
+      <h3>💰 Estimación orientativa</h3>
+      <div id="brows"></div>
+    </div>
+    <button class="sub-btn" onclick="enviar()">📩 Solicitar presupuesto personalizado</button>
+  </div>
+</div>
+
+<footer>Tasas fijas: 1 EUR = $1.09 USD | 1 EUR = S/ 4.10 PEN · Actualizado Abril 2026 · Inspira – Especialistas en Extranjería</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+
+const RATES = {eur:1, usd:1.09, pen:4.10};
+const SYM   = {eur:'€', usd:'$', pen:'S/ '};
+let cur = 'eur';
+
+function p(eur) {
+  return SYM[cur] + Math.round(eur * RATES[cur]);
+}
+
+// ── PAQUETES COMPLETOS ────────────────────────────────────────────────────
+const COMPLETOS = [
+  {
+    name:'All-In Master Pack', top:'', featured:true,
+    tag:'Acompañamiento completo hasta tu Carta de Admisión',
+    eur:219,
+    for:'Andalucía · 10 universidades públicas · Portal unificado · 3 fases: Enero, Junio, Septiembre',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['🔍','Búsqueda y estrategia de máster personalizada'],
+      ['📄','Documentario PRO completo: CV europeo, cartas, equivalencia, kit bienvenida'],
+      ['🏫','Postulación en portales oficiales · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas (Generación Bicentenario, Fundación Carolina, etc.)'],
+      ['🔄','Subsanaciones, alegaciones y gestión de resultados'],
+      ['🎓','Matrícula y acompañamiento hasta carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias (aprox. €845) ni homologación.',
+    btn:'green'
+  },
+  {
+    name:'Full Económico', top:'',
+    tag:'7 comunidades económicas · +21 universidades',
+    eur:359,
+    for:'Andalucía + Cantabria + Asturias + Castilla-La Mancha + Galicia + Castilla y León + Navarra',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['🔍','Búsqueda personalizada en las 7 comunidades'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en +21 universidades · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas incluida'],
+      ['🔄','Subsanaciones y alegaciones en cada universidad'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'green'
+  },
+  {
+    name:'Madrid o Cataluña', top:'',
+    tag:'7-9 universidades · Portales completamente independientes',
+    eur:400,
+    for:'Todas las universidades de Madrid O de Cataluña. Cada una tiene su propio portal y cronograma.',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['🔍','Búsqueda personalizada en la comunidad elegida'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en todas las universidades · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas incluida'],
+      ['🔄','Subsanaciones en cada portal independiente'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'green'
+  },
+  {
+    name:'Econ + Intermedias', top:'',
+    tag:'12 comunidades · +24 universidades',
+    eur:650,
+    for:'Full Económico (incl. Navarra) + La Rioja + País Vasco + Murcia + Extremadura + Aragón + C. Valenciana',
+    feats:[
+      ['🔍','Búsqueda en 11 comunidades autónomas'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en +23 universidades · Todas las fases'],
+      ['🔄','Subsanaciones, alegaciones y seguimiento'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'green'
+  },
+  {
+    name:'Madrid + Cataluña', top:'',
+    tag:'+15 universidades · Máxima complejidad operativa',
+    eur:550,
+    for:'Todas las universidades de Madrid Y Cataluña. +15 portales completamente independientes.',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['🔍','Búsqueda y estrategia en las dos comunidades Premium'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en +15 universidades · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas incluida'],
+      ['🔄','Subsanaciones en cada portal independiente'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'green'
+  },
+  {
+    name:'Premium', top:'gold',
+    tag:'Hasta 6 comunidades a elegir · +45 universidades',
+    eur:700,
+    for:'Elige cualquier combinación de 6 comunidades, incluyendo privadas y universidades top.',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['👑','6 comunidades a elegir libremente de TODO España'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en +45 universidades · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas incluida'],
+      ['🔄','Subsanaciones, alegaciones y gestión intensiva'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'gold'
+  },
+  {
+    name:'Infinity', top:'gold',
+    tag:'17 comunidades · +80 universidades · Todo España',
+    eur:1100,
+    for:'Máxima cobertura. Para quienes no pueden arriesgarse. Incluye privadas, universidades top y convocatorias de becas.',
+    feats:[
+      ['🔒','Asesoría inicial 1:1 incluida'],
+      ['∞','17 comunidades autónomas — TODO España'],
+      ['📄','Documentario PRO completo'],
+      ['🏫','Postulación en +80 universidades · Todas las fases (enero a septiembre)'],
+      ['🎓','Postulación a becas incluida'],
+      ['🔄','Subsanaciones, alegaciones y seguimiento máximo'],
+      ['🎓','Matrícula, carta de admisión oficial y orientación de visado'],
+    ],
+    warn:'No incluye tasas universitarias ni homologación.',
+    btn:'gold'
+  },
+];
+
+// ── PAQUETES PARCIALES ────────────────────────────────────────────────────
+const PARCIALES = [
+  {
+    name:'Pack Check-In Master', top:'soft',
+    tag:'Revisión final + Postulación correcta · Solo Andalucía',
+    eur:109,
+    for:'Ya tienes el máster definido y los documentos listos. Solo necesitas que lo revisemos y postulemos correctamente.',
+    feats:[
+      ['✅','Revisión express del expediente y documentación'],
+      ['✅','Identificación de documentos faltantes o a corregir'],
+      ['✅','Postulación oficial en el portal unificado de Andalucía'],
+      ['✅','Confirmación de envío y credenciales oficiales'],
+      ['✅','Subsanaciones durante la fase de postulación'],
+    ],
+    warn:'Exclusivo Andalucía. No incluye búsqueda de másteres. Solo 1 fase de convocatoria.',
+    btn:'out'
+  },
+  {
+    name:'Pack Smart Master', top:'',
+    tag:'Estrategia + Documentos + Postulación · Solo Andalucía',
+    eur:149,
+    for:'Ya tienes idea del máster. Quieres que validemos tu elección, optimicemos tus documentos y postulemos.',
+    feats:[
+      ['✅','Validación académica de los másteres que elegiste'],
+      ['✅','CV europeo + carta de motivación + cartas de recomendación'],
+      ['✅','Equivalencia y orientación de notas'],
+      ['✅','Postulación oficial en portal de Andalucía + subsanaciones'],
+      ['✅','Análisis de resultados y observaciones'],
+    ],
+    warn:'Exclusivo Andalucía. No incluye búsqueda de másteres. Solo 1 fase de convocatoria.',
+    btn:'green'
+  },
+];
+
+// ── COMBOS ───────────────────────────────────────────────────────────────
+const COMBOS = [
+  {
+    name:'Pack Explorador', top:'soft',
+    tag:'Solo Búsqueda · Informe personalizado de másteres',
+    eur:79,
+    for:'No sabes qué másteres existen o cuáles se ajustan a ti. Quieres un informe con opciones reales antes de decidir.',
+    feats:[
+      ['🔍','Búsqueda en todo España o en las comunidades que elijas'],
+      ['🔍','Elige: universidades públicas y/o privadas'],
+      ['🔍','Elige: títulos oficiales y/o títulos propios'],
+      ['🔍','Indícanos el máster que buscas y tu presupuesto'],
+      ['🔍','Informe con opciones viables: requisitos, costos, plazos y fases'],
+      ['🔍','Con este informe decides qué combo contratar después'],
+    ],
+    warn:'No incluye documentación ni postulación. Con el informe eliges el combo que necesitas — si decides escalar a un paquete completo, los €79 se aplican como crédito.',
+    btn:'out'
+  },
+  {
+    name:'Pack Listo', top:'',
+    tag:'Revisión + Postulación · Ya tienes el máster elegido',
+    eur:149,
+    for:'Ya elegiste el máster. Quieres que dejemos tu documentación perfecta y postulemos correctamente.',
+    feats:[
+      ['📄','Revisión y optimización de CV y carta de motivación'],
+      ['📄','Checklist de documentos por universidad'],
+      ['🏫','Postulación oficial en portal universitario'],
+      ['🏫','Confirmación de envío y credenciales'],
+    ],
+    warn:'Aplica a 1 universidad (2 según complejidad). Más universidades se presupuestan aparte.',
+    btn:'green'
+  },
+  {
+    name:'Pack Seguro', top:'',
+    tag:'Revisión + Postulación + Subsanaciones · Hasta resultados',
+    eur:189,
+    for:'Ya tienes el máster elegido. Quieres que gestionemos todo hasta resolver los resultados de admisión.',
+    feats:[
+      ['📄','Revisión y optimización de documentación completa'],
+      ['🏫','Postulación oficial en portal universitario'],
+      ['🔄','Análisis de resultados y observaciones'],
+      ['🔄','Subsanaciones, apelaciones y aportación de documentos'],
+      ['🔄','Acompañamiento hasta resolución del proceso de admisión'],
+    ],
+    warn:'Aplica a 1 universidad (2 según complejidad). Más universidades se presupuestan aparte.',
+    btn:'green'
+  },
+  {
+    name:'Pack Completo', top:'', featured:true,
+    tag:'Documentación + Postulación + Subsanaciones + Matrícula',
+    eur:229,
+    for:'Ya tienes 1 o 2 másteres escogidos. Necesitas que hagamos todo el proceso hasta tu carta de admisión oficial.',
+    feats:[
+      ['📄','Documentario PRO: CV europeo, cartas de motivación, equivalencia'],
+      ['🏫','Postulación oficial en portal universitario · Todas las fases'],
+      ['🔄','Análisis de resultados, subsanaciones y alegaciones'],
+      ['🔄','Seguimiento hasta resolución del proceso de admisión'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'No incluye búsqueda — tú ya tienes el máster definido. Aplica a 1 universidad (2 según complejidad).',
+    btn:'green'
+  },
+  {
+    name:'Pack Todo en Uno', top:'gold',
+    tag:'Búsqueda + Documentación + Postulación + Subsanaciones + Matrícula',
+    eur:289,
+    for:'Quieres empezar desde cero: que encontremos el máster ideal y hagamos todo el proceso hasta tu carta de admisión.',
+    feats:[
+      ['🔍','Búsqueda personalizada: público/privado, oficial/propio, por presupuesto'],
+      ['📄','Documentario PRO completo: CV europeo, cartas, equivalencia'],
+      ['🏫','Postulación oficial en portal universitario · Todas las fases'],
+      ['🔄','Subsanaciones, alegaciones y seguimiento de resultados'],
+      ['🎓','Matrícula y carta de admisión oficial'],
+    ],
+    warn:'Aplica a 1 máster (2 según complejidad). Si empezaste con el Pack Explorador, pagas solo la diferencia. Si necesitas más cobertura geográfica, puedes añadir comunidades pagando la diferencia al plan que corresponda.',
+    btn:'gold'
+  },
+];
+
+// ── SERVICIOS SOLOS ───────────────────────────────────────────────────────
+const SOLOS = [
+  {
+    name:'Solo Revisión Documentaria', top:'soft',
+    tag:'CV europeo + Cartas + Equivalencia',
+    eur:79,
+    for:'Ya sabes qué universidad y máster quieres. Solo necesitas que revisemos y optimicemos tu documentación.',
+    feats:[
+      ['📄','Revisión de requisitos por máster/universidad'],
+      ['📄','CV europeo optimizado'],
+      ['📄','Carta de motivación personalizada'],
+      ['📄','Equivalencia y orientación de notas'],
+      ['📄','Cartas de recomendación (guía + modelos)'],
+    ],
+    warn:'No incluye postulación. Aplica a 1 universidad (2 según complejidad).',
+    btn:'out'
+  },
+  {
+    name:'Solo Postulación', top:'',
+    tag:'Nosotros postulamos · Tú ya tienes los docs listos',
+    eur:89,
+    for:'Ya tienes todos tus documentos listos. Solo necesitas que presentemos tu solicitud en el portal oficial.',
+    feats:[
+      ['🏫','Presentación oficial en el portal universitario'],
+      ['🏫','Confirmación de envío y credenciales'],
+      ['🏫','Aportación de documentos adicionales si la universidad lo pide'],
+    ],
+    warn:'Aplica a 1 universidad (2 según complejidad). Más universidades se presupuestan aparte.',
+    btn:'green'
+  },
+  {
+    name:'Soporte en Proceso de Admisión', top:'',
+    tag:'Subsanaciones · Alegaciones · Desde €45',
+    eur:45,
+    for:'La universidad te pide documentos adicionales, tienes baja puntuación o quieres apelar una decisión.',
+    feats:[
+      ['🔄','Análisis detallado de la notificación recibida'],
+      ['🔄','Identificación del documento requerido o motivo de exclusión'],
+      ['🔄','Orientación: subsanaciones, documentos o lista de espera'],
+      ['🔄','Nosotros presentamos tu escrito de subsanación o alegación'],
+    ],
+    warn:'Precio desde €45 según complejidad del caso.',
+    btn:'out'
+  },
+  {
+    name:'Soporte Post-Admisión', top:'soft',
+    tag:'Matrícula · Confirmación de plaza · Orientación visado',
+    eur:45,
+    for:'Ya fuiste admitido. No sabes cómo confirmar plaza, matricularte o qué documentos necesitas.',
+    feats:[
+      ['🎓','Revisión de carta de admisión'],
+      ['🎓','Checklist paso a paso personalizado'],
+      ['🎓','Revisión de documentos para matrícula'],
+      ['🎓','Orientación hasta confirmación correcta y trámites de visado'],
+    ],
+    warn:'No incluye gestión directa del visado, solo orientación.',
+    btn:'out'
+  },
+];
+
+// ── REGIONES ──────────────────────────────────────────────────────────────
+const REGIONES = [
+  {t:'eco', name:'Andalucía', tasas:'845 €', fases:'Enero · Junio · Septiembre', reconoc:'Sin reconocimiento previo de título',
+   unis:[{c:'US',n:'Univ. de Sevilla'},{c:'UCO',n:'Univ. de Córdoba'},{c:'UJA',n:'Univ. de Jaén'},{c:'UGR',n:'Univ. de Granada'},{c:'UAL',n:'Univ. de Almería'},{c:'UMA',n:'Univ. de Málaga'},{c:'UCA',n:'Univ. de Cádiz'},{c:'UHU',n:'Univ. de Huelva'},{c:'UPO',n:'Pablo de Olavide'},{c:'INT',n:'Internacional de Andalucía'}]},
+  {t:'eco', name:'Cantabria', tasas:'1,001 – 1,560 €', fases:'1 abril – 4 julio · Resultados: Julio', reconoc:'Sin reconocimiento previo',
+   unis:[{c:'UNICAN',n:'Univ. de Cantabria (Santander)'}]},
+  {t:'eco', name:'Asturias', tasas:'1,310 €', fases:'1 mayo – 10 junio · Resultados: 26 junio', reconoc:'Sin reconocimiento previo',
+   unis:[{c:'UNIOVI',n:'Univ. de Oviedo'}]},
+  {t:'eco', name:'Galicia', tasas:'738 – 1,050 € aprox.', fases:'Feb-Julio (fases 0, 1 y EX)', reconoc:'Con reconocimiento previo · Tasa: 27,09 €',
+   unis:[{c:'UDC',n:'Universidade da Coruña'},{c:'USC',n:'Univ. de Santiago de Compostela'},{c:'UVIGO',n:'Universidade de Vigo'}]},
+  {t:'eco', name:'Castilla-La Mancha', tasas:'738 – 1,050 €', fases:'25 marzo – 14 septiembre · Cada máster con admisión propia', reconoc:'Con reconocimiento previo · Tasa: 49,40 €',
+   unis:[{c:'UCLM',n:'Univ. de Castilla-La Mancha'}]},
+  {t:'eco', name:'Castilla y León', tasas:'700 – 1,600 €', fases:'Abril – Julio (varía por universidad)', reconoc:'Con reconocimiento previo · Tasa: 210,97 €',
+   unis:[{c:'ULE',n:'Univ. de León'},{c:'USAL',n:'Univ. de Salamanca'},{c:'UVA',n:'Univ. de Valladolid'},{c:'UBU',n:'Univ. de Burgos'}]},
+  {t:'eco', name:'Navarra', tasas:'Consultar', fases:'Consultar convocatoria', reconoc:'Sin reconocimiento previo',
+   unis:[{c:'UPNA',n:'Univ. Pública de Navarra'}]},
+  {t:'int', name:'La Rioja', tasas:'2,800 – 3,600 € aprox.', fases:'20 mayo – 17 junio', reconoc:'Sin reconocimiento previo',
+   unis:[{c:'UNIRIOJA',n:'Univ. de La Rioja (Logroño)'}]},
+  {t:'int', name:'País Vasco', tasas:'960 – 2,640 €', fases:'26-30 mayo · 2-4 julio · Resultados: 24 jun / 21 jul', reconoc:'Con reconocimiento previo · Tasa: 49,40 €',
+   unis:[{c:'UPV/EHU',n:'Univ. del País Vasco (Vizcaya)'}]},
+  {t:'int', name:'Murcia', tasas:'2,578 – 3,660 €', fases:'1-13 jun · 13 jun – 18 jul', reconoc:'Con reconocimiento previo · Tasa: 200 €',
+   unis:[{c:'UM',n:'Univ. de Murcia'},{c:'UPCT',n:'Univ. Politécnica de Cartagena'}]},
+  {t:'int', name:'Extremadura', tasas:'1,320 – 2,467 €', fases:'31 mayo – 19 junio · Resultados: 1 julio', reconoc:'Con reconocimiento previo · Tasa: 166,50 €',
+   unis:[{c:'UNEX',n:'Univ. de Extremadura'}]},
+  {t:'int', name:'C. Valenciana', tasas:'3,180 € aprox.', fases:'Fases 0, 1, 2 y 3 (nov 2025 – sep 2026)', reconoc:'Con reconocimiento previo · Solicitud de acceso',
+   unis:[{c:'UPV',n:'Univ. Politècnica de València'},{c:'UA',n:'Univ. de Alicante'},{c:'UMH',n:'Univ. Miguel Hernández'},{c:'UJI',n:'Univ. Jaume I (Castellón)'},{c:'UV',n:'Universitat de València'}]},
+  {t:'int', name:'Aragón', tasas:'1,027 – 2,050 €', fases:'12 – 30 junio', reconoc:'Con reconocimiento previo · Solicitud de acceso',
+   unis:[{c:'UNIZAR',n:'Univ. de Zaragoza'}]},
+  {t:'pre', name:'Madrid', tasas:'Varía por universidad', fases:'Feb – Sep 2026 (cada universidad distinta)', reconoc:'Varía por universidad',
+   unis:[{c:'UAH',n:'Univ. de Alcalá'},{c:'UAM',n:'Univ. Autónoma de Madrid'},{c:'UPM',n:'Univ. Politécnica de Madrid'},{c:'UCM',n:'Univ. Complutense'},{c:'UC3M',n:'Univ. Carlos III'},{c:'URJC',n:'Univ. Rey Juan Carlos'},{c:'UIMP',n:'Univ. Int. Menéndez Pelayo'}]},
+  {t:'pre', name:'Cataluña', tasas:'Varía por universidad', fases:'Enero (resultados desde 24 marzo)', reconoc:'Varía por universidad',
+   unis:[{c:'UAB',n:'Univ. Autònoma de Barcelona'},{c:'UB',n:'Universitat de Barcelona'},{c:'UPC',n:'Univ. Politècnica de Catalunya'},{c:'UPF',n:'Univ. Pompeu Fabra'},{c:'UDL',n:'Univ. de Lleida'},{c:'UDG',n:'Univ. de Girona'},{c:'URV',n:'Univ. Rovira i Virgili'},{c:'ESMUC',n:'Esc. Sup. Música'},{c:'ESCI',n:'Esc. Sup. Comerç UPF'}]},
+];
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+
+function card(d, cta) {
+  const tc = d.top === 'gold' ? 'gold' : d.top === 'soft' ? 'soft' : d.top === 'amber' ? 'amber' : '';
+  return `
+    <div class="card${d.featured?' featured':''}">
+      ${d.featured ? '<div class="card-ribbon">⭐ Recomendado</div>' : ''}
+      <div class="card-top ${tc}">
+        <div class="card-name">${d.name}</div>
+        <div class="card-tag">${d.tag}</div>
+        <div class="card-price pv" data-e="${d.eur}">${p(d.eur)}</div>
+        <div class="card-price-note">inversión</div>
+      </div>
+      <div class="card-body">
+        <div class="card-for">${d.for}</div>
+        <ul class="feats">${d.feats.map(f=>`<li><span class="fi">${f[0]}</span>${f[1]}</li>`).join('')}</ul>
+        ${d.warn ? `<div class="card-warn">⚠️ ${d.warn}</div>` : ''}
+        <button class="card-btn ${d.btn}" onclick="alert('Pronto habilitaremos el checkout. Escríbenos para contratar: ${d.name}.')">${cta}</button>
+      </div>
+    </div>`;
+}
+
+function renderAll() {
+  document.getElementById('g-completos').innerHTML   = COMPLETOS.map(d=>card(d,'Contratar paquete')).join('');
+  document.getElementById('g-parciales').innerHTML   = PARCIALES.map(d=>card(d,'Contratar paquete parcial')).join('');
+  document.getElementById('g-combos').innerHTML      = COMBOS.map(d=>card(d,'Contratar combo')).join('');
+  document.getElementById('g-solos').innerHTML       = SOLOS.map(d=>card(d,'Contratar servicio')).join('');
+
+  ['p-diag','p-punt','p-acomp'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = p([25,29,45][i]);
+  });
+
+  document.querySelectorAll('.pv').forEach(el => {
+    el.textContent = p(+el.dataset.e);
+  });
+}
+
+function showSub(sub) {
+  const isCombo = sub === 'combo';
+  document.getElementById('sub-combo').style.display = isCombo ? 'block' : 'none';
+  document.getElementById('sub-solo').style.display  = isCombo ? 'none' : 'block';
+  const btnCombo = document.getElementById('st-combo');
+  const btnSolo  = document.getElementById('st-solo');
+  btnCombo.style.background    = isCombo ? 'var(--v)' : 'white';
+  btnCombo.style.color         = isCombo ? 'white' : 'var(--gray)';
+  btnCombo.style.borderColor   = isCombo ? 'var(--v)' : 'var(--border)';
+  btnSolo.style.background     = isCombo ? 'white' : 'var(--v)';
+  btnSolo.style.color          = isCombo ? 'var(--gray)' : 'white';
+  btnSolo.style.borderColor    = isCombo ? 'var(--border)' : 'var(--v)';
+}
+
+function renderRegiones() {
+  const label = {eco:'Económica', int:'Intermedia', pre:'Premium'};
+  document.getElementById('g-regiones').innerHTML = REGIONES.map(r=>`
+    <div class="rcard">
+      <div class="rhead ${r.t}">
+        <span class="rname">${r.name}</span>
+        <span class="rtag">${r.unis.length} univ · ${label[r.t]}</span>
+      </div>
+      <div class="rbody">
+        <ul class="ulist">
+          ${r.unis.map(u=>`<li><span class="utag">${u.c}</span>${u.n}</li>`).join('')}
+        </ul>
+        <div class="rfooter">
+          <span>💶 Tasas universitarias: <strong>${r.tasas}</strong></span>
+          <span>📅 Fases: ${r.fases}</span>
+          <span style="color:#b06000;">🔖 ${r.reconoc}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
+
+function go(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function setCur(c, el) {
+  cur = c;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+
+function tog(el) { el.classList.toggle('on'); calcBudget(); }
+
+function calcBudget() {
+  const sel = document.querySelectorAll('#c-comunidades .on').length;
+  const base = +document.getElementById('c-cant').value;
+  if(!base) { document.getElementById('bcard').style.display='none'; return; }
+  let price = base;
+  if(sel > 4) price = Math.max(price, 700);
+  document.getElementById('brows').innerHTML =
+    `<div class="brow"><span>Paquete base estimado</span><strong>${p(price)}</strong></div>
+     <div class="brow btotal"><span>Estimación total</span><strong>${p(price)}</strong></div>
+     <div style="font-size:.78em;color:#666;margin-top:8px;">Esta estimación es orientativa. Te enviaremos el presupuesto exacto según tu caso.</div>`;
+  document.getElementById('bcard').style.display = 'block';
+}
+
+function enviar() {
+  const n = document.getElementById('c-nom').value;
+  const c = document.getElementById('c-con').value;
+  if(!n || !c) { alert('Por favor completa tu nombre y contacto.'); return; }
+  alert(`✅ ¡Listo, ${n}!\nTe contactaremos en menos de 24 horas a: ${c}`);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderAll();
+renderRegiones();
+</script>
+</body>
+</html>

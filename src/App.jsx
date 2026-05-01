@@ -5,6 +5,7 @@ import { Header } from "./components/layout/Header";
 import Home from "./pages/home/Home";
 import AuthSuccess from "./pages/auth/AuthSuccess";
 import MasterLanding from "./pages/servicios/master/MasterLanding";
+import PortalServiciosMaster from "./pages/servicios/master/PortalServiciosMaster";
 import EstanciaLanding from "./pages/servicios/estancia/EstanciaLanding";
 import BackofficeApp from "./pages/backoffice/BackofficeApp";
 import CalculadoraMaster from "./pages/calculadora/CalculadoraMaster";
@@ -36,7 +37,7 @@ export default function App() {
 
       {path === "/auth/success" && <AuthSuccess />}
 
-      {path === "/servicios/master" && <MasterLanding />}
+      {path === "/servicios/master" && <PortalServiciosMaster />}
       {path === "/servicios/estancia" && <EstanciaLanding />}
       {path === "/calculadora-master" && <CalculadoraMaster />}
 
