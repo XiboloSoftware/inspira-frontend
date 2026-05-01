@@ -32,6 +32,10 @@ export default function SolicitudesList({ onVerSolicitud }) {
     await papelera.restaurar(id);
   }
 
+  async function handlePurgar(id) {
+    await papelera.purgar(id);
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-4">
       {/* Cabecera */}
@@ -202,12 +206,21 @@ export default function SolicitudesList({ onVerSolicitud }) {
                           {s.eliminada_en ? new Date(s.eliminada_en).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button
-                            onClick={() => handleRestaurar(s.id_solicitud)}
-                            className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition"
-                          >
-                            Restaurar
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleRestaurar(s.id_solicitud)}
+                              className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition"
+                            >
+                              Restaurar
+                            </button>
+                            <button
+                              onClick={() => handlePurgar(s.id_solicitud)}
+                              className="px-3 py-1.5 text-xs font-medium bg-white text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
+                              title="Eliminar permanentemente"
+                            >
+                              Purgar
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

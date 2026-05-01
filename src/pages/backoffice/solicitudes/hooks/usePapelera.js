@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { boGET, boPATCH } from "../../../../services/backofficeApi";
+import { boGET, boPATCH, boDELETE } from "../../../../services/backofficeApi";
 
 export function usePapelera({ activo }) {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -33,10 +33,17 @@ export function usePapelera({ activo }) {
     cargar(page);
   }
 
+  async function purgar(id_solicitud) {
+    if (!window.confirm("¿Eliminar PERMANENTEMENTE esta solicitud? Esta acción no se puede deshacer.")) return;
+    const r = await boDELETE(`/backoffice/solicitudes/${id_solicitud}/purgar`);
+    if (!r.ok) { alert(r.msg || "No se pudo purgar"); return; }
+    cargar(page);
+  }
+
   function changePage(p) {
     if (p < 1 || p > totalPages) return;
     cargar(p);
   }
 
-  return { solicitudes, loading, page, pageSize, total, totalPages, restaurar, changePage };
+  return { solicitudes, loading, page, pageSize, total, totalPages, restaurar, purgar, changePage };
 }
