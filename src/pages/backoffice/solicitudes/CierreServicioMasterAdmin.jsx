@@ -1,6 +1,6 @@
 // src/pages/backoffice/solicitudes/CierreServicioMasterAdmin.jsx
 import { useEffect, useState } from "react";
-import { boGET, boPOST } from "../../../services/backofficeApi";
+import { boGET, boPOST, boPATCH } from "../../../services/backofficeApi";
 
 const DECISIONES = ["ACEPTA_COMO_PRINCIPAL", "EN_ESPERA", "RECHAZA"];
 
@@ -14,18 +14,28 @@ function labelDecision(decision) {
   }
 }
 
+const RESUMEN_VACIO = { inversion_total: "", plan_contratado: "", matricula_minima: "" };
+
 export default function CierreServicioMasterAdmin({ idSolicitud }) {
   const [masters, setMasters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resumen, setResumen] = useState(RESUMEN_VACIO);
+  const [guardandoResumen, setGuardandoResumen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       try {
-        const r = await boGET(`/api/cierre-master/admin/solicitudes/${idSolicitud}/bloque8`);
-        if (!r.ok || !r.masters) return;
-        if (!cancelled) setMasters(r.masters);
+        const [r, rd] = await Promise.all([
+          boGET(`/api/cierre-master/admin/solicitudes/${idSolicitud}/bloque8`),
+          boGET(`/backoffice/solicitudes/${idSolicitud}`),
+        ]);
+        if (!cancelled) {
+          if (r.ok && r.masters) setMasters(r.masters);
+          const rf = rd?.datos_panel?.resumen_financiero;
+          if (rf) setResumen({ inversion_total: rf.inversion_total ?? "", plan_contratado: rf.plan_contratado ?? "", matricula_minima: rf.matricula_minima ?? "" });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -33,6 +43,17 @@ export default function CierreServicioMasterAdmin({ idSolicitud }) {
     load();
     return () => { cancelled = true; };
   }, [idSolicitud]);
+
+  async function guardarResumen() {
+    setGuardandoResumen(true);
+    try {
+      await boPATCH(`/backoffice/solicitudes/${idSolicitud}/datos-panel`, {
+        resumen_financiero: resumen,
+      });
+    } finally {
+      setGuardandoResumen(false);
+    }
+  }
 
   const handleChange = (idx, field, value) => {
     setMasters((prev) => prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m)));
@@ -62,17 +83,73 @@ export default function CierreServicioMasterAdmin({ idSolicitud }) {
     );
   }
 
-  if (!masters.length) {
-    return (
-      <p className="text-xs text-neutral-500">No hay másteres admitidos o matriculados todavía.</p>
-    );
-  }
-
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Resumen financiero */}
+      <div className="border border-neutral-200 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 bg-gradient-to-r from-[#1A3557] to-[#023A4B] flex items-center gap-3">
+          <span className="text-lg shrink-0">💶</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-serif text-sm font-bold text-white mb-0">Resumen financiero del caso</p>
+            <p className="text-[11px] text-white/60">Datos internos — no visibles por el cliente</p>
+          </div>
+          {guardandoResumen && <span className="text-[10px] text-white/50 font-mono shrink-0">Guardando…</span>}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 py-3 bg-white">
+          <div>
+            <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">
+              Inversión total másteres
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={resumen.inversion_total}
+                onChange={(e) => setResumen((r) => ({ ...r, inversion_total: e.target.value }))}
+                onBlur={guardarResumen}
+                placeholder="Ej: 5.600"
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 pr-7 text-sm text-neutral-800 outline-none focus:border-[#1A3557] transition"
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">€</span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">
+              Plan contratado
+            </label>
+            <input
+              type="text"
+              value={resumen.plan_contratado}
+              onChange={(e) => setResumen((r) => ({ ...r, plan_contratado: e.target.value }))}
+              onBlur={guardarResumen}
+              placeholder="Ej: Plan Comfort"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-800 outline-none focus:border-[#1A3557] transition"
+            />
+          </div>
+          <div>
+            <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">
+              Matrícula más económica
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={resumen.matricula_minima}
+                onChange={(e) => setResumen((r) => ({ ...r, matricula_minima: e.target.value }))}
+                onBlur={guardarResumen}
+                placeholder="Ej: 1.600"
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 pr-7 text-sm text-neutral-800 outline-none focus:border-[#1A3557] transition"
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">€</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <p className="text-xs text-neutral-600">
         Resumen de másteres admitidos/matriculados y decisión final del cliente.
       </p>
+      {masters.length === 0 && (
+        <p className="text-xs text-neutral-500">No hay másteres admitidos o matriculados todavía.</p>
+      )}
       {masters.map((m, idx) => (
         <div key={m.id_acceso_portal} className="border border-neutral-200 rounded-xl p-3 text-xs space-y-3">
           <div className="flex justify-between gap-2">
@@ -150,6 +227,6 @@ export default function CierreServicioMasterAdmin({ idSolicitud }) {
           </div>
         </div>
       ))}
-    </div>
+    </div>{/* /space-y-4 */}
   );
 }

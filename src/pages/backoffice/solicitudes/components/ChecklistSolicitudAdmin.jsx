@@ -123,9 +123,31 @@ export default function ChecklistSolicitudAdmin({
     return <p className="text-sm text-neutral-500 py-2">Esta solicitud no tiene checklist configurado.</p>;
   }
 
+  // Contadores para la barra de resumen
+  const todosLosItems = Object.values(checklistPorEtapa).flat();
+  const totalDocs     = todosLosItems.length;
+  const nEnviados     = todosLosItems.filter((it) => ["enviado","aprobado","no_aplica"].includes((it.estado_item||"").toLowerCase())).length;
+  const nPendientes   = todosLosItems.filter((it) => (it.estado_item||"pendiente").toLowerCase() === "pendiente" && (it.documentos?.length > 0 || it.documento)).length;
+  const nSinDoc       = todosLosItems.filter((it) => (it.estado_item||"pendiente").toLowerCase() === "pendiente" && !(it.documentos?.length > 0 || it.documento)).length;
+  const nObservados   = todosLosItems.filter((it) => (it.estado_item||"").toLowerCase() === "observado").length;
+
   return (
     <>
     <DriveToast state={driveToastState} />
+
+    {/* Barra de resumen de documentos */}
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs">
+      <span className="text-neutral-600">
+        <strong className="text-neutral-900">{nEnviados}</strong> de {totalDocs} documentos listos
+      </span>
+      <div className="flex gap-3 flex-wrap">
+        {nEnviados  > 0 && <span className="font-semibold text-emerald-600">● {nEnviados} Listos</span>}
+        {nObservados > 0 && <span className="font-semibold text-red-600">● {nObservados} Observados</span>}
+        {nPendientes > 0 && <span className="font-semibold text-amber-600">● {nPendientes} Pendientes</span>}
+        {nSinDoc     > 0 && <span className="font-semibold text-neutral-400">● {nSinDoc} Sin doc.</span>}
+      </div>
+    </div>
+
     <div className="space-y-5">
       {Object.entries(checklistPorEtapa).map(([nombreEtapa, items]) => (
         <div key={nombreEtapa}>
