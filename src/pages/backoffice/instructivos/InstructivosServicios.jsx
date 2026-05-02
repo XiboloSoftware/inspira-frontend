@@ -19,7 +19,7 @@ export default function InstructivosServicios() {
   useEffect(() => { cargarServicios(); }, []);
 
   const serviciosOrdenados = [...servicios].sort(
-    (a, b) => (b.cantidad_instructivos_activos || 0) - (a.cantidad_instructivos_activos || 0)
+    (a, b) => (b.cantidad_clientes || 0) - (a.cantidad_clientes || 0)
   );
 
   const servicioActual = servicios.find(s => s.id_servicio === selectedServicio);
@@ -52,7 +52,8 @@ export default function InstructivosServicios() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {serviciosOrdenados.map(s => {
-            const count = s.cantidad_instructivos_activos || 0;
+            const instCount  = s.cantidad_instructivos_activos || 0;
+            const cliCount   = s.cantidad_clientes || 0;
             return (
               <button
                 key={s.id_servicio}
@@ -71,18 +72,21 @@ export default function InstructivosServicios() {
                     </p>
                   </div>
                   <span className={`shrink-0 min-w-[28px] text-center text-[12px] font-bold px-2 py-0.5 rounded-full ${
-                    count > 0
-                      ? "bg-[#E8F5EE] text-[#1D6A4A]"
+                    cliCount > 0
+                      ? "bg-[#EEF2F8] text-[#1A3557]"
                       : "bg-neutral-100 text-neutral-400"
                   }`}>
-                    {count}
+                    {cliCount}
                   </span>
                 </div>
-                <p className="text-[10px] text-neutral-400 mt-2 group-hover:text-primary/60 transition-colors">
-                  {count === 0
-                    ? "Sin instructivos — haz clic para añadir"
-                    : `${count} instructivo${count > 1 ? "s" : ""} activo${count > 1 ? "s" : ""}`}
-                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-[10px] text-neutral-400 group-hover:text-primary/60 transition-colors">
+                    {cliCount === 0 ? "Sin clientes activos" : `${cliCount} cliente${cliCount > 1 ? "s" : ""}`}
+                  </p>
+                  <span className={`text-[10px] font-medium ${instCount > 0 ? "text-[#1D6A4A]" : "text-neutral-300"}`}>
+                    {instCount > 0 ? `${instCount} instructivo${instCount > 1 ? "s" : ""}` : "Sin instructivos"}
+                  </span>
+                </div>
               </button>
             );
           })}
