@@ -1,127 +1,236 @@
 // src/pages/panel/components/mis-servicios/sections/ChecklistDocumentos.jsx
-import { useState, useMemo } from "react";
-import BotonSubirDocumento from "../../checklist/BotonSubirDocumento";
+import { useState, useMemo, useEffect } from "react";
+import { apiDELETE, apiUpload } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
-import { apiDELETE } from "../../../../../services/api";
 
-const ESTADO_ITEM_CFG = {
-  aprobado:  { label: "Aprobado",  bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  enviado:   { label: "Enviado",   bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-200",     dot: "bg-sky-500"     },
-  observado: { label: "Observado", bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200",     dot: "bg-red-500"     },
-  no_aplica: { label: "No aplica", bg: "bg-neutral-50", text: "text-neutral-500", border: "border-neutral-200", dot: "bg-neutral-400" },
-  pendiente: { label: "Pendiente", bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
+const ESTADO_CFG = {
+  aprobado:  { label: "Aprobado",  bg: "bg-emerald-50",  text: "text-emerald-700" },
+  enviado:   { label: "Enviado",   bg: "bg-sky-50",      text: "text-sky-700"     },
+  observado: { label: "Observado", bg: "bg-red-50",      text: "text-red-700"     },
+  no_aplica: { label: "No aplica", bg: "bg-neutral-50",  text: "text-neutral-500" },
+  pendiente: { label: "Pendiente", bg: "bg-amber-50",    text: "text-amber-700"   },
 };
 
-function getItemCfg(estado) {
-  return ESTADO_ITEM_CFG[(estado || "pendiente").toLowerCase()] || ESTADO_ITEM_CFG.pendiente;
+function getCfg(estado) {
+  return ESTADO_CFG[(estado || "pendiente").toLowerCase()] || ESTADO_CFG.pendiente;
 }
 
-function formatBytes(bytes) {
-  if (!bytes) return "";
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function esVisualizableInline(mimeType) {
+  const m = (mimeType || "").toLowerCase();
+  return m.includes("pdf") || m.includes("image/");
 }
 
-function FileIcon({ mimeType }) {
-  const m = mimeType || "";
-  if (m.includes("pdf"))
-    return (
-      <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-        <span className="text-[10px] font-bold text-red-500 leading-none">PDF</span>
-      </div>
-    );
-  if (m.includes("image"))
-    return (
-      <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
-        <svg className="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
-        </svg>
-      </div>
-    );
-  if (m.includes("word") || m.includes("doc"))
-    return (
-      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-        <span className="text-[10px] font-bold text-blue-500 leading-none">DOC</span>
-      </div>
-    );
-  if (m.includes("sheet") || m.includes("excel") || m.includes("xls"))
-    return (
-      <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-        <span className="text-[10px] font-bold text-emerald-500 leading-none">XLS</span>
-      </div>
-    );
+// ─── Visor modal ────────────────────────────────────────────────────────────
+function VisorModal({ doc, onClose }) {
+  const url = `/api/documentos/${doc.id_documento}/descargar?view=1`;
+  const esPdf = (doc.mime_type || "").toLowerCase().includes("pdf");
+  const esImagen = (doc.mime_type || "").toLowerCase().includes("image/");
+
+  // Cerrar con Escape
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
-      <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-        <polyline strokeLinecap="round" strokeLinejoin="round" points="14 2 14 8 20 8" />
-      </svg>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-4xl"
+        style={{ height: "88vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 shrink-0">
+          <p className="text-sm font-semibold text-neutral-800 truncate pr-4" title={doc.nombre_original}>
+            📎 {doc.nombre_original}
+          </p>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors shrink-0"
+            aria-label="Cerrar"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Contenido */}
+        <div className="flex-1 overflow-hidden rounded-b-2xl bg-neutral-100">
+          {esPdf && (
+            <iframe
+              src={url}
+              title={doc.nombre_original}
+              className="w-full h-full border-0"
+            />
+          )}
+          {esImagen && (
+            <div className="w-full h-full flex items-center justify-center p-4">
+              <img
+                src={url}
+                alt={doc.nombre_original}
+                className="max-w-full max-h-full object-contain rounded-xl shadow"
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function DocumentoChip({ doc, canDelete, onDelete }) {
-  const [deleting, setDeleting] = useState(false);
+// ─── Tarjeta de documento ────────────────────────────────────────────────────
+function DocCard({ it, solicitudId, onEliminar, onUploaded, onVerDoc }) {
+  const docs = it.documentos || [];
+  const hayDocs = docs.length > 0;
+  const cfg = getCfg(it.estado_item);
+  const itemAprobado = (it.estado_item || "").toLowerCase() === "aprobado";
+  const [subiendo, setSubiendo] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
-  async function handleDelete() {
-    if (deleting) return;
-    setDeleting(true);
+  async function handleUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setSubiendo(true);
     try {
-      await onDelete(doc.id_documento);
+      const formData = new FormData();
+      for (const f of files) formData.append("archivos", f);
+      await apiUpload(
+        `/api/panel/solicitudes/${solicitudId}/items/${it.id_solicitud_item}/documento`,
+        formData
+      );
+      if (onUploaded) onUploaded();
+    } catch (err) {
+      console.error(err);
     } finally {
-      setDeleting(false);
+      setSubiendo(false);
+      e.target.value = "";
     }
   }
 
-  const rev = (doc.estado_revision || "").toUpperCase();
+  async function handleDelete(idDoc) {
+    if (deleting) return;
+    setDeleting(idDoc);
+    try {
+      await onEliminar(idDoc);
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 bg-white border border-neutral-200 rounded-xl hover:border-neutral-300 hover:shadow-sm transition-all group">
-      <FileIcon mimeType={doc.mime_type} />
+    <div
+      className={`border rounded-xl p-3 relative flex flex-col gap-2 ${
+        it.estado_item === "observado"
+          ? "border-red-200 bg-red-50/20"
+          : it.estado_item === "aprobado"
+          ? "border-emerald-200 bg-emerald-50/10"
+          : "border-neutral-200 bg-white"
+      }`}
+    >
+      {/* Badge posicionado arriba a la derecha */}
+      <span
+        className={`absolute top-2.5 right-2.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}
+      >
+        {cfg.label}
+      </span>
 
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-neutral-800 truncate leading-snug" title={doc.nombre_original}>
-          {doc.nombre_original}
+      {/* Nombre */}
+      <p className="text-[13px] font-semibold text-neutral-900 pr-20 leading-snug">
+        {it.item?.nombre_item}
+      </p>
+
+      {/* Descripción */}
+      {it.item?.descripcion && (
+        <p className="text-xs text-neutral-500 leading-snug -mt-1">
+          {it.item.descripcion}
         </p>
-        <p className="text-xs text-neutral-400 leading-none mt-0.5">{formatBytes(doc.tamano_bytes)}</p>
-      </div>
-
-      {rev === "APROBADO" && (
-        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Aprobado
-        </span>
-      )}
-      {rev === "OBSERVADO" && (
-        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-          Observado
-        </span>
       )}
 
-      {canDelete && (
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          aria-label="Eliminar archivo"
-          className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:cursor-wait"
-        >
-          {deleting ? (
-            <span className="w-3 h-3 border border-neutral-300 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+      {/* Comentario del asesor */}
+      {it.comentario_asesor && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-amber-800">
+          💬 {it.comentario_asesor}
+        </div>
+      )}
+
+      {/* Archivos y subida */}
+      {it.item?.permite_archivo && (
+        <div className="mt-auto flex flex-col gap-1.5">
+          {/* Lista de archivos subidos */}
+          {hayDocs &&
+            docs.map((doc) => {
+              const isDel = deleting === doc.id_documento;
+              const canDel =
+                !itemAprobado &&
+                (doc.estado_revision || "").toUpperCase() !== "APROBADO";
+              const puedeVer = esVisualizableInline(doc.mime_type);
+
+              return (
+                <div key={doc.id_documento}>
+                  <p
+                    className="text-xs text-neutral-600 font-medium truncate"
+                    title={doc.nombre_original}
+                  >
+                    📎 {doc.nombre_original}
+                  </p>
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {puedeVer && (
+                      <button
+                        onClick={() => onVerDoc(doc)}
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 transition-colors"
+                      >
+                        Ver
+                      </button>
+                    )}
+                    {canDel && (
+                      <button
+                        onClick={() => handleDelete(doc.id_documento)}
+                        disabled={isDel}
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded border border-neutral-200 bg-white text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {isDel ? "…" : "Eliminar"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+          {/* Botón subir — estilo dashed */}
+          {!itemAprobado && (
+            <label
+              className={`mt-1 block text-center text-xs font-semibold py-3 rounded-lg border-2 border-dashed cursor-pointer transition-all select-none ${
+                subiendo
+                  ? "border-neutral-200 bg-neutral-50 text-neutral-400 cursor-wait"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-500 hover:border-green-600 hover:bg-green-50 hover:text-green-700"
+              }`}
+            >
+              {subiendo ? "Subiendo…" : "↑ Subir archivo"}
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleUpload}
+                multiple
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                disabled={subiendo}
+              />
+            </label>
           )}
-        </button>
+        </div>
       )}
     </div>
   );
 }
 
+// ─── Componente principal ────────────────────────────────────────────────────
 export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud }) {
+  const [docVisor, setDocVisor] = useState(null);
+
   const grupos = {};
   (checklist || []).forEach((it) => {
     const etapa = it.item?.etapa?.nombre || "Checklist";
@@ -137,7 +246,9 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
 
   const estadoGlobal = useMemo(() => {
     if (!checklist.length) return "pendiente";
-    const hasObservado = checklist.some((it) => (it.estado_item || "").toLowerCase() === "observado");
+    const hasObservado = checklist.some(
+      (it) => (it.estado_item || "").toLowerCase() === "observado"
+    );
     if (hasObservado) return "observado";
     const allDone = checklist.every((it) =>
       ["aprobado", "no_aplica"].includes((it.estado_item || "").toLowerCase())
@@ -145,11 +256,12 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
     return allDone ? "completado" : "pendiente";
   }, [checklist]);
 
-  const subtitulo = total > 0
-    ? `${aprobados} de ${total} documentos listos`
-    : "Sube los archivos del checklist de tu servicio.";
+  const subtitulo =
+    total > 0
+      ? `${aprobados} de ${total} documentos listos`
+      : "Sube los archivos del checklist de tu servicio.";
 
-  async function handleEliminarDocumento(idDocumento) {
+  async function handleEliminar(idDocumento) {
     await apiDELETE(`/api/panel/documentos/${idDocumento}`);
     if (cargarTodo) cargarTodo();
   }
@@ -157,114 +269,62 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
   const sinDoc = total - aprobados;
 
   return (
-    <SeccionPanel
-      numero="1"
-      titulo="Documentos requeridos"
-      subtitulo={subtitulo}
-      estado={estadoGlobal}
-      sectionId="1"
-    >
-      {/* Barra de progreso resumida */}
-      {total > 0 && (
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <p className="text-sm text-neutral-500">
-            Sube todos tus documentos para que tu asesor pueda revisarlos.
-          </p>
-          <div className="flex gap-4 text-xs font-semibold">
-            <span className="text-emerald-600">● {aprobados} Listos</span>
-            <span className="text-neutral-400">● {sinDoc} Sin doc.</span>
-          </div>
-        </div>
+    <>
+      {docVisor && (
+        <VisorModal doc={docVisor} onClose={() => setDocVisor(null)} />
       )}
 
-      {Object.keys(grupos).length === 0 && (
-        <p className="text-sm text-neutral-400 py-4 text-center">
-          Aún no hay checklist configurado.
-        </p>
-      )}
-
-      {Object.entries(grupos).map(([nombre, items]) => (
-        <div key={nombre} className="space-y-3">
-          {multiGrupo && (
-            <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 pb-2 border-b border-neutral-100">
-              {nombre}
+      <SeccionPanel
+        numero="1"
+        titulo="Documentos requeridos"
+        subtitulo={subtitulo}
+        estado={estadoGlobal}
+        sectionId="1"
+      >
+        {total > 0 && (
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <p className="text-sm text-neutral-500">
+              Sube todos tus documentos para que tu asesor pueda revisarlos.
             </p>
-          )}
-          {items.map((it) => {
-            const docs = it.documentos || [];
-            const hayDocs = docs.length > 0;
-            const cfg = getItemCfg(it.estado_item);
-            const itemAprobado = (it.estado_item || "").toLowerCase() === "aprobado";
+            <div className="flex gap-4 text-xs font-semibold">
+              <span className="text-emerald-600">● {aprobados} Listos</span>
+              <span className="text-neutral-400">● {sinDoc} Sin doc.</span>
+            </div>
+          </div>
+        )}
 
-            return (
-              <div
-                key={it.id_solicitud_item}
-                className={`border rounded-2xl p-4 transition-all ${
-                  it.estado_item === "observado"
-                    ? "border-red-200 bg-red-50/30"
-                    : it.estado_item === "aprobado"
-                    ? "border-emerald-200 bg-emerald-50/20"
-                    : "border-neutral-200 bg-white hover:border-neutral-300"
-                }`}
-              >
-                {/* Encabezado del item */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-neutral-900">{it.item?.nombre_item}</p>
-                    {it.item?.descripcion && (
-                      <p className="text-xs text-neutral-500 mt-0.5">{it.item.descripcion}</p>
-                    )}
-                  </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                    {cfg.label}
-                  </span>
-                </div>
+        {Object.keys(grupos).length === 0 && (
+          <p className="text-sm text-neutral-400 py-4 text-center">
+            Aún no hay checklist configurado.
+          </p>
+        )}
 
-                {/* Comentario del asesor */}
-                {it.comentario_asesor && (
-                  <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                    <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
-                    </svg>
-                    <p className="text-sm text-amber-800">{it.comentario_asesor}</p>
-                  </div>
-                )}
+        {Object.entries(grupos).map(([nombre, items]) => (
+          <div key={nombre} className="space-y-3">
+            {multiGrupo && (
+              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 pb-2 border-b border-neutral-100">
+                {nombre}
+              </p>
+            )}
 
-                {it.item?.permite_archivo && (
-                  <div className="mt-3 pt-3 border-t border-neutral-100 space-y-2.5">
-                    {/* Lista de archivos subidos */}
-                    {hayDocs ? (
-                      <div className="space-y-2">
-                        {docs.map((doc) => (
-                          <DocumentoChip
-                            key={doc.id_documento}
-                            doc={doc}
-                            canDelete={!itemAprobado && (doc.estado_revision || "").toUpperCase() !== "APROBADO"}
-                            onDelete={handleEliminarDocumento}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 py-1">
-                        <span className="w-2 h-2 rounded-full bg-neutral-300 shrink-0" />
-                        <span className="text-sm text-neutral-400">Sin archivos aún</span>
-                      </div>
-                    )}
-
-                    {/* Botón subir */}
-                    {!itemAprobado && (
-                      <div className="flex justify-end pt-1">
-                        <BotonSubirDocumento solicitudId={idSolicitud} item={it} onUploaded={cargarTodo} />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </SeccionPanel>
+            <div
+              className="grid gap-3"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
+            >
+              {items.map((it) => (
+                <DocCard
+                  key={it.id_solicitud_item}
+                  it={it}
+                  solicitudId={idSolicitud}
+                  onEliminar={handleEliminar}
+                  onUploaded={cargarTodo}
+                  onVerDoc={setDocVisor}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </SeccionPanel>
+    </>
   );
 }
