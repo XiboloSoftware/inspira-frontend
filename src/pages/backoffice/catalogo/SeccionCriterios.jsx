@@ -1,9 +1,9 @@
-// SeccionCriterios.jsx — Vista global de todos los criterios de admisión
+// SeccionCriterios.jsx — Vista global de criterios de admisión
 import { useCallback, useEffect, useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
 import { CATEGORIAS_CRITERIO } from "./catalogoConstants";
 
-const LIMIT = 50;
+const LIMIT = 100;
 
 function categoriaCls(cat) {
   return CATEGORIAS_CRITERIO.find((c) => c.value === cat)?.color || "bg-neutral-100 text-neutral-600 border-neutral-200";
@@ -20,28 +20,32 @@ export default function SeccionCriterios({ universidades }) {
   const [search,     setSearch]     = useState("");
   const [filtroCat,  setFiltroCat]  = useState("");
   const [filtroUniv, setFiltroUniv] = useState("");
+  const [agrupado,   setAgrupado]   = useState(true); // true = únicos, false = todos
 
   const fetchCriterios = useCallback(async (overrides = {}) => {
     setLoading(true);
     try {
+      const ag = overrides.agrupado !== undefined ? overrides.agrupado : agrupado;
       const q = new URLSearchParams({
         page:           String(overrides.page      ?? page),
         limit:          String(LIMIT),
         search:         overrides.search           !== undefined ? overrides.search     : search,
         categoria:      overrides.filtroCat        !== undefined ? overrides.filtroCat  : filtroCat,
         id_universidad: overrides.filtroUniv       !== undefined ? overrides.filtroUniv : filtroUniv,
+        agrupado:       ag ? "1" : "0",
       });
       ["search", "categoria", "id_universidad"].forEach((k) => { if (!q.get(k)) q.delete(k); });
       const data = await boGET(`/backoffice/catalogo/criterios?${q}`);
       if (data.ok) { setCriterios(data.criterios); setTotal(data.total); }
     } finally { setLoading(false); }
-  }, [page, search, filtroCat, filtroUniv]);
+  }, [page, search, filtroCat, filtroUniv, agrupado]);
 
   useEffect(() => { fetchCriterios(); }, [fetchCriterios]);
 
   function handleFilter(key, val, setter) { setter(val); setPage(1); fetchCriterios({ page: 1, [key]: val }); }
   function applySearch() { setPage(1); fetchCriterios({ page: 1, search }); }
   function resetSearch() { setSearch(""); setPage(1); fetchCriterios({ page: 1, search: "" }); }
+  function toggleAgrupado(val) { setAgrupado(val); setPage(1); fetchCriterios({ page: 1, agrupado: val }); }
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -51,9 +55,23 @@ export default function SeccionCriterios({ universidades }) {
         <div>
           <h2 className="text-base font-bold text-neutral-800">Criterios de admisión</h2>
           <p className="text-xs text-neutral-500 mt-0.5">
-            Criterios de todos los másteres del catálogo
-            {total > 0 && <span className="ml-2 font-medium text-neutral-400">— {total} registros</span>}
+            {agrupado ? "Criterios únicos del catálogo" : "Todas las instancias por máster"}
+            {total > 0 && <span className="ml-2 font-medium text-neutral-400">— {total} {agrupado ? "tipos" : "registros"}</span>}
           </p>
+        </div>
+
+        {/* Toggle agrupado / todos */}
+        <div className="flex items-center gap-1 bg-neutral-100 rounded-xl p-1">
+          <button
+            onClick={() => toggleAgrupado(true)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${agrupado ? "bg-white shadow text-neutral-800" : "text-neutral-500 hover:text-neutral-700"}`}>
+            Únicos
+          </button>
+          <button
+            onClick={() => toggleAgrupado(false)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!agrupado ? "bg-white shadow text-neutral-800" : "text-neutral-500 hover:text-neutral-700"}`}>
+            Por máster
+          </button>
         </div>
       </div>
 
@@ -84,15 +102,17 @@ export default function SeccionCriterios({ universidades }) {
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
-        <select
-          className="border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-          value={filtroUniv}
-          onChange={(e) => handleFilter("filtroUniv", e.target.value, setFiltroUniv)}>
-          <option value="">Todas las universidades</option>
-          {universidades.map((u) => (
-            <option key={u.id_universidad} value={u.id_universidad}>{u.sigla} — {u.nombre_completo}</option>
-          ))}
-        </select>
+        {!agrupado && (
+          <select
+            className="border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+            value={filtroUniv}
+            onChange={(e) => handleFilter("filtroUniv", e.target.value, setFiltroUniv)}>
+            <option value="">Todas las universidades</option>
+            {universidades.map((u) => (
+              <option key={u.id_universidad} value={u.id_universidad}>{u.sigla} — {u.nombre_completo}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Tabla */}
@@ -102,14 +122,19 @@ export default function SeccionCriterios({ universidades }) {
             <tr>
               <th className="text-left px-3 py-2.5 w-[180px]">Categoría</th>
               <th className="text-left px-3 py-2.5">Descripción</th>
-              <th className="text-center px-3 py-2.5 w-[64px]">Peso %</th>
-              <th className="text-left px-3 py-2.5 w-[220px]">Máster</th>
-              <th className="text-left px-3 py-2.5 w-[90px]">Universidad</th>
+              {agrupado
+                ? <th className="text-center px-3 py-2.5 w-[100px]">Nº másteres</th>
+                : <>
+                    <th className="text-center px-3 py-2.5 w-[64px]">Peso %</th>
+                    <th className="text-left px-3 py-2.5 w-[220px]">Máster</th>
+                    <th className="text-left px-3 py-2.5 w-[90px]">Universidad</th>
+                  </>
+              }
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {loading && (
-              <tr><td colSpan={5} className="text-center py-12 text-neutral-400">
+              <tr><td colSpan={agrupado ? 3 : 5} className="text-center py-12 text-neutral-400">
                 <div className="inline-flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   Cargando…
@@ -117,11 +142,28 @@ export default function SeccionCriterios({ universidades }) {
               </td></tr>
             )}
             {!loading && criterios.length === 0 && (
-              <tr><td colSpan={5} className="text-center py-12 text-neutral-400 text-sm">
+              <tr><td colSpan={agrupado ? 3 : 5} className="text-center py-12 text-neutral-400 text-sm">
                 Sin criterios para los filtros seleccionados.
               </td></tr>
             )}
-            {!loading && criterios.map((c) => (
+            {!loading && agrupado && criterios.map((c, i) => (
+              <tr key={`${c.categoria}-${i}`} className="hover:bg-neutral-50/80 transition-colors">
+                <td className="px-3 py-2.5">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${categoriaCls(c.categoria)}`}>
+                    {categoriaLabel(c.categoria)}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-neutral-700 text-xs leading-relaxed">
+                  {c.descripcion || <span className="text-neutral-300 italic">—</span>}
+                </td>
+                <td className="px-3 py-2.5 text-center">
+                  <span className="inline-flex items-center justify-center w-8 h-5 rounded-full bg-neutral-100 text-[10px] font-bold text-neutral-600 tabular-nums">
+                    {c.num_masters}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {!loading && !agrupado && criterios.map((c) => (
               <tr key={c.id_criterio} className="hover:bg-neutral-50/80 transition-colors">
                 <td className="px-3 py-2.5">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${categoriaCls(c.categoria)}`}>
@@ -155,7 +197,7 @@ export default function SeccionCriterios({ universidades }) {
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 text-sm">
-          <span className="text-neutral-500">Página {page} de {totalPages} · {total} criterios</span>
+          <span className="text-neutral-500">Página {page} de {totalPages} · {total} {agrupado ? "tipos" : "criterios"}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1}
               onClick={() => { const p = page - 1; setPage(p); fetchCriterios({ page: p }); }}
