@@ -15,6 +15,18 @@ const FORM_INIT = {
   titulo_acceso: "", notas: "", activo: true,
 };
 
+function nivelLabel(nivel) {
+  const map = { B1: "B1", B2: "B2", C1: "C1", C2: "C2", NATIVO: "Nativo", NO_ESPECIFICADO: "No especificado" };
+  return map[nivel] || nivel || "—";
+}
+
+function categoriaLabel(cat) {
+  if (!cat) return "—";
+  return cat.replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ── Th sorteable (server-side) ─────────────────────────────────────────────────
 function Th({ col, label, sortCol, sortDir, onSort, right, center }) {
   const active = sortCol === col;
@@ -53,8 +65,12 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
         }
       : { ...FORM_INIT }
   );
-  const [saving, setSaving] = useState(false);
-  const [err,    setErr]    = useState(null);
+  const [saving,         setSaving]         = useState(false);
+  const [err,            setErr]            = useState(null);
+  const [detalle,        setDetalle]        = useState(null);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [showCriterios,  setShowCriterios]  = useState(false);
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const univSel = universidades.find((u) => String(u.id_universidad) === String(form.id_universidad));
@@ -62,6 +78,14 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
   const precioPreview = comUniv && form.ects
     ? Number(comUniv.precio_credito_extranjero) * Number(form.ects)
     : null;
+
+  useEffect(() => {
+    if (!isEdit) return;
+    setLoadingDetalle(true);
+    boGET(`/backoffice/catalogo/masters/${item.id_master}`)
+      .then((d) => { if (d.ok) setDetalle(d.master); })
+      .finally(() => setLoadingDetalle(false));
+  }, [item?.id_master, isEdit]); // eslint-disable-line
 
   async function submit(e) {
     e.preventDefault();
@@ -87,10 +111,13 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
     finally { setSaving(false); }
   }
 
+  const criterios = detalle?.criterios || [];
+  const idiomas   = detalle?.idiomas   || [];
+
   return (
     <div className={MODAL_OVERLAY} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={MODAL_PANEL}>
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-primary">{isEdit ? "Editar Máster" : "Nuevo Máster"}</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 text-xl leading-none">✕</button>
         </div>
@@ -205,6 +232,77 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             Activo
           </label>
 
+          {/* ── Criterios e idiomas (solo en edición) ── */}
+          {isEdit && (
+            <div className="border border-neutral-200 rounded-xl overflow-hidden">
+              <button type="button"
+                onClick={() => setShowCriterios((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 hover:bg-neutral-100 transition text-sm font-semibold text-neutral-700">
+                <span className="flex items-center gap-2">
+                  Criterios de admisión e idiomas
+                  {loadingDetalle
+                    ? <span className="text-xs text-neutral-400 font-normal">Cargando…</span>
+                    : <span className="text-xs bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full font-normal">
+                        {criterios.length} criterios · {idiomas.length} idiomas
+                      </span>
+                  }
+                </span>
+                <span className="text-neutral-400 text-xs">{showCriterios ? "▲" : "▼"}</span>
+              </button>
+
+              {showCriterios && (
+                <div className="px-4 py-3 space-y-4">
+                  {/* Criterios */}
+                  {criterios.length > 0 ? (
+                    <div>
+                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">Criterios de admisión</p>
+                      <div className="divide-y divide-neutral-50">
+                        {criterios.map((c, i) => (
+                          <div key={c.id_criterio || i} className="flex items-start gap-2 py-1.5 text-xs">
+                            <span className="shrink-0 font-semibold text-neutral-400 w-4 text-right tabular-nums">{c.orden ?? i + 1}.</span>
+                            <span className="shrink-0 text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
+                              {categoriaLabel(c.categoria)}
+                            </span>
+                            <span className="flex-1 text-neutral-700 leading-relaxed">{c.descripcion || "—"}</span>
+                            {c.peso_porcentaje != null && (
+                              <span className="shrink-0 font-bold text-neutral-500 tabular-nums whitespace-nowrap">{c.peso_porcentaje}%</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-400 italic">Sin criterios de admisión registrados.</p>
+                  )}
+
+                  {/* Idiomas */}
+                  {idiomas.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">Idiomas requeridos</p>
+                      <div className="divide-y divide-neutral-50">
+                        {idiomas.map((id, i) => (
+                          <div key={id.id_idioma_req || i} className="flex items-center gap-2 py-1.5 text-xs flex-wrap">
+                            <span className="font-semibold text-neutral-800">{id.idioma}</span>
+                            <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold">
+                              {nivelLabel(id.nivel_minimo)}
+                            </span>
+                            {id.es_obligatorio && (
+                              <span className="text-[10px] bg-red-50 text-red-600 border border-red-100 px-1.5 py-0.5 rounded font-semibold">Obligatorio</span>
+                            )}
+                            {id.peso_porcentaje != null && (
+                              <span className="text-neutral-500 tabular-nums">{id.peso_porcentaje}%</span>
+                            )}
+                            {id.detalle && <span className="text-neutral-400 italic">{id.detalle}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border text-sm hover:bg-neutral-50 transition">Cancelar</button>
             <button type="submit" disabled={saving}
@@ -230,6 +328,7 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   // Filtros
   const [search,       setSearch]       = useState("");
   const [filtroCC,     setFiltroCC]     = useState("");
+  const [filtroUniv,   setFiltroUniv]   = useState("");
   const [filtroRama,   setFiltroRama]   = useState("");
   const [filtroMod,    setFiltroMod]    = useState("");
   const [filtroActivo, setFiltroActivo] = useState("");
@@ -240,27 +339,33 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   const searchRef = useRef("");
   const LIMIT = 25;
 
+  // Lista de universidades para el filtro, acotada por CCAA si hay una seleccionada
+  const universidadesFiltradas = filtroCC
+    ? universidades.filter((u) => String(u.id_comunidad) === String(filtroCC))
+    : universidades;
+
   const fetchMasters = useCallback(async (overrides = {}) => {
     setLoading(true);
     try {
       const q = new URLSearchParams({
-        page:         String(overrides.page         ?? page),
-        limit:        String(LIMIT),
-        search:       overrides.search              !== undefined ? overrides.search       : searchRef.current,
-        id_comunidad: overrides.filtroCC            !== undefined ? overrides.filtroCC     : filtroCC,
-        rama:         overrides.filtroRama          !== undefined ? overrides.filtroRama   : filtroRama,
-        modalidad:    overrides.filtroMod           !== undefined ? overrides.filtroMod    : filtroMod,
-        activo:       overrides.filtroActivo        !== undefined ? overrides.filtroActivo : filtroActivo,
-        sortBy:       overrides.sortCol             !== undefined ? overrides.sortCol      : sortCol,
-        sortDir:      overrides.sortDir             !== undefined ? overrides.sortDir      : sortDir,
+        page:          String(overrides.page      ?? page),
+        limit:         String(LIMIT),
+        search:        overrides.search           !== undefined ? overrides.search      : searchRef.current,
+        id_comunidad:  overrides.filtroCC         !== undefined ? overrides.filtroCC    : filtroCC,
+        id_universidad: overrides.filtroUniv      !== undefined ? overrides.filtroUniv  : filtroUniv,
+        rama:          overrides.filtroRama       !== undefined ? overrides.filtroRama  : filtroRama,
+        modalidad:     overrides.filtroMod        !== undefined ? overrides.filtroMod   : filtroMod,
+        activo:        overrides.filtroActivo     !== undefined ? overrides.filtroActivo: filtroActivo,
+        sortBy:        overrides.sortCol          !== undefined ? overrides.sortCol     : sortCol,
+        sortDir:       overrides.sortDir          !== undefined ? overrides.sortDir     : sortDir,
       });
-      ["search", "id_comunidad", "rama", "modalidad", "activo"].forEach((k) => {
+      ["search", "id_comunidad", "id_universidad", "rama", "modalidad", "activo"].forEach((k) => {
         if (!q.get(k)) q.delete(k);
       });
       const data = await boGET(`/backoffice/catalogo/masters?${q}`);
       if (data.ok) { setMasters(data.masters); setTotal(data.total); }
     } finally { setLoading(false); }
-  }, [page, filtroCC, filtroRama, filtroMod, filtroActivo, sortCol, sortDir]);
+  }, [page, filtroCC, filtroUniv, filtroRama, filtroMod, filtroActivo, sortCol, sortDir]);
 
   useEffect(() => { fetchMasters(); }, [fetchMasters]);
 
@@ -276,6 +381,13 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   function handleFilter(key, val, setter) {
     setter(val); setPage(1);
     fetchMasters({ page: 1, [key]: val });
+  }
+  // Al cambiar CCAA, resetear también el filtro de universidad
+  function handleFiltroCC(val) {
+    setFiltroCC(val);
+    setFiltroUniv("");
+    setPage(1);
+    fetchMasters({ page: 1, filtroCC: val, filtroUniv: "" });
   }
   function handleSort(col) {
     const newDir = sortCol === col && sortDir === "asc" ? "desc" : "asc";
@@ -321,9 +433,16 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
           )}
         </div>
         <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroCC} onChange={(e) => handleFilter("filtroCC", e.target.value, setFiltroCC)}>
+          value={filtroCC} onChange={(e) => handleFiltroCC(e.target.value)}>
           <option value="">Todas las CCAA</option>
           {comunidades.map((c) => <option key={c.id_comunidad} value={c.id_comunidad}>{c.nombre}</option>)}
+        </select>
+        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          value={filtroUniv} onChange={(e) => handleFilter("filtroUniv", e.target.value, setFiltroUniv)}>
+          <option value="">Todas las universidades</option>
+          {universidadesFiltradas.map((u) => (
+            <option key={u.id_universidad} value={u.id_universidad}>{u.sigla} — {u.nombre_completo}</option>
+          ))}
         </select>
         <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={filtroRama} onChange={(e) => handleFilter("filtroRama", e.target.value, setFiltroRama)}>
