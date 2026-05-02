@@ -5,7 +5,7 @@ import { navigate } from "../../../services/navigate";
 import { navItems } from "./header.data";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
-import LoginButton from "./LoginButton";
+import LoginButton, { loginGoogle } from "./LoginButton";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -81,17 +81,37 @@ export default function Header() {
             {user && <UserMenu user={user} />}
           </div>
 
-          {/* Mobile Hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="md:hidden p-2 rounded-lg hover:bg-neutral-100 text-neutral-700"
-            aria-label="Abrir menú"
-          >
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h16M3 12h16M3 18h16" strokeLinecap="round" />
-            </svg>
-          </button>
+          {/* Mobile: login siempre visible + hamburguesa */}
+          <div className="md:hidden flex items-center gap-2">
+            {!user && (
+              <button
+                type="button"
+                onClick={loginGoogle}
+                className="bg-[#1D6A4A] text-white text-xs font-semibold px-3 py-2 rounded-lg whitespace-nowrap"
+              >
+                Iniciar con Google
+              </button>
+            )}
+            {user && (
+              <button
+                type="button"
+                onClick={() => navigate("/panel")}
+                className="w-8 h-8 rounded-lg bg-[#1D6A4A] text-white text-xs font-bold flex items-center justify-center uppercase"
+              >
+                {user.nombre?.[0] || "P"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-700"
+              aria-label="Abrir menú"
+            >
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h16M3 12h16M3 18h16" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 

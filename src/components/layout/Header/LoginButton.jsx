@@ -2,7 +2,7 @@
 const API_URL =
   import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
 
-const loginGoogle = () => {
+export const loginGoogle = () => {
   // Ruta actual (incluye query y hash, por si acaso)
   const currentPath =
     window.location.pathname +
