@@ -18,27 +18,27 @@ import SEOSchema from "./components/SEOSchema";
 // ── Configuración SEO por ruta ─────────────────────────────────────────────
 const SEO_PAGES = {
   "/": {
-    title: "Tu camino a estudiar en España",
+    title: "Visa Estudiante y Máster en España para Latinoamericanos 2026",
     description:
-      "Inspira Legal te acompaña desde la elección del máster hasta la matrícula en universidades españolas de primer nivel. Visas, apostilla y extranjería.",
+      "Tramita tu visa de estudiante y encuentra el mejor máster en España. Apostilla, extranjería y acompañamiento 360° para latinoamericanos. ¡Empieza hoy!",
     path: "/",
   },
   "/servicios/master": {
-    title: "Programa Máster 360° – Estudia en España",
+    title: "Estudia un Máster en España – Programa 360° para Latinoamericanos",
     description:
-      "Servicio integral para estudiar un máster en España: selección de universidad, visado de estudiante, apostilla y trámites de extranjería.",
+      "Elegimos el máster ideal para ti y gestionamos todo: visa de estudiante, apostilla y matrícula en universidades españolas. Acompañamiento completo 2026/2027.",
     path: "/servicios/master",
   },
   "/servicios/estancia": {
-    title: "Visa de Estancia en España desde Perú",
+    title: "Visa de Estancia en España para Latinoamericanos 2026",
     description:
-      "Gestiona tu visa de estancia y permisos de residencia en España con Inspira Legal. Asesoría personalizada, sin sorpresas.",
+      "Gestiona tu visa de estancia, renovación o permiso de residencia en España. Expertos en extranjería para latinoamericanos. Sin sorpresas.",
     path: "/servicios/estancia",
   },
   "/calculadora-master": {
-    title: "Calculadora de Másteres en España – Gratis",
+    title: "¿Cuánto cuesta un Máster en España? Calculadora Gratis",
     description:
-      "Calcula el presupuesto total para estudiar un máster en España: matrícula, alojamiento, visado y gastos de vida. Completamente gratis.",
+      "Calcula el costo real de estudiar un máster en España desde Latinoamérica: matrícula, visa, apostilla, alojamiento y gastos de vida. Gratis e instantáneo.",
     path: "/calculadora-master",
   },
 };
@@ -50,8 +50,8 @@ const SCHEMA_ORG = {
   name: "Inspira Legal",
   url: "https://inspira-legal.cloud",
   description:
-    "Consultoría especializada en másteres y postgrados en España, visas de estudiante y trámites de extranjería para peruanos.",
-  areaServed: ["PE", "ES"],
+    "Consultoría especializada en másteres y postgrados en España, visas de estudiante y trámites de extranjería para latinoamericanos.",
+  areaServed: ["PE", "CO", "MX", "AR", "CL", "EC", "BO", "VE", "ES"],
   serviceType: ["Asesoría académica", "Gestión de visas", "Trámites de extranjería"],
   address: {
     "@type": "PostalAddress",
