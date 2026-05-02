@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { apiGET } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -16,39 +17,6 @@ const AREAS_CARRERA = [
   { value: "Otra",                      label: "Otra" },
 ];
 
-// Coincide exactamente con el enum RamaConocimiento de la BD de másteres
-const RAMAS_CONOCIMIENTO = [
-  {
-    value: "CIENCIAS_SOCIALES_JURIDICAS",
-    label: "Ciencias Sociales y Jurídicas",
-    desc:  "Derecho, Economía, Administración, Educación, Comunicación…",
-    icon:  "⚖️",
-  },
-  {
-    value: "INGENIERIA_ARQUITECTURA",
-    label: "Ingeniería y Arquitectura",
-    desc:  "Informática, Telecomunicaciones, Civil, Industrial, Arquitectura…",
-    icon:  "⚙️",
-  },
-  {
-    value: "CIENCIAS_SALUD",
-    label: "Ciencias de la Salud",
-    desc:  "Medicina, Enfermería, Farmacia, Psicología, Fisioterapia…",
-    icon:  "🩺",
-  },
-  {
-    value: "CIENCIAS",
-    label: "Ciencias",
-    desc:  "Biología, Química, Física, Matemáticas, Medio Ambiente…",
-    icon:  "🔬",
-  },
-  {
-    value: "ARTES_HUMANIDADES",
-    label: "Artes y Humanidades",
-    desc:  "Historia, Filosofía, Lenguas, Arte, Diseño, Patrimonio…",
-    icon:  "🎨",
-  },
-];
 
 const COMUNIDADES = [
   "Andalucía", "Madrid", "Cataluña", "Valencia",
@@ -268,6 +236,13 @@ export default function FormularioDatosAcademicos({
   const [modalOpen, setModalOpen]   = useState(false);
   const [step, setStep]             = useState(0);
   const [showErrors, setShowErrors] = useState(false);
+  const [ramas, setRamas]           = useState([]);
+
+  useEffect(() => {
+    apiGET("/catalogo/ramas").then((r) => {
+      if (r.ok && Array.isArray(r.ramas)) setRamas(r.ramas);
+    }).catch(() => {});
+  }, []);
 
   // Universidad autocomplete
   const [uniQ, setUniQ]         = useState(formData.universidad_origen || "");
@@ -757,31 +732,30 @@ export default function FormularioDatosAcademicos({
       case 6: return (
         <div>
           <FLabel>¿A qué rama pertenece el máster que te interesa?</FLabel>
-          <p className="text-xs text-neutral-400 mb-4">
-            Son las 5 ramas oficiales del sistema universitario español. Puede ser diferente a tu carrera de origen.
+          <p className="text-xs text-neutral-400 mb-3">
+            Puede ser diferente a tu carrera de origen.
           </p>
-          <div className={`flex flex-col gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-            {RAMAS_CONOCIMIENTO.map((r) => (
-              <button key={r.value} type="button"
-                onClick={() => set("area_interes_master", formData.area_interes_master === r.value ? "" : r.value)}
-                className={`flex items-start gap-3 w-full text-left px-4 py-3 rounded-xl border transition-all active:scale-[0.99] ${
-                  formData.area_interes_master === r.value
-                    ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
-                    : "border-neutral-200 bg-white hover:border-[#023A4B] hover:text-[#023A4B]"
-                }`}>
-                <span className="text-xl shrink-0 mt-0.5">{r.icon}</span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold leading-snug">{r.label}</p>
-                  <p className={`text-xs mt-0.5 leading-snug ${formData.area_interes_master === r.value ? "text-white/70" : "text-neutral-400"}`}>
-                    {r.desc}
-                  </p>
-                </div>
-                {formData.area_interes_master === r.value && (
-                  <span className="ml-auto shrink-0 text-white/80 self-center">✓</span>
-                )}
-              </button>
-            ))}
-          </div>
+          {ramas.length === 0 ? (
+            <p className="text-xs text-neutral-400 py-4 text-center">Cargando opciones…</p>
+          ) : (
+            <div className={`grid grid-cols-2 gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+              {ramas.map((r) => {
+                const active = formData.area_interes_master === r.valor;
+                return (
+                  <button key={r.valor} type="button"
+                    onClick={() => set("area_interes_master", active ? "" : r.valor)}
+                    className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] text-left ${
+                      active
+                        ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                        : "border-neutral-200 bg-white hover:border-[#023A4B] hover:text-[#023A4B] text-neutral-700"
+                    }`}>
+                    <span className="leading-snug">{r.etiqueta}</span>
+                    {active && <span className="shrink-0 text-white/80 text-xs">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <EMsg show={has("area_interes_master")} msg="Selecciona la rama de tu interés" />
         </div>
       );
