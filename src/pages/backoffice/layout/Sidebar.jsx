@@ -21,6 +21,7 @@ const NAV_SECTIONS = [
   {
     label: "Operación",
     items: [
+      { label: "Catálogo Másteres",   href: "/backoffice/catalogo-masters" },
       { label: "Documentos",          href: "/backoffice/documentos" },
       { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
       { label: "Instructivos",        href: "/backoffice/instructivos" },
