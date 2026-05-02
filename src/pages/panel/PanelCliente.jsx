@@ -5,10 +5,11 @@ import PanelSidebar from "./components/PanelSidebar";
 import PerfilCliente from "./components/PerfilCliente";
 import MisServicios from "./components/MisServicios";
 
-const BecasEspana = lazy(() => import("./BecasEspana"));
-const GuiaMaster  = lazy(() => import("./GuiaMaster"));
+const BecasEspana   = lazy(() => import("./BecasEspana"));
+const GuiaMaster    = lazy(() => import("./GuiaMaster"));
+const GuiaApostilla = lazy(() => import("./GuiaApostilla"));
 
-const VALID_TABS = ["servicios", "perfil", "becas", "guia"];
+const VALID_TABS = ["servicios", "perfil", "becas", "guia", "apostilla"];
 
 function LoadingPage() {
   return (
@@ -30,6 +31,7 @@ export default function PanelCliente() {
 
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tieneSolicitudes, setTieneSolicitudes] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,6 +50,10 @@ export default function PanelCliente() {
       if (!r.ok) { window.location.href = "/"; return; }
       setUser(r.cliente || r.user || r);
     } catch { window.location.href = "/"; }
+    try {
+      const rs = await apiGET("/solicitudes/mias");
+      setTieneSolicitudes(rs.ok && (rs.solicitudes || []).length > 0);
+    } catch { setTieneSolicitudes(false); }
   }
 
   function handleChangeTab(newTab) {
@@ -59,7 +65,7 @@ export default function PanelCliente() {
   const esScrollInterno = esServicios;
 
   // Tab titles
-  const titles = { servicios: "Mis Servicios", perfil: "Mi Perfil", becas: "Becas España", guia: "Guía Máster" };
+  const titles = { servicios: "Mis Servicios", perfil: "Mi Perfil", becas: "Becas España", guia: "Guía Máster", apostilla: "Guía Apostilla Digital" };
 
   return (
     <div className="h-screen overflow-hidden flex bg-[#F4F6F9] relative">
@@ -73,6 +79,7 @@ export default function PanelCliente() {
         onChangeTab={handleChangeTab}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        tieneSolicitudes={tieneSolicitudes}
       />
 
       <main className={`flex-1 min-w-0 flex flex-col ${esScrollInterno ? "min-h-0" : "overflow-y-auto"}`}>
@@ -134,6 +141,13 @@ export default function PanelCliente() {
           {tab === "guia" && (
             <Suspense fallback={<LoadingPage />}>
               <GuiaMaster />
+            </Suspense>
+          )}
+
+          {/* Guía Apostilla Digital */}
+          {tab === "apostilla" && (
+            <Suspense fallback={<LoadingPage />}>
+              <GuiaApostilla />
             </Suspense>
           )}
         </div>

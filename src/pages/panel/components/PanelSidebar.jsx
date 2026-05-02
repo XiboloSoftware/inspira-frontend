@@ -3,7 +3,7 @@ import SidebarItem from "./SidebarItem";
 import { useAuth } from "../../../context/AuthContext";
 import { navigate } from "../../../services/navigate";
 
-export default function PanelSidebar({ user, activeTab, onChangeTab, isOpen, onClose }) {
+export default function PanelSidebar({ user, activeTab, onChangeTab, isOpen, onClose, tieneSolicitudes }) {
   const { logout } = useAuth();
 
   const inicial = user?.nombre?.[0] || user?.email_contacto?.[0] || "U";
@@ -72,22 +72,32 @@ export default function PanelSidebar({ user, activeTab, onChangeTab, isOpen, onC
           onClick={() => onChangeTab("servicios")}
         />
 
-        {/* Sección recursos */}
-        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/35 px-3 mt-4 mb-1.5 font-mono">
-          Recursos Inspira
-        </p>
-        <SidebarItem
-          icon="🎓"
-          label="Becas España"
-          active={activeTab === "becas"}
-          onClick={() => onChangeTab("becas")}
-        />
-        <SidebarItem
-          icon="📖"
-          label="Guía Máster"
-          active={activeTab === "guia"}
-          onClick={() => onChangeTab("guia")}
-        />
+        {/* Sección recursos — solo si tiene al menos una solicitud */}
+        {tieneSolicitudes && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/35 px-3 mt-4 mb-1.5 font-mono">
+              Recursos Inspira
+            </p>
+            <SidebarItem
+              icon="🎓"
+              label="Becas España"
+              active={activeTab === "becas"}
+              onClick={() => onChangeTab("becas")}
+            />
+            <SidebarItem
+              icon="📖"
+              label="Guía Máster"
+              active={activeTab === "guia"}
+              onClick={() => onChangeTab("guia")}
+            />
+            <SidebarItem
+              icon="📜"
+              label="Guía Apostilla"
+              active={activeTab === "apostilla"}
+              onClick={() => onChangeTab("apostilla")}
+            />
+          </>
+        )}
       </div>
 
       {/* Acciones inferiores */}
