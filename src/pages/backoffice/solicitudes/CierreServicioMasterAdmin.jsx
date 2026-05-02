@@ -227,6 +227,6 @@ export default function CierreServicioMasterAdmin({ idSolicitud }) {
           </div>
         </div>
       ))}
-    </div>{/* /space-y-4 */}
+    </div>
   );
 }
