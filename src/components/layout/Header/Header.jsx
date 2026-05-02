@@ -81,24 +81,36 @@ export default function Header() {
             {user && <UserMenu user={user} />}
           </div>
 
-          {/* Mobile: login siempre visible + hamburguesa */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* Mobile: calculadora + login/panel + hamburguesa */}
+          <div className="md:hidden flex items-center gap-1.5">
+            <a
+              href="/calculadora-master"
+              onClick={(e) => { e.preventDefault(); navigate("/calculadora-master"); }}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap"
+              style={{ background: "#F5C842", color: "#1A1410" }}
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-600 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-700" />
+              </span>
+              Calculadora
+            </a>
             {!user && (
               <button
                 type="button"
                 onClick={loginGoogle}
-                className="bg-[#1D6A4A] text-white text-xs font-semibold px-3 py-2 rounded-lg whitespace-nowrap"
+                className="bg-[#1D6A4A] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap"
               >
-                Iniciar con Google
+                Iniciar
               </button>
             )}
             {user && (
               <button
                 type="button"
                 onClick={() => navigate("/panel")}
-                className="w-8 h-8 rounded-lg bg-[#1D6A4A] text-white text-xs font-bold flex items-center justify-center uppercase"
+                className="bg-[#1D6A4A] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg whitespace-nowrap"
               >
-                {user.nombre?.[0] || "P"}
+                Mi Panel
               </button>
             )}
             <button

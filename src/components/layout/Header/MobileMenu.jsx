@@ -1,7 +1,6 @@
 // src/components/layout/Header/MobileMenu.jsx
 import { useAuth } from "../../../context/AuthContext";
 import MobileMenuHeader from "./MobileMenuHeader";
-import MobileMenuCTA from "./MobileMenuCTA";
 import MobileMenuNavLinks from "./MobileMenuNavLinks";
 import MobileMenuUserSection from "./MobileMenuUserSection";
 
@@ -38,8 +37,6 @@ export default function MobileMenu({ open, onClose }) {
 
       <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-xl p-5 flex flex-col gap-4">
         <MobileMenuHeader onClose={onClose} />
-
-        <MobileMenuCTA />
 
         <MobileMenuNavLinks onClose={onClose} />
 
