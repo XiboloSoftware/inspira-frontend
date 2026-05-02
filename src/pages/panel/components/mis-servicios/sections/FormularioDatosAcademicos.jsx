@@ -262,7 +262,8 @@ export default function FormularioDatosAcademicos({
   const [uniQ, setUniQ]         = useState(formData.universidad_origen || "");
   const [showSugg, setShowSugg] = useState(false);
   const [auip, setAuip]         = useState(() => detectarAuip(formData.universidad_origen || ""));
-  const uniWrap = useRef(null);
+  const uniWrap        = useRef(null);
+  const scrollAreaRef  = useRef(null);
 
   // Sync uniQ if formData changes externally
   useEffect(() => {
@@ -310,7 +311,16 @@ export default function FormularioDatosAcademicos({
 
   function handleNext() {
     const missing = validateStep(step, formData);
-    if (missing.length > 0) { setShowErrors(true); return; }
+    if (missing.length > 0) {
+      setShowErrors(true);
+      setTimeout(() => {
+        const el = scrollAreaRef.current?.querySelector(
+          ".border-red-200, .border-red-300, .border-red-400"
+        );
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 30);
+      return;
+    }
     setShowErrors(false);
     setStep((p) => Math.min(STEPS.length - 1, p + 1));
   }
@@ -987,7 +997,7 @@ export default function FormularioDatosAcademicos({
 
             {/* Contenido del paso (scrolleable) */}
             <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-5 py-4">
                 {/* Card del paso */}
                 <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm mb-4">
                   <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center gap-2.5">
