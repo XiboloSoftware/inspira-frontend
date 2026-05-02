@@ -16,27 +16,38 @@ const AREAS_CARRERA = [
   { value: "Otra",                      label: "Otra" },
 ];
 
-const MASTERS_INTERES = [
-  { value: "Administración de Empresas / MBA",   label: "Administración / MBA" },
-  { value: "Marketing Digital y Comunicación",   label: "Marketing Digital" },
-  { value: "Gestión de Proyectos",               label: "Gestión de Proyectos" },
-  { value: "Recursos Humanos y Organización",    label: "Recursos Humanos" },
-  { value: "Finanzas y Banca",                   label: "Finanzas y Banca" },
-  { value: "Comercio Internacional",             label: "Comercio Internacional" },
-  { value: "Derecho Internacional y RRII",       label: "Derecho Internacional" },
-  { value: "Derecho de Empresa",                 label: "Derecho de Empresa" },
-  { value: "Inteligencia Artificial y Data",     label: "IA / Data Science" },
-  { value: "Ciberseguridad",                     label: "Ciberseguridad" },
-  { value: "Ingeniería y Tecnología",            label: "Ingeniería" },
-  { value: "Arquitectura y Urbanismo",           label: "Arquitectura / Urbanismo" },
-  { value: "Salud Pública y Epidemiología",      label: "Salud Pública" },
-  { value: "Psicología y Salud Mental",          label: "Psicología" },
-  { value: "Educación y Docencia",               label: "Educación" },
-  { value: "Medio Ambiente y Sostenibilidad",    label: "Medio Ambiente" },
-  { value: "Ciencias Sociales y Cooperación",    label: "Ciencias Sociales" },
-  { value: "Arte, Diseño y Comunicación Visual", label: "Arte y Diseño" },
-  { value: "Humanidades e Historia",             label: "Humanidades" },
-  { value: "No sé todavía / Estoy explorando",   label: "🤔 Aún explorando" },
+// Coincide exactamente con el enum RamaConocimiento de la BD de másteres
+const RAMAS_CONOCIMIENTO = [
+  {
+    value: "CIENCIAS_SOCIALES_JURIDICAS",
+    label: "Ciencias Sociales y Jurídicas",
+    desc:  "Derecho, Economía, Administración, Educación, Comunicación…",
+    icon:  "⚖️",
+  },
+  {
+    value: "INGENIERIA_ARQUITECTURA",
+    label: "Ingeniería y Arquitectura",
+    desc:  "Informática, Telecomunicaciones, Civil, Industrial, Arquitectura…",
+    icon:  "⚙️",
+  },
+  {
+    value: "CIENCIAS_SALUD",
+    label: "Ciencias de la Salud",
+    desc:  "Medicina, Enfermería, Farmacia, Psicología, Fisioterapia…",
+    icon:  "🩺",
+  },
+  {
+    value: "CIENCIAS",
+    label: "Ciencias",
+    desc:  "Biología, Química, Física, Matemáticas, Medio Ambiente…",
+    icon:  "🔬",
+  },
+  {
+    value: "ARTES_HUMANIDADES",
+    label: "Artes y Humanidades",
+    desc:  "Historia, Filosofía, Lenguas, Arte, Diseño, Patrimonio…",
+    icon:  "🎨",
+  },
 ];
 
 const COMUNIDADES = [
@@ -742,25 +753,36 @@ export default function FormularioDatosAcademicos({
         </div>
       );
 
-      // ── PASO 7: Tipo de máster ──────────────────────────────────────────
+      // ── PASO 7: Rama de conocimiento ────────────────────────────────────
       case 6: return (
         <div>
-          <FLabel>¿Qué tipo de máster te interesa estudiar?</FLabel>
-          <p className="text-xs text-neutral-400 mb-3">Puede ser diferente a tu carrera. Ej: Ingeniería → Gestión de Proyectos.</p>
-          <div className={`flex flex-wrap gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-            {MASTERS_INTERES.map((m) => (
-              <button key={m.value} type="button"
-                onClick={() => set("area_interes_master", formData.area_interes_master === m.value ? "" : m.value)}
-                className={`px-3.5 py-2 rounded-full border text-sm font-medium transition-all active:scale-95 ${
-                  formData.area_interes_master === m.value
+          <FLabel>¿A qué rama pertenece el máster que te interesa?</FLabel>
+          <p className="text-xs text-neutral-400 mb-4">
+            Son las 5 ramas oficiales del sistema universitario español. Puede ser diferente a tu carrera de origen.
+          </p>
+          <div className={`flex flex-col gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+            {RAMAS_CONOCIMIENTO.map((r) => (
+              <button key={r.value} type="button"
+                onClick={() => set("area_interes_master", formData.area_interes_master === r.value ? "" : r.value)}
+                className={`flex items-start gap-3 w-full text-left px-4 py-3 rounded-xl border transition-all active:scale-[0.99] ${
+                  formData.area_interes_master === r.value
                     ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
-                    : "border-neutral-200 text-neutral-700 hover:border-[#023A4B] hover:text-[#023A4B] bg-white"
+                    : "border-neutral-200 bg-white hover:border-[#023A4B] hover:text-[#023A4B]"
                 }`}>
-                {m.label}
+                <span className="text-xl shrink-0 mt-0.5">{r.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-snug">{r.label}</p>
+                  <p className={`text-xs mt-0.5 leading-snug ${formData.area_interes_master === r.value ? "text-white/70" : "text-neutral-400"}`}>
+                    {r.desc}
+                  </p>
+                </div>
+                {formData.area_interes_master === r.value && (
+                  <span className="ml-auto shrink-0 text-white/80 self-center">✓</span>
+                )}
               </button>
             ))}
           </div>
-          <EMsg show={has("area_interes_master")} msg="Selecciona el tipo de máster de tu interés" />
+          <EMsg show={has("area_interes_master")} msg="Selecciona la rama de tu interés" />
         </div>
       );
 
