@@ -242,12 +242,14 @@ function ErrBox({ show, children }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function FormularioDatosAcademicos({
-  formData, setFormData, handleSubmitFormulario, savingForm, hasData,
+  formData, setFormData, handleSubmitFormulario, onGuardarProgreso, savingForm, hasData,
 }) {
-  const [modalOpen, setModalOpen]   = useState(false);
-  const [step, setStep]             = useState(0);
-  const [showErrors, setShowErrors] = useState(false);
-  const [ramas, setRamas]           = useState([]);
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [step, setStep]               = useState(0);
+  const [showErrors, setShowErrors]   = useState(false);
+  const [ramas, setRamas]             = useState([]);
+  const [xWarning, setXWarning]       = useState(false);
+  const [savingX, setSavingX]         = useState(false);
 
   useEffect(() => {
     apiGET("/api/catalogo/ramas").then((r) => {
@@ -304,6 +306,18 @@ export default function FormularioDatosAcademicos({
 
   function confirmarAuip(val) {
     setAuip(val); set("es_auip", val === "si" ? "si" : "no");
+  }
+
+  async function handleCerrarConX() {
+    setSavingX(true);
+    if (onGuardarProgreso) await onGuardarProgreso();
+    setSavingX(false);
+    const pendientes = STEPS.reduce((acc, _, i) => acc + validateStep(i, formData).length, 0);
+    if (pendientes > 0) {
+      setXWarning(true);
+      return; // no cerrar aún — el usuario verá la advertencia con botón confirmar
+    }
+    setModalOpen(false);
   }
 
   function handleNext() {
@@ -950,12 +964,10 @@ export default function FormularioDatosAcademicos({
       {modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
-          onClick={() => setModalOpen(false)}
         >
           <div
             className="bg-white rounded-2xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden"
             style={{ maxHeight: "92vh" }}
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del modal */}
             <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-neutral-200">
@@ -965,13 +977,31 @@ export default function FormularioDatosAcademicos({
                   Paso {step + 1} / {STEPS.length} — {STEPS[step].title}
                 </p>
               </div>
-              <button type="button" onClick={() => setModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button type="button" onClick={handleCerrarConX} disabled={savingX}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors disabled:opacity-40">
+                {savingX
+                  ? <span className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin" />
+                  : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                }
               </button>
             </div>
+
+            {/* Advertencia al cerrar con X */}
+            {xWarning && (
+              <div className="shrink-0 mx-5 mt-3 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-800">Tu progreso se ha guardado, pero el formulario está incompleto.</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Vuelve cuando puedas para terminar de rellenarlo.</p>
+                </div>
+                <button type="button" onClick={() => { setXWarning(false); setModalOpen(false); }}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-semibold transition">
+                  Cerrar
+                </button>
+              </div>
+            )}
 
             {/* Barra de progreso */}
             <div className="shrink-0 px-5 pt-4 pb-2">

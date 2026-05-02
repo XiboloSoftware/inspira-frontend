@@ -103,6 +103,12 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     }
   }
 
+  async function guardarFormularioSilencioso() {
+    try {
+      await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
+    } catch { /* silencioso */ }
+  }
+
   async function handleGuardarElecciones() {
     setSavingElecciones(true);
     try {
@@ -184,6 +190,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               formData={formData}
               setFormData={setFormData}
               handleSubmitFormulario={handleSubmitFormulario}
+              onGuardarProgreso={guardarFormularioSilencioso}
               savingForm={savingForm}
               hasData={hasFormData}
             />
