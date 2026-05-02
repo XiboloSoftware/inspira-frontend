@@ -94,7 +94,10 @@ export default function SolicitudesList({ onVerSolicitud }) {
       </div>
 
       {tab === "activas" && isAdmin && mostrarCrear && (
-        <CreateSolicitudAdmin onCreated={() => { cargarSolicitudes({ page: 1 }); setMostrarCrear(false); }} />
+        <CreateSolicitudAdmin
+          onCreated={() => { cargarSolicitudes({ page: 1 }); setMostrarCrear(false); }}
+          onCerrar={() => setMostrarCrear(false)}
+        />
       )}
 
       {/* ══ TAB ACTIVAS ══ */}

@@ -10,31 +10,40 @@ export default function ClienteAutocomplete({ clientes, value, inputValue, onInp
 
   return (
     <div className="relative">
-      <label className="block mb-1 font-medium text-xs">Cliente</label>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">
+        Cliente
+      </label>
       <input
         type="text"
         value={inputValue}
         onChange={onInput}
         onFocus={() => setShowSuggestions(true)}
-        className="w-full border border-neutral-300 rounded-md px-2 py-1 text-xs bg-white"
+        className={`w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 transition
+          ${value
+            ? "border-[#1D6A4A] focus:ring-[#1D6A4A]/20 bg-[#E8F5EE]/30"
+            : "border-neutral-200 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A]"
+          }`}
         placeholder="Escribe nombre o correo del cliente…"
+        autoComplete="off"
       />
+      {value && (
+        <p className="mt-1 text-[10px] text-[#1D6A4A] font-medium">✓ Cliente seleccionado</p>
+      )}
       {showSuggestions && sugerencias.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
+        <div className="absolute z-30 mt-1 w-full bg-white border border-neutral-200 rounded-xl shadow-xl max-h-56 overflow-y-auto">
           {sugerencias.map((c) => (
             <button
               type="button"
               key={c.id_cliente}
               onClick={() => onSelect(c)}
-              className="w-full text-left px-2 py-1.5 text-[11px] hover:bg-neutral-100"
+              className="w-full text-left px-3 py-2.5 hover:bg-[#E8F5EE] transition border-b border-neutral-50 last:border-0"
             >
-              <div className="font-medium">{c.nombre || "Sin nombre"}</div>
-              <div className="text-[10px] text-neutral-500">{c.email_contacto || "Sin correo"}</div>
+              <div className="text-sm font-medium text-neutral-800">{c.nombre || "Sin nombre"}</div>
+              <div className="text-xs text-neutral-400">{c.email_contacto || "Sin correo"}</div>
             </button>
           ))}
         </div>
       )}
-      {value && <p className="mt-1 text-[10px] text-emerald-700">Cliente seleccionado (ID {value})</p>}
     </div>
   );
 }
