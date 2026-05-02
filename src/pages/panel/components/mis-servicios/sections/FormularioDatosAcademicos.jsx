@@ -239,7 +239,7 @@ export default function FormularioDatosAcademicos({
   const [ramas, setRamas]           = useState([]);
 
   useEffect(() => {
-    apiGET("/catalogo/ramas").then((r) => {
+    apiGET("/api/catalogo/ramas").then((r) => {
       if (r.ok && Array.isArray(r.ramas)) setRamas(r.ramas);
     }).catch(() => {});
   }, []);

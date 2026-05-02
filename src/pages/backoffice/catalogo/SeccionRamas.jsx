@@ -102,11 +102,12 @@ function Modal({ item, onClose, onSaved }) {
 }
 
 export default function SeccionRamas({ ramas, onReload }) {
-  const [modal,    setModal]    = useState(null);
-  const [toggling, setToggling] = useState(null);
-  const [search,   setSearch]   = useState("");
-  const [sortCol,  setSortCol]  = useState("etiqueta");
-  const [sortDir,  setSortDir]  = useState("asc");
+  const [modal,       setModal]    = useState(null);
+  const [toggling,    setToggling] = useState(null);
+  const [search,      setSearch]   = useState("");
+  const [sortCol,     setSortCol]  = useState("etiqueta");
+  const [sortDir,     setSortDir]  = useState("asc");
+  const [filtroEstado, setFiltroEstado] = useState("todos"); // "todos" | "activo" | "inactivo"
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -116,13 +117,17 @@ export default function SeccionRamas({ ramas, onReload }) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return [...ramas]
-      .filter((r) => !q || r.etiqueta.toLowerCase().includes(q) || r.valor.toLowerCase().includes(q))
+      .filter((r) => {
+        if (filtroEstado === "activo"   && !r.activo)  return false;
+        if (filtroEstado === "inactivo" &&  r.activo)  return false;
+        return !q || r.etiqueta.toLowerCase().includes(q) || r.valor.toLowerCase().includes(q);
+      })
       .sort((a, b) => {
         const valA = String(a[sortCol] ?? ""); const valB = String(b[sortCol] ?? "");
         const cmp = valA.localeCompare(valB, "es");
         return sortDir === "asc" ? cmp : -cmp;
       });
-  }, [ramas, search, sortCol, sortDir]);
+  }, [ramas, search, sortCol, sortDir, filtroEstado]);
 
   const thProps = { sortCol, sortDir, onSort: toggleSort };
 
@@ -147,13 +152,31 @@ export default function SeccionRamas({ ramas, onReload }) {
         </button>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-3 flex items-center gap-3 flex-wrap">
         <input
-          className="border rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="border rounded-lg px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-primary/30"
           placeholder="Buscar rama…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+          {[
+            { value: "todos",    label: "Todos" },
+            { value: "activo",   label: "Activo" },
+            { value: "inactivo", label: "Inactivo" },
+          ].map((opt) => (
+            <button key={opt.value} type="button"
+              onClick={() => setFiltroEstado(opt.value)}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                filtroEstado === opt.value
+                  ? "bg-white shadow text-neutral-800"
+                  : "text-neutral-500 hover:text-neutral-700"
+              }`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-neutral-400">{filtered.length} rama{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-neutral-200">
