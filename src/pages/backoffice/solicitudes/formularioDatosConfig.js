@@ -15,9 +15,10 @@ export const FIELD_CONFIG = {
   universidad_origen:          { label: "Universidad de origen",        section: "Perfil académico" },
   es_auip:                     { label: "Afiliada a AUIP",              section: "Perfil académico",
                                  format: (v) => ({ si: "Sí", no: "No" }[v] || v) },
-  promedio_peru:               { label: "Promedio",                     section: "Perfil académico" },
-  promedio_escala:             { label: "Escala",                       section: "Perfil académico",
-                                 format: (v) => ({ "20": "/20", "10": "/10", "5": "/5", "4": "GPA 0–4", "100": "%" }[v] || v) },
+  promedio_peru:               { label: "Promedio",                     section: "Perfil académico",
+                                 format: (v, extra) => extra?.escala
+                                   ? `${v} ${({ "20": "/ 20 (Perú)", "10": "/ 10", "5": "/ 5 (Colombia)", "4": "GPA 0–4", "100": "%" }[extra.escala] || `/ ${extra.escala}`)}`
+                                   : v },
   ubicacion_grupo:             { label: "Posición académica",           section: "Perfil académico",
                                  format: (v) => UBICACION[v] || v },
   otra_maestria_tiene:         { label: "Tiene otra maestría",          section: "Perfil académico" },

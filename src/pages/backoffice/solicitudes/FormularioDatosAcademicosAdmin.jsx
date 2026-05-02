@@ -2,110 +2,120 @@
 import { FIELD_CONFIG, SECTIONS_ORDER } from "./formularioDatosConfig";
 
 const SECTION_CFG = {
-  "Perfil académico":         { icon: "🎓", color: "blue"    },
-  "Experiencia profesional":  { icon: "💼", color: "violet"  },
-  "Investigación y formación":{ icon: "🔬", color: "cyan"    },
-  "Idiomas":                  { icon: "🗣️",  color: "emerald" },
-  "Becas":                    { icon: "💸", color: "amber"   },
-  "Preferencias del máster":  { icon: "🎯", color: "orange"  },
-  "Comentario especial":      { icon: "💬", color: "pink"    },
-  "Otros datos":              { icon: "📋", color: "neutral" },
+  "Perfil académico":          { icon: "🎓", color: "blue"    },
+  "Experiencia profesional":   { icon: "💼", color: "violet"  },
+  "Investigación y formación": { icon: "🔬", color: "cyan"    },
+  "Idiomas":                   { icon: "🗣️",  color: "emerald" },
+  "Becas":                     { icon: "💸", color: "amber"   },
+  "Preferencias del máster":   { icon: "🎯", color: "orange"  },
+  "Comentario especial":       { icon: "💬", color: "pink"    },
+  "Otros datos":               { icon: "📋", color: "neutral" },
 };
 
-const COLOR_MAP = {
-  blue:    { header: "bg-blue-50 border-blue-100",    bar: "bg-blue-400",    text: "text-blue-700"    },
-  violet:  { header: "bg-violet-50 border-violet-100",bar: "bg-violet-400",  text: "text-violet-700"  },
-  cyan:    { header: "bg-cyan-50 border-cyan-100",    bar: "bg-cyan-400",    text: "text-cyan-700"    },
-  emerald: { header: "bg-emerald-50 border-emerald-100",bar:"bg-emerald-400",text: "text-emerald-700" },
-  amber:   { header: "bg-amber-50 border-amber-100",  bar: "bg-amber-400",   text: "text-amber-700"   },
-  orange:  { header: "bg-orange-50 border-orange-100",bar: "bg-orange-400",  text: "text-orange-700"  },
-  pink:    { header: "bg-pink-50 border-pink-100",    bar: "bg-pink-400",    text: "text-pink-700"    },
-  neutral: { header: "bg-neutral-50 border-neutral-100",bar:"bg-neutral-400",text: "text-neutral-600" },
+const CLR = {
+  blue:    { h: "bg-blue-50 border-blue-100",      bar: "bg-blue-400",    t: "text-blue-700"    },
+  violet:  { h: "bg-violet-50 border-violet-100",  bar: "bg-violet-400",  t: "text-violet-700"  },
+  cyan:    { h: "bg-cyan-50 border-cyan-100",       bar: "bg-cyan-400",    t: "text-cyan-700"    },
+  emerald: { h: "bg-emerald-50 border-emerald-100", bar: "bg-emerald-400", t: "text-emerald-700" },
+  amber:   { h: "bg-amber-50 border-amber-100",     bar: "bg-amber-400",   t: "text-amber-700"   },
+  orange:  { h: "bg-orange-50 border-orange-100",   bar: "bg-orange-400",  t: "text-orange-700"  },
+  pink:    { h: "bg-pink-50 border-pink-100",       bar: "bg-pink-400",    t: "text-pink-700"    },
+  neutral: { h: "bg-neutral-50 border-neutral-100", bar: "bg-neutral-300", t: "text-neutral-500" },
 };
 
 function toBool(v) {
   if (typeof v === "boolean") return v;
   if (typeof v !== "string") return null;
   const s = v.trim().toLowerCase();
-  if (["si","sí","yes","true","1"].includes(s)) return true;
-  if (["no","false","0"].includes(s)) return false;
+  if (["si","sí","yes","true"].includes(s)) return true;   // "1" excluido — puede ser un valor numérico
+  if (["no","false"].includes(s)) return false;             // "0" excluido por la misma razón
   return null;
 }
 
 function Badge({ ok }) {
   return ok ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />Sí
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-500 border border-neutral-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 shrink-0" />No
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-400 border border-neutral-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 shrink-0" />No
     </span>
   );
 }
 
-function Val({ value, field }) {
-  if (value === null || value === undefined || value === "") {
-    return <span className="text-[11px] text-neutral-300 italic">—</span>;
+function Val({ value, field, extra }) {
+  // Vacío
+  if (value === null || value === undefined || value === "")
+    return <span className="text-[10px] text-neutral-300 italic">—</span>;
+
+  // Boolean nativo siempre es badge
+  if (typeof value === "boolean") return <Badge ok={value} />;
+
+  // Si tiene format → aplicar PRIMERO (evita que "1", "2" etc. se lean como boolean)
+  if (field?.format) {
+    const formatted = field.format(value, extra);
+    if (typeof formatted === "object")
+      return <span className="text-[11px] text-neutral-600">{JSON.stringify(formatted)}</span>;
+    const str = String(formatted);
+    // Número con unidad (ej: "8.750 €/año", "16 / 20")
+    if (/^[\d.,]+/.test(str.trim()))
+      return <span className="text-xs font-bold text-neutral-900 tabular-nums">{str}</span>;
+    return <span className="text-[11px] font-semibold text-neutral-800 text-right leading-snug">{str}</span>;
   }
+
+  // Sin format → revisar si es bool-like
   const bool = toBool(value);
   if (bool !== null) return <Badge ok={bool} />;
 
-  const formatted = field?.format ? field.format(value) : value;
-  if (typeof formatted === "object") return <span className="text-[11px] text-neutral-600">{JSON.stringify(formatted)}</span>;
+  const str = String(value);
+  if (/^\d+([.,]\d+)?$/.test(str.trim()))
+    return <span className="text-xs font-bold text-neutral-900 tabular-nums">{str}</span>;
 
-  const str = String(formatted);
-
-  // Número puro → destacado
-  if (/^[\d.,]+(\s*[€%].*)?$/.test(str.trim())) {
-    return <span className="text-sm font-bold text-neutral-900 tabular-nums">{str}</span>;
-  }
-
-  // Texto largo → normal
   return <span className="text-[11px] font-semibold text-neutral-800 text-right leading-snug">{str}</span>;
 }
 
-function SectionCard({ nombre, fields }) {
-  const cfg   = SECTION_CFG[nombre] || SECTION_CFG["Otros datos"];
-  const clr   = COLOR_MAP[cfg.color] || COLOR_MAP.neutral;
+function SectionCard({ nombre, fields, extra }) {
+  const cfg = SECTION_CFG[nombre] || SECTION_CFG["Otros datos"];
+  const clr = CLR[cfg.color] || CLR.neutral;
 
-  const inlineFields   = fields.filter((f) => !f.fullWidth);
-  const fullWidthFields = fields.filter((f) => f.fullWidth);
+  const inline    = fields.filter((f) => !f.fullWidth);
+  const fullWidth = fields.filter((f) =>  f.fullWidth);
 
   return (
-    <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white">
+    <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-sm bg-white break-inside-avoid mb-3">
       {/* Header */}
-      <div className={`flex items-center gap-2 px-3 py-2 border-b ${clr.header}`}>
-        <span className={`w-1 h-3.5 rounded-full ${clr.bar} shrink-0`} />
-        <span className="text-base leading-none shrink-0">{cfg.icon}</span>
-        <span className={`text-[10px] font-extrabold uppercase tracking-widest ${clr.text}`}>{nombre}</span>
-        <span className="ml-auto text-[10px] text-neutral-400">{fields.length} campo{fields.length !== 1 ? "s" : ""}</span>
+      <div className={`flex items-center gap-2 px-3 py-1.5 border-b ${clr.h}`}>
+        <span className={`w-0.5 h-3.5 rounded-full ${clr.bar} shrink-0`} />
+        <span className="text-sm leading-none shrink-0">{cfg.icon}</span>
+        <span className={`text-[9px] font-extrabold uppercase tracking-widest ${clr.t}`}>{nombre}</span>
+        <span className="ml-auto text-[9px] text-neutral-400 tabular-nums">{fields.length}</span>
       </div>
 
-      {/* Filas inline: label izq, valor der */}
-      {inlineFields.length > 0 && (
+      {/* Inline rows */}
+      {inline.length > 0 && (
         <div className="divide-y divide-neutral-50">
-          {inlineFields.map((f) => (
-            <div key={f.key} className="flex items-center justify-between gap-3 px-3 py-2">
-              <span className="text-[11px] text-neutral-400 leading-snug min-w-0">{f.label}</span>
-              <div className="shrink-0 text-right max-w-[55%]">
-                <Val value={f.value} field={f} />
+          {inline.map((f) => (
+            <div key={f.key} className="flex items-center justify-between gap-2 px-3 py-1.5 min-h-0">
+              <span className="text-[10px] text-neutral-400 leading-tight flex-1 min-w-0">{f.label}</span>
+              <div className="shrink-0 max-w-[56%] text-right">
+                <Val value={f.value} field={f} extra={extra} />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Filas fullWidth: label arriba, texto abajo */}
-      {fullWidthFields.map((f) => (
-        <div key={f.key} className={`px-3 py-2 space-y-0.5 ${inlineFields.length > 0 ? "border-t border-neutral-50" : ""}`}>
-          <p className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">{f.label}</p>
+      {/* Full-width rows */}
+      {fullWidth.map((f) => (
+        <div key={f.key} className={`px-3 py-1.5 ${inline.length > 0 ? "border-t border-neutral-50" : ""}`}>
+          <p className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider mb-0.5">{f.label}</p>
           {f.value ? (
             <p className="text-[11px] font-medium text-neutral-800 leading-relaxed">
-              {String(f.format ? f.format(f.value) : f.value)}
+              {String(f.format ? f.format(f.value, extra) : f.value)}
             </p>
           ) : (
-            <span className="text-[11px] text-neutral-300 italic">—</span>
+            <span className="text-[10px] text-neutral-300 italic">—</span>
           )}
         </div>
       ))}
@@ -128,15 +138,18 @@ export default function FormularioDatosAcademicosAdmin({ datos }) {
     );
   }
 
-  const knownKeys = new Set(Object.keys(FIELD_CONFIG));
-  const grouped   = {};
+  // Extra data passed to format functions (para combinar campos relacionados)
+  const extra = { escala: datos.promedio_escala };
 
+  const knownKeys = new Set(Object.keys(FIELD_CONFIG));
+  knownKeys.add("promedio_escala"); // manejado via extra, no mostrar por separado
+
+  const grouped = {};
+
+  // Mostrar TODOS los campos del config, con "—" si no están en datos
   Object.entries(FIELD_CONFIG).forEach(([key, cfg]) => {
-    if (!(key in datos)) return;
-    const val = datos[key];
-    // Omitir booleans falsy que no aportan información si hay campos más relevantes
     if (!grouped[cfg.section]) grouped[cfg.section] = [];
-    grouped[cfg.section].push({ key, ...cfg, value: val });
+    grouped[cfg.section].push({ key, ...cfg, value: datos[key] ?? null });
   });
 
   // Campos desconocidos → Otros datos
@@ -151,9 +164,10 @@ export default function FormularioDatosAcademicosAdmin({ datos }) {
   const sections = SECTIONS_ORDER.filter((s) => grouped[s]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+    // CSS columns = masonry natural, sin huecos
+    <div className="columns-1 sm:columns-2 xl:columns-3 gap-3">
       {sections.map((nombre) => (
-        <SectionCard key={nombre} nombre={nombre} fields={grouped[nombre]} />
+        <SectionCard key={nombre} nombre={nombre} fields={grouped[nombre]} extra={extra} />
       ))}
     </div>
   );
