@@ -114,12 +114,23 @@ function validateStep(s, formData) {
       if (!formData.carrera_titulo?.trim()) missing.push("carrera_titulo");
       if (!formData.area_carrera)           missing.push("area_carrera");
       break;
-    case 1:
+    case 1: {
       if (!formData.universidad_origen?.trim()) missing.push("universidad_origen");
-      if (!String(formData.promedio_peru || "").trim()) missing.push("promedio_peru");
-      if (!formData.ubicacion_grupo)            missing.push("ubicacion_grupo");
-      if (!formData.otra_maestria_tiene)        missing.push("otra_maestria_tiene");
+      const promStr = String(formData.promedio_peru || "").trim();
+      if (!promStr) {
+        missing.push("promedio_peru");
+      } else {
+        const nota   = parseFloat(promStr);
+        const escala = formData.promedio_escala || "20";
+        const maxMap = { "20": 20, "10": 10, "5": 5, "4": 4, "100": 100 };
+        const max    = maxMap[escala] || 20;
+        if (isNaN(nota) || nota < 0 || nota > max)
+          missing.push("promedio_rango");
+      }
+      if (!formData.ubicacion_grupo)    missing.push("ubicacion_grupo");
+      if (!formData.otra_maestria_tiene) missing.push("otra_maestria_tiene");
       break;
+    }
     case 2:
       if (!formData.experiencia_anios) missing.push("experiencia_anios");
       if (formData.experiencia_anios && formData.experiencia_anios !== "sin") {
@@ -435,7 +446,7 @@ export default function FormularioDatosAcademicos({
               <FInput type="number" step="0.01" min="0"
                 value={formData.promedio_peru || ""}
                 onChange={(e) => set("promedio_peru", e.target.value.trim())}
-                placeholder="Ej: 15.75" err={has("promedio_peru")} />
+                placeholder="Ej: 15.75" err={has("promedio_peru") || has("promedio_rango")} />
               <select value={formData.promedio_escala || "20"}
                 onChange={(e) => set("promedio_escala", e.target.value)}
                 className="w-44 sm:w-52 shrink-0 rounded-xl border border-neutral-200 px-3 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition">
@@ -447,6 +458,11 @@ export default function FormularioDatosAcademicos({
               </select>
             </div>
             <EMsg show={has("promedio_peru")} msg="Ingresa tu promedio universitario" />
+            {has("promedio_rango") && (() => {
+              const maxMap = { "20": 20, "10": 10, "5": 5, "4": 4, "100": 100 };
+              const max = maxMap[formData.promedio_escala || "20"] || 20;
+              return <EMsg show msg={`El promedio debe estar entre 0 y ${max} para la escala seleccionada`} />;
+            })()}
           </div>
 
           <div>
