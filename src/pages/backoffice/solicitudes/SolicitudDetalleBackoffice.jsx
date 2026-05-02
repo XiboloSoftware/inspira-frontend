@@ -98,7 +98,12 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       (c) => datos[c] !== undefined && datos[c] !== null && datos[c] !== ""
     );
     const hayEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
-    const clienteOk = !!(detalle.cliente?.nombre);
+    const cli = detalle.cliente || {};
+    const extraCli = cli.datos_extra || {};
+    const clienteOk = !!(
+      cli.nombre &&
+      (cli.pasaporte || extraCli.fecha_nacimiento || cli.pais_origen)
+    );
 
     const lista = visado
       ? [
@@ -249,7 +254,14 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
           {/* B1 — Encabezado del cliente */}
           <div id="bloque-cliente" className="mb-8 scroll-mt-4">
-            <BlqHead numero="1" titulo="Encabezado del cliente" estado={detalle.cliente?.nombre ? "completado" : "pendiente"} />
+            <BlqHead numero="1" titulo="Encabezado del cliente" estado={
+              (() => {
+                const c = detalle.cliente || {};
+                const ex = c.datos_extra || {};
+                return c.nombre && (c.pasaporte || ex.fecha_nacimiento || c.pais_origen)
+                  ? "completado" : "pendiente";
+              })()
+            } />
             <CBox>
               <EncabezadoClienteAdmin detalle={detalle} />
             </CBox>
