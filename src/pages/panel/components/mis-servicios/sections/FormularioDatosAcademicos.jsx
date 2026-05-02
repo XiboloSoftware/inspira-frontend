@@ -999,14 +999,14 @@ export default function FormularioDatosAcademicos({
                   </div>
                 </div>
 
-                {/* Banner de error */}
+                </div>
+
+              {/* Navegación — siempre visible al pie del modal */}
+              <div className="shrink-0 border-t border-neutral-100 bg-white px-5 pb-4 pt-3 flex flex-col gap-3">
                 {showErrors && validateStep(step, formData).length > 0 && (
                   <ErrBox show>Completa todos los campos requeridos antes de continuar.</ErrBox>
                 )}
-              </div>
-
-              {/* Navegación — siempre visible al pie del modal */}
-              <div className="shrink-0 border-t border-neutral-100 bg-white px-5 py-4 flex items-center justify-between">
+                <div className="flex items-center justify-between">
                 <button type="button"
                   onClick={() => setStep(p => Math.max(0, p - 1))}
                   disabled={step === 0}
@@ -1029,6 +1029,7 @@ export default function FormularioDatosAcademicos({
                     }
                   </button>
                 )}
+                </div>
               </div>
             </form>
           </div>
