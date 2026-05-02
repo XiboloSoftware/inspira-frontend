@@ -13,6 +13,21 @@ import EncabezadoClienteAdmin from "./EncabezadoClienteAdmin";
 const RING_R = 13;
 const RING_C = 2 * Math.PI * RING_R;
 
+function calcClienteEstado(detalle) {
+  const c  = detalle?.cliente || {};
+  const ex = c.datos_extra || {};
+  if (!c.nombre || !c.pasaporte || !c.pais_origen) return "pendiente";
+  const venc = ex.pasaporte_vencimiento;
+  if (venc) {
+    const d = new Date(venc);
+    if (!isNaN(d)) {
+      const meses = (d - new Date()) / (1000 * 60 * 60 * 24 * 30);
+      if (meses < 18) return "observado";
+    }
+  }
+  return "completado";
+}
+
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
   "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
@@ -98,22 +113,17 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       (c) => datos[c] !== undefined && datos[c] !== null && datos[c] !== ""
     );
     const hayEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
-    const cli = detalle.cliente || {};
-    const extraCli = cli.datos_extra || {};
-    const clienteOk = !!(
-      cli.nombre &&
-      (cli.pasaporte || extraCli.fecha_nacimiento || cli.pais_origen)
-    );
+    const clienteEstado = calcClienteEstado(detalle);
 
     const lista = visado
       ? [
-          { id: "cliente",     numero: "1", label: "Encabezado cliente",  estado: clienteOk ? "completado" : "pendiente" },
+          { id: "cliente",     numero: "1", label: "Encabezado cliente",  estado: clienteEstado },
           { id: "checklist",   numero: "2", label: "Documentos",          estado: checklistStats.estado },
           { id: "instructivo", numero: "3", label: "Instructivo",         estado: "inactivo" },
           { id: "portales",    numero: "4", label: "Portales · Claves",   estado: "pendiente" },
         ]
       : [
-          { id: "cliente",      numero: "1", label: "Encabezado cliente",      estado: clienteOk ? "completado" : "pendiente" },
+          { id: "cliente",      numero: "1", label: "Encabezado cliente",      estado: clienteEstado },
           { id: "checklist",    numero: "2", label: "Documentos",              estado: checklistStats.estado },
           { id: "formulario",   numero: "3", label: "Formulario académico",    estado: tieneForm ? "completado" : "pendiente" },
           { id: "informe",      numero: "4", label: "Informe IA másteres",     estado: detalle.informe_fecha_subida ? "completado" : "pendiente" },
@@ -254,14 +264,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
           {/* B1 — Encabezado del cliente */}
           <div id="bloque-cliente" className="mb-8 scroll-mt-4">
-            <BlqHead numero="1" titulo="Encabezado del cliente" estado={
-              (() => {
-                const c = detalle.cliente || {};
-                const ex = c.datos_extra || {};
-                return c.nombre && (c.pasaporte || ex.fecha_nacimiento || c.pais_origen)
-                  ? "completado" : "pendiente";
-              })()
-            } />
+            <BlqHead numero="1" titulo="Encabezado del cliente" estado={calcClienteEstado(detalle)} />
             <CBox>
               <EncabezadoClienteAdmin
                 detalle={detalle}
