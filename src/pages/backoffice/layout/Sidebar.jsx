@@ -42,7 +42,13 @@ const MIN_W = 150;
 const MAX_W = 380;
 const DEFAULT_W = 210;
 
-export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
+function initials(user) {
+  if (!user) return "IL";
+  if (user.nombre) return user.nombre.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  return (user.email || "IL").slice(0, 2).toUpperCase();
+}
+
+export default function Sidebar({ path, open, onClose, pinned, onTogglePin, user, onLogout }) {
   const [width, setWidth] = useState(() => {
     const s = localStorage.getItem("bo_sidebar_w");
     const n = s ? parseInt(s, 10) : DEFAULT_W;
@@ -56,8 +62,6 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
     e.preventDefault();
     const startX = e.clientX;
     const startW = curW.current;
-
-    // Desactivar transición y selección de texto durante el drag
     if (asideRef.current) asideRef.current.style.transition = "none";
     document.body.style.userSelect = "none";
     document.body.style.cursor = "col-resize";
@@ -65,18 +69,15 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
     function onMove(ev) {
       const next = Math.max(MIN_W, Math.min(MAX_W, startW + ev.clientX - startX));
       curW.current = next;
-      // Manipulación directa del DOM — sin re-render de React
       if (asideRef.current) asideRef.current.style.width = `${next}px`;
       if (innerRef.current) innerRef.current.style.minWidth = `${next}px`;
     }
 
     function onUp() {
       const finalW = curW.current;
-      // Restaurar transición y cursor
       if (asideRef.current) asideRef.current.style.transition = "";
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
-      // Sincronizar estado React y guardar solo al soltar
       setWidth(finalW);
       localStorage.setItem("bo_sidebar_w", String(finalW));
       window.removeEventListener("mousemove", onMove);
@@ -91,13 +92,9 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;
     e.preventDefault();
     navigate(href);
-    // El cierre lo gestiona onPop en BackofficeApp según el estado pin
   }
 
   return (
-    /* El aside SIEMPRE está en el flex layout — solo cambia el ancho.
-       Cuando open=false → width=0, overflow-hidden lo oculta.
-       El contenido interior mantiene minWidth para no recolapsar durante la animación. */
     <aside
       ref={asideRef}
       className="shrink-0 flex flex-col bg-primary text-white h-full overflow-hidden relative"
@@ -106,7 +103,6 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
         transition: "width 260ms ease-in-out",
       }}
     >
-      {/* Contenedor interior con ancho fijo — se clipea por el aside durante animación */}
       <div ref={innerRef} className="flex flex-col h-full" style={{ minWidth: `${width}px` }}>
 
         {/* Cabecera */}
@@ -120,10 +116,9 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
           </a>
 
           <div className="flex items-center gap-1 shrink-0">
-            {/* Pin/Unpin */}
             <button
               onClick={onTogglePin}
-              title={pinned ? "Desanclar — se cerrará al navegar" : "Fijar — no se cerrará al navegar"}
+              title={pinned ? "Desanclar" : "Fijar"}
               className={`flex items-center gap-1 px-2 h-7 rounded-lg hover:bg-white/10 transition text-[11px] font-medium ${pinned ? "text-emerald-300" : "text-white/50"}`}
             >
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -136,7 +131,6 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
               <span>{pinned ? "Fijo" : "Fijar"}</span>
             </button>
 
-            {/* Cerrar sidebar */}
             <button
               onClick={onClose}
               aria-label="Cerrar menú"
@@ -180,11 +174,32 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin }) {
           ))}
         </nav>
 
-        {/* Handle de resize */}
+        {/* Footer: usuario + logout */}
+        {user && (
+          <div className="shrink-0 border-t border-white/10 px-3 py-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-white/20 text-white text-xs font-bold flex items-center justify-center shrink-0 select-none">
+                {initials(user)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{user.nombre || user.email || "Usuario"}</p>
+                <p className="text-[10px] text-white/40 capitalize">{user.rol || "—"}</p>
+              </div>
+              <button
+                onClick={onLogout}
+                className="shrink-0 text-[11px] text-white/50 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition"
+                title="Salir"
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Handle resize */}
         <div
           onMouseDown={startResize}
           className="absolute top-0 right-0 bottom-0 w-1.5 cursor-col-resize hover:bg-white/25 active:bg-white/40 transition-colors z-10"
-          title="Arrastrar para cambiar el ancho"
         />
       </div>
     </aside>
