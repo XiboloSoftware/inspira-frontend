@@ -1,20 +1,17 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useRef } from "react";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
 import PortalesYJustificantesAdmin from "./PortalesYJustificantesAdmin";
 import CierreServicioMasterAdmin from "./CierreServicioMasterAdmin";
-import { boPATCH } from "../../../services/backofficeApi";
 import { useSolicitudDetalle } from "./hooks/useSolicitudDetalle";
 import ChecklistSolicitudAdmin from "./components/ChecklistSolicitudAdmin";
 import InformeAdmin from "./components/InformeAdmin";
-import SeccionBackoffice from "./components/SeccionBackoffice";
-import AsesoresAsignadosAdmin from "./AsesoresAsignadosAdmin";
-import { AccordionBackofficeContext } from "./components/AccordionBackofficeContext";
-import { formatearFecha } from "./utils";
 import EncabezadoClienteAdmin from "./EncabezadoClienteAdmin";
-import ProgresoExpediente from "./components/ProgresoExpediente";
+
+const RING_R = 13;
+const RING_C = 2 * Math.PI * RING_R;
 
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
@@ -22,81 +19,116 @@ const CAMPOS_REQUERIDOS_FORMULARIO = [
   "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
 ];
 
+function BlqHead({ numero, titulo, estado }) {
+  const badge = {
+    completado: "bg-[#1D6A4A] text-white",
+    observado:  "bg-[#DC2626] text-white",
+    pendiente:  "bg-[#FFFBEA] text-[#F59E0B] border-2 border-[#F59E0B]/30",
+    inactivo:   "bg-[#F4F6F9] text-[#6B7280] border-2 border-[#E2E8F0]",
+  };
+  const chip = {
+    completado: "bg-[#E8F5EE] text-[#1D6A4A]",
+    observado:  "bg-[#FEF2F2] text-[#DC2626]",
+    pendiente:  "bg-[#FFFBEA] text-[#F59E0B]",
+    inactivo:   "bg-[#F4F6F9] text-[#6B7280]",
+  };
+  const chipLabel = {
+    completado: "✓ Completo",
+    observado:  "⚠ Observado",
+    pendiente:  "● En progreso",
+    inactivo:   "— Inactivo",
+  };
+  const e = estado || "inactivo";
+  return (
+    <div className="flex items-center gap-2.5 mb-[13px] flex-wrap">
+      <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center text-[13px] font-extrabold font-mono shrink-0 ${badge[e] || badge.inactivo}`}>
+        {numero}
+      </div>
+      <h3 className="font-serif text-[16px] text-[#1A3557] flex-1">{titulo}</h3>
+      <span className={`text-[10.5px] font-semibold px-[11px] py-1 rounded-full ${chip[e] || chip.inactivo}`}>
+        {chipLabel[e] || "—"}
+      </span>
+    </div>
+  );
+}
+
+function CBox({ children }) {
+  return (
+    <div className="bg-white border border-[#E2E8F0] rounded-[14px] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.06)]">
+      {children}
+    </div>
+  );
+}
+
 export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
-  const [accordionOpenId, setAccordionOpenId] = useState(null);
+  const mainRef = useRef(null);
 
   const {
     detalle, setDetalle,
     checklistPorEtapa, setChecklist,
     loading, error, cargar,
-    asesoresDisponibles,
-    asesoresSeleccionados, setAsesoresSeleccionados,
-    guardandoAsesores, setGuardandoAsesores,
   } = useSolicitudDetalle(idSolicitud);
 
-  async function handleGuardarAsesores() {
-    if (!detalle) return;
-    setGuardandoAsesores(true);
-    try {
-      const body = { ids_asesores: asesoresSeleccionados.map((id) => Number(id)) };
-      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/asesores`, body);
-      if (!r.ok) { alert(r.msg || "No se pudieron guardar los asesores"); return; }
-      setDetalle((prev) => ({ ...prev, asesores: r.solicitud.asesores || [] }));
-      alert("Asesores actualizados correctamente");
-    } catch (e) {
-      console.error(e);
-      alert("Error al guardar asesores");
-    } finally {
-      setGuardandoAsesores(false);
-    }
+  function irABloque(id) {
+    const el = document.getElementById(`bloque-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const checklistStats = useMemo(() => {
     const allItems = Object.values(checklistPorEtapa).flat();
     const total = allItems.length;
-    if (total === 0) return { estado: "pendiente", subtitulo: "Sin checklist configurado" };
+    if (total === 0) return { estado: "pendiente" };
     const aprobados = allItems.filter((it) =>
       ["aprobado", "no_aplica"].includes((it.estado_item || "").toLowerCase())
     ).length;
     const hayObservados = allItems.some((it) => (it.estado_item || "").toLowerCase() === "observado");
-    const estado = hayObservados ? "observado" : aprobados === total ? "completado" : "pendiente";
-    return { estado, subtitulo: `${aprobados} de ${total} documentos listos` };
+    return { estado: hayObservados ? "observado" : aprobados === total ? "completado" : "pendiente" };
   }, [checklistPorEtapa]);
 
-  const bloquesMaster = useMemo(() => {
-    if (!detalle) return [];
+  const { bloques, isVisado } = useMemo(() => {
+    if (!detalle) return { bloques: [], isVisado: false };
+    const tituloLower = String(detalle.titulo || "").toLowerCase().trim();
+    const visado =
+      Number(detalle.id_tipo_solicitud) === 15 ||
+      tituloLower === "visado" ||
+      tituloLower.includes("visado");
+
     const datos = detalle.datos_formulario || {};
     const tieneForm = CAMPOS_REQUERIDOS_FORMULARIO.every(
       (c) => datos[c] !== undefined && datos[c] !== null && datos[c] !== ""
     );
     const hayEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
     const clienteOk = !!(detalle.cliente?.nombre);
-    return [
-      { id: "cliente",      numero: "1", label: "Cliente",     titulo: "Datos del cliente",                 estado: clienteOk ? "completado" : "pendiente" },
-      { id: "checklist",    numero: "2", label: "Docs",        titulo: "Documentos requeridos",              estado: checklistStats.estado },
-      { id: "formulario",   numero: "3", label: "Formulario",  titulo: "Formulario académico",               estado: tieneForm ? "completado" : "pendiente" },
-      { id: "informe",      numero: "4", label: "Informe",     titulo: "Informe de búsqueda",                estado: detalle.informe_fecha_subida ? "completado" : "pendiente" },
-      { id: "eleccion",     numero: "5", label: "Elección",    titulo: "Elección de másteres",               estado: hayEleccion ? "completado" : "pendiente" },
-      { id: "programacion", numero: "6", label: "Program.",    titulo: "Programación de postulaciones",      estado: "pendiente" },
-      { id: "portales",     numero: "7", label: "Portales",    titulo: "Portales y justificantes",           estado: "pendiente" },
-      { id: "cierre",       numero: "8", label: "Cierre",      titulo: "Cierre del servicio",                estado: "pendiente" },
-    ];
-  }, [detalle, checklistStats]);
 
-  const bloquesVisado = useMemo(() => {
-    if (!detalle) return [];
-    const clienteOk = !!(detalle.cliente?.nombre);
-    return [
-      { id: "cliente",   numero: "1", label: "Cliente",   titulo: "Datos del cliente",             estado: clienteOk ? "completado" : "pendiente" },
-      { id: "checklist", numero: "2", label: "Docs",      titulo: "Documentos requeridos",          estado: checklistStats.estado },
-      { id: "instructivo", numero: "3", label: "Instructivo", titulo: "Instructivo y plantillas",   estado: "inactivo" },
-      { id: "portales",  numero: "4", label: "Portales",  titulo: "Portales y justificantes",       estado: "pendiente" },
-    ];
+    const lista = visado
+      ? [
+          { id: "cliente",     numero: "1", label: "Encabezado cliente",  estado: clienteOk ? "completado" : "pendiente" },
+          { id: "checklist",   numero: "2", label: "Documentos",          estado: checklistStats.estado },
+          { id: "instructivo", numero: "3", label: "Instructivo",         estado: "inactivo" },
+          { id: "portales",    numero: "4", label: "Portales · Claves",   estado: "pendiente" },
+        ]
+      : [
+          { id: "cliente",      numero: "1", label: "Encabezado cliente",      estado: clienteOk ? "completado" : "pendiente" },
+          { id: "checklist",    numero: "2", label: "Documentos",              estado: checklistStats.estado },
+          { id: "formulario",   numero: "3", label: "Formulario académico",    estado: tieneForm ? "completado" : "pendiente" },
+          { id: "informe",      numero: "4", label: "Informe IA másteres",     estado: detalle.informe_fecha_subida ? "completado" : "pendiente" },
+          { id: "eleccion",     numero: "5", label: "Elección del cliente",    estado: hayEleccion ? "completado" : "pendiente" },
+          { id: "programacion", numero: "6", label: "Postulaciones · Portales", estado: "pendiente" },
+          { id: "portales",     numero: "7", label: "Portales y justificantes", estado: "pendiente" },
+          { id: "cierre",       numero: "8", label: "Cierre y derivación",     estado: "pendiente" },
+        ];
+    return { bloques: lista, isVisado: visado };
   }, [detalle, checklistStats]);
 
   function handleEleccionesActualizadas(nuevasElecciones) {
     setDetalle((prev) => ({ ...prev, eleccion_masters: nuevasElecciones }));
   }
+
+  const pct = useMemo(() => {
+    if (!bloques.length) return 0;
+    const done = bloques.filter((b) => b.estado === "completado").length;
+    return Math.round((done / bloques.length) * 100);
+  }, [bloques]);
 
   if (loading) {
     return (
@@ -110,7 +142,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   if (error) {
     return (
       <div className="p-6">
-        <button type="button" onClick={onVolver} className="text-xs text-primary hover:underline mb-3">← Volver</button>
+        <button type="button" onClick={onVolver} className="text-xs text-[#1D6A4A] hover:underline mb-3">← Volver</button>
         <p className="text-sm text-red-600">{error}</p>
       </div>
     );
@@ -118,218 +150,231 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
   if (!detalle) return null;
 
-  const tituloLower = String(detalle.titulo || "").toLowerCase().trim();
-  const isVisado =
-    Number(detalle.id_tipo_solicitud) === 15 ||
-    tituloLower === "visado" ||
-    tituloLower.includes("visado");
-
-  const asesorEstado = asesoresSeleccionados.length > 0 ? "completado" : "pendiente";
-  const informeEstado = detalle.informe_fecha_subida ? "completado" : "pendiente";
   const datos = detalle.datos_formulario || {};
   const tieneFormulario = CAMPOS_REQUERIDOS_FORMULARIO.every(
     (campo) => datos[campo] !== undefined && datos[campo] !== null && datos[campo] !== ""
   );
   const tieneEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
-  const nAsesores = asesoresSeleccionados.length;
-  const nElecciones = tieneEleccion ? detalle.eleccion_masters.length : 0;
 
-  // Layout: ocupa toda la altura del <main>, scroll solo en el interior
+  function dotColor(estado) {
+    if (estado === "completado") return "bg-[#1D6A4A]";
+    if (estado === "observado")  return "bg-[#DC2626]";
+    if (estado === "pendiente")  return "bg-[#F59E0B]";
+    return "bg-[#E2E8F0]";
+  }
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 gap-3">
+    <div className="flex-1 min-h-0 flex overflow-hidden">
 
-      {/* Botón volver — fijo arriba, no crece */}
-      <div className="shrink-0 flex items-center gap-3">
+      {/* ── SIDEBAR ── */}
+      <aside className="w-[220px] flex-none border-r border-[#E2E8F0] bg-white overflow-y-auto px-[9px] py-3">
+
+        {/* Back button */}
         <button
           type="button"
           onClick={onVolver}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm group"
+          className="flex items-center gap-2 px-2 py-2 mb-2 rounded-[8px] text-[12px] font-semibold text-[#6B7280] hover:bg-[#F4F6F9] hover:text-[#1A1A2E] transition-all group w-full"
         >
-          <span className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-            <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-          </span>
+          <svg className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
           Solicitudes
         </button>
 
-        {/* Botón "Ver todas" — aparece cuando hay sección abierta */}
-        {accordionOpenId !== null && (
-          <button
-            type="button"
-            onClick={() => setAccordionOpenId(null)}
-            className="inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-xl bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all group"
-          >
-            <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Ver todas las secciones
-          </button>
-        )}
-      </div>
+        {/* Case info box */}
+        <div className="bg-[#EEF2F8] border border-[#1A3557]/[.12] rounded-[11px] p-[11px] mb-[9px]">
+          <p className="font-mono text-[9px] tracking-[.2em] text-[#6B7280] uppercase mb-[3px]">
+            Solicitud #{detalle.id_solicitud}
+          </p>
+          <p className="font-serif text-[12.5px] text-[#1A3557] leading-[1.3] mb-1">
+            {detalle.titulo || "(Sin título)"}
+          </p>
+          <p className="text-[11px] text-[#6B7280]">{detalle.cliente?.nombre || "Sin nombre"}</p>
+        </div>
 
-      {/* Cabecera del expediente — solo cuando no hay sección abierta */}
-      {accordionOpenId === null && (
-        <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1">
-                Solicitud #{detalle.id_solicitud}
-              </p>
-              <h2 className="text-xl font-bold text-neutral-900 leading-snug">
-                {detalle.titulo || "(Sin título)"}
-              </h2>
-              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">
-                <p className="text-xs text-neutral-500">
-                  <span className="font-medium text-neutral-700">Cliente:</span>{" "}
-                  {detalle.cliente?.nombre
-                    ? `${detalle.cliente.nombre}${detalle.cliente.email_contacto ? ` · ${detalle.cliente.email_contacto}` : ""}`
-                    : "N/D"}
-                </p>
-                <p className="text-xs text-neutral-500">
-                  <span className="font-medium text-neutral-700">Creada:</span>{" "}
-                  {formatearFecha(detalle.fecha_creacion)}
-                </p>
-                {detalle.fecha_cierre && (
-                  <p className="text-xs text-neutral-500">
-                    <span className="font-medium text-neutral-700">Cerrada:</span>{" "}
-                    {formatearFecha(detalle.fecha_cierre)}
-                  </p>
-                )}
-              </div>
+        {/* Progress ring */}
+        <div className="bg-[#E8F5EE] border border-[#1D6A4A]/20 rounded-[9px] px-[11px] py-[9px] mb-[9px] flex items-center gap-2.5">
+          <div className="relative w-[34px] h-[34px] shrink-0">
+            <svg width="34" height="34" viewBox="0 0 34 34" style={{ transform: "rotate(-90deg)" }}>
+              <circle fill="none" stroke="rgba(29,106,74,.15)" cx="17" cy="17" r={RING_R} strokeWidth="3" />
+              <circle
+                fill="none"
+                stroke="#1D6A4A"
+                cx="17" cy="17" r={RING_R}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={RING_C}
+                strokeDashoffset={RING_C * (1 - pct / 100)}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center font-mono text-[9px] font-bold text-[#1D6A4A]">
+              {pct}%
             </div>
-            {detalle.estado && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                {detalle.estado}
-              </span>
-            )}
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-[#1D6A4A]">Progreso</p>
+            <p className="text-[11px] text-[#6B7280]">en curso</p>
           </div>
         </div>
-      )}
 
-      {/* Barra de progreso — solo cuando no hay sección abierta */}
-      {accordionOpenId === null && (
-        <ProgresoExpediente
-          bloques={isVisado ? bloquesVisado : bloquesMaster}
-          onIrA={(sectionId) => setAccordionOpenId(sectionId)}
-        />
-      )}
+        {/* Nav title */}
+        <p className="text-[9px] font-bold text-[#6B7280] uppercase tracking-[.15em] px-2 pt-[7px] pb-[3px]">
+          Bloques del expediente
+        </p>
 
-      {/* Secciones — flex-1 = ocupa el resto de la altura disponible */}
-      <AccordionBackofficeContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
-        <div className={`flex-1 min-h-0 ${
-          accordionOpenId !== null
-            ? "flex flex-col pb-6"                         // sección abierta: flex + margen inferior
-            : "overflow-y-auto space-y-3 pb-6 pr-0.5"     // lista: scroll interno
-        }`}>
-
-          {/* Sección de asesores asignados desactivada temporalmente — todos los asesores ven todas las solicitudes
-          <SeccionBackoffice
-            sectionId="asesores"
-            titulo="Asesores asignados"
-            subtitulo={nAsesores > 0 ? `${nAsesores} asesor${nAsesores > 1 ? "es" : ""} asignado${nAsesores > 1 ? "s" : ""}` : "Sin asesores asignados"}
-            estado={asesorEstado}
+        {/* Nav links */}
+        {bloques.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => irABloque(b.id)}
+            className={`flex items-center gap-2 px-2 py-2 rounded-[8px] transition-all cursor-pointer w-full mb-[2px] border border-transparent text-left ${
+              b.estado === "completado" ? "text-[#155a3d]" : "text-[#6B7280]"
+            } hover:bg-[#F4F6F9] hover:text-[#1A1A2E]`}
           >
-            <AsesoresAsignadosAdmin
-              asesoresDisponibles={asesoresDisponibles}
-              asesoresSeleccionados={asesoresSeleccionados}
-              onChangeSeleccionados={setAsesoresSeleccionados}
-              onGuardar={handleGuardarAsesores}
-              guardando={guardandoAsesores}
-            />
-          </SeccionBackoffice>
-          */}
+            <span className={`w-[21px] h-[21px] rounded-[6px] flex items-center justify-center text-[10px] font-bold font-mono shrink-0 ${
+              b.estado === "completado" ? "bg-[#E8F5EE] text-[#1D6A4A]" : "bg-[#F4F6F9] text-[#6B7280]"
+            }`}>
+              {b.numero}
+            </span>
+            <span className="text-[11.5px] font-medium flex-1 leading-[1.3]">{b.label}</span>
+            <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${dotColor(b.estado)}`} />
+          </button>
+        ))}
+      </aside>
 
-          {/* B1 — Datos del cliente */}
-          <SeccionBackoffice
-            sectionId="cliente"
-            numero="1"
-            titulo="Datos del cliente"
-            subtitulo={detalle.cliente?.nombre || "Sin nombre"}
-            estado={detalle.cliente?.nombre ? "completado" : "pendiente"}
-          >
-            <EncabezadoClienteAdmin detalle={detalle} />
-          </SeccionBackoffice>
+      {/* ── MAIN SCROLL ── */}
+      <main ref={mainRef} className="flex-1 overflow-y-auto bg-[#F4F6F9]">
+        <div className="p-[22px] pb-20">
 
-          <SeccionBackoffice
-            sectionId="checklist"
-            numero="2"
-            titulo="Documentos requeridos"
-            subtitulo={checklistStats.subtitulo}
-            estado={checklistStats.estado}
-          >
-            <ChecklistSolicitudAdmin
-              detalle={detalle}
-              checklistPorEtapa={checklistPorEtapa}
-              setChecklist={setChecklist}
-              recargar={cargar}
-            />
-          </SeccionBackoffice>
+          {/* B1 — Encabezado del cliente */}
+          <div id="bloque-cliente" className="mb-8 scroll-mt-4">
+            <BlqHead numero="1" titulo="Encabezado del cliente" estado={detalle.cliente?.nombre ? "completado" : "pendiente"} />
+            <CBox>
+              <EncabezadoClienteAdmin detalle={detalle} />
+            </CBox>
+          </div>
+
+          {/* B2 — Documentos requeridos */}
+          <div id="bloque-checklist" className="mb-8 scroll-mt-4">
+            <BlqHead numero="2" titulo="Documentos requeridos" estado={checklistStats.estado} />
+            <CBox>
+              <div className="p-5">
+                <ChecklistSolicitudAdmin
+                  detalle={detalle}
+                  checklistPorEtapa={checklistPorEtapa}
+                  setChecklist={setChecklist}
+                  recargar={cargar}
+                />
+              </div>
+            </CBox>
+          </div>
 
           {isVisado ? (
             <>
-              <SeccionBackoffice sectionId="instructivo" numero="3" titulo="Instructivo y plantillas" subtitulo="Contenido configurado por servicio en Instructivos">
-                <p className="text-sm text-neutral-500">
-                  Este contenido se configura por servicio en <b>Instructivos</b>.
-                </p>
-              </SeccionBackoffice>
+              <div id="bloque-instructivo" className="mb-8 scroll-mt-4">
+                <BlqHead numero="3" titulo="Instructivo y plantillas" estado="inactivo" />
+                <CBox>
+                  <div className="px-5 py-4">
+                    <p className="text-sm text-neutral-500">
+                      Este contenido se configura por servicio en <b>Instructivos</b>.
+                    </p>
+                  </div>
+                </CBox>
+              </div>
 
-              <SeccionBackoffice sectionId="portales" numero="4" titulo="Portales, claves y justificantes" subtitulo="Registra portales, claves, estado del trámite y justificantes">
-                <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-              </SeccionBackoffice>
+              <div id="bloque-portales" className="mb-8 scroll-mt-4">
+                <BlqHead numero="4" titulo="Portales, claves y justificantes" estado="pendiente" />
+                <CBox>
+                  <div className="p-5">
+                    <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+                  </div>
+                </CBox>
+              </div>
             </>
           ) : (
             <>
-              <SeccionBackoffice
-                sectionId="formulario"
-                numero="3"
-                titulo="Formulario de datos académicos"
-                subtitulo={tieneFormulario ? "Formulario completado" : "El cliente aún no ha completado el formulario"}
-                estado={tieneFormulario ? "completado" : "pendiente"}
-              >
-                <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-              </SeccionBackoffice>
-
-              <SeccionBackoffice
-                sectionId="informe"
-                numero="4"
-                titulo="Informe de búsqueda de másteres"
-                subtitulo={detalle.informe_fecha_subida ? `Subido el ${formatearFecha(detalle.informe_fecha_subida)}` : "Aún no se ha subido el informe"}
-                estado={informeEstado}
-              >
-                <InformeAdmin detalle={detalle} recargar={cargar} />
-              </SeccionBackoffice>
-
-              <SeccionBackoffice
-                sectionId="eleccion"
-                numero="5"
-                titulo="Elección de másteres (cliente)"
-                subtitulo={tieneEleccion ? `${nElecciones} máster${nElecciones > 1 ? "es" : ""} seleccionado${nElecciones > 1 ? "s" : ""}` : "El cliente aún no ha seleccionado másteres"}
-                estado={tieneEleccion ? "completado" : "pendiente"}
-              >
-                <EleccionMastersAdmin
-                  elecciones={detalle.eleccion_masters}
-                  idSolicitud={detalle.id_solicitud}
-                  onEleccionesActualizadas={handleEleccionesActualizadas}
+              {/* B3 — Formulario académico */}
+              <div id="bloque-formulario" className="mb-8 scroll-mt-4">
+                <BlqHead
+                  numero="3"
+                  titulo="Formulario de datos académicos"
+                  estado={tieneFormulario ? "completado" : "pendiente"}
                 />
-              </SeccionBackoffice>
+                <CBox>
+                  <div className="p-5">
+                    <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+                  </div>
+                </CBox>
+              </div>
 
-              <SeccionBackoffice sectionId="programacion" numero="6" titulo="Programación de postulaciones" subtitulo="Gestiona las tareas por cada máster confirmado">
-                <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
-              </SeccionBackoffice>
+              {/* B4 — Informe de búsqueda */}
+              <div id="bloque-informe" className="mb-8 scroll-mt-4">
+                <BlqHead
+                  numero="4"
+                  titulo="Informe de búsqueda de másteres"
+                  estado={detalle.informe_fecha_subida ? "completado" : "pendiente"}
+                />
+                <CBox>
+                  <div className="px-5 pt-4">
+                    <InformeAdmin detalle={detalle} recargar={cargar} />
+                  </div>
+                </CBox>
+              </div>
 
-              <SeccionBackoffice sectionId="portales" numero="7" titulo="Portales, claves y justificantes" subtitulo="Registra portales, claves, estado del trámite y justificantes">
-                <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-              </SeccionBackoffice>
+              {/* B5 — Elección de másteres */}
+              <div id="bloque-eleccion" className="mb-8 scroll-mt-4">
+                <BlqHead
+                  numero="5"
+                  titulo="Elección de másteres (cliente)"
+                  estado={tieneEleccion ? "completado" : "pendiente"}
+                />
+                <CBox>
+                  <div className="p-5">
+                    <EleccionMastersAdmin
+                      elecciones={detalle.eleccion_masters}
+                      idSolicitud={detalle.id_solicitud}
+                      onEleccionesActualizadas={handleEleccionesActualizadas}
+                    />
+                  </div>
+                </CBox>
+              </div>
 
-              <SeccionBackoffice sectionId="cierre" numero="8" titulo="Cierre de servicio de máster y siguientes pasos" subtitulo="Másteres admitidos, matriculados y cierre del expediente">
-                <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
-              </SeccionBackoffice>
+              {/* B6 — Programación de postulaciones */}
+              <div id="bloque-programacion" className="mb-8 scroll-mt-4">
+                <BlqHead numero="6" titulo="Programación de postulaciones" estado="pendiente" />
+                <CBox>
+                  <div className="p-5">
+                    <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+                  </div>
+                </CBox>
+              </div>
+
+              {/* B7 — Portales y justificantes */}
+              <div id="bloque-portales" className="mb-8 scroll-mt-4">
+                <BlqHead numero="7" titulo="Portales, claves y justificantes" estado="pendiente" />
+                <CBox>
+                  <div className="p-5">
+                    <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+                  </div>
+                </CBox>
+              </div>
+
+              {/* B8 — Cierre de servicio */}
+              <div id="bloque-cierre" className="mb-8 scroll-mt-4">
+                <BlqHead numero="8" titulo="Cierre de servicio y derivación" estado="pendiente" />
+                <CBox>
+                  <div className="px-5 pt-4">
+                    <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+                  </div>
+                </CBox>
+              </div>
             </>
           )}
+
         </div>
-      </AccordionBackofficeContext.Provider>
+      </main>
+
     </div>
   );
 }
