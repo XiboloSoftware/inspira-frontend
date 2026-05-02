@@ -1,5 +1,4 @@
 // SeccionMasters.jsx — CRUD Másteres
-// precio_total_estimado = ects × precio_credito_extranjero de la CCAA de la universidad.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
 import {
@@ -15,35 +14,221 @@ const FORM_INIT = {
   titulo_acceso: "", notas: "", activo: true,
 };
 
+const RAMA_COLOR = {
+  CIENCIAS:                    "bg-cyan-50 text-cyan-700 border-cyan-200",
+  CIENCIAS_SALUD:              "bg-rose-50 text-rose-700 border-rose-200",
+  CIENCIAS_SOCIALES_JURIDICAS: "bg-blue-50 text-blue-700 border-blue-200",
+  INGENIERIA_ARQUITECTURA:     "bg-orange-50 text-orange-700 border-orange-200",
+  ARTES_HUMANIDADES:           "bg-violet-50 text-violet-700 border-violet-200",
+};
+
+function ramaLabel(val) {
+  return RAMAS.find((r) => r.value === val)?.label || val;
+}
+function modLabel(val) {
+  return MODALIDADES.find((m) => m.value === val)?.label || val;
+}
 function nivelLabel(nivel) {
-  const map = { B1: "B1", B2: "B2", C1: "C1", C2: "C2", NATIVO: "Nativo", NO_ESPECIFICADO: "No especificado" };
+  const map = { B1:"B1", B2:"B2", C1:"C1", C2:"C2", NATIVO:"Nativo", NO_ESPECIFICADO:"Sin especificar" };
   return map[nivel] || nivel || "—";
 }
-
 function categoriaLabel(cat) {
   if (!cat) return "—";
-  return cat.replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return cat.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// ── Th sorteable (server-side) ─────────────────────────────────────────────────
+// ── Th sorteable ──────────────────────────────────────────────────────────────
 function Th({ col, label, sortCol, sortDir, onSort, right, center }) {
   const active = sortCol === col;
-  const align = right ? "text-right" : center ? "text-center" : "text-left";
+  const align  = right ? "text-right" : center ? "text-center" : "text-left";
   return (
     <th onClick={() => onSort(col)}
-      className={`px-4 py-3 cursor-pointer select-none whitespace-nowrap hover:bg-neutral-100 transition ${align}`}>
-      <span className={`inline-flex items-center gap-1 ${right ? "justify-end" : center ? "justify-center" : ""}`}>
+      className={`px-3 py-2.5 cursor-pointer select-none whitespace-nowrap hover:bg-neutral-100 transition ${align}`}>
+      <span className={`inline-flex items-center gap-1 ${right?"justify-end":center?"justify-center":""}`}>
         {label}
-        <span className="text-[10px] text-neutral-400">{active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+        <span className="text-[9px] text-neutral-300">{active?(sortDir==="asc"?"▲":"▼"):"⇅"}</span>
       </span>
     </th>
   );
 }
 
+// ── Badge chip pequeño ─────────────────────────────────────────────────────────
+function Chip({ label, color = "neutral" }) {
+  const cls = {
+    neutral: "bg-neutral-100 text-neutral-600",
+    green:   "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    blue:    "bg-blue-50 text-blue-700 border border-blue-200",
+    red:     "bg-red-50 text-red-600 border border-red-200",
+    amber:   "bg-amber-50 text-amber-700 border border-amber-200",
+  }[color] || "bg-neutral-100 text-neutral-600";
+  return <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${cls}`}>{label}</span>;
+}
 
-// ── Modal crear / editar ──────────────────────────────────────────────────────
+// ── Modal VER (solo lectura) ──────────────────────────────────────────────────
+function ModalVerMaster({ item, onClose, onEditar }) {
+  const [detalle,  setDetalle]  = useState(null);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    boGET(`/backoffice/catalogo/masters/${item.id_master}`)
+      .then((d) => { if (d.ok) setDetalle(d.master); })
+      .finally(() => setLoading(false));
+  }, [item.id_master]);
+
+  const m          = detalle || item;
+  const criterios  = detalle?.criterios || [];
+  const idiomas    = detalle?.idiomas   || [];
+  const ramaCls    = RAMA_COLOR[m.rama] || "bg-neutral-100 text-neutral-600 border-neutral-200";
+  const badge      = activoBadge(m.activo);
+
+  return (
+    <div className={MODAL_OVERLAY} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={MODAL_PANEL}>
+        {/* Header */}
+        <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">Detalle del máster</p>
+            <h2 className="text-base font-bold text-neutral-900 leading-snug">{m.nombre_limpio}</h2>
+            {m.nombre_original && m.nombre_original !== m.nombre_limpio && (
+              <p className="text-xs text-neutral-400 mt-0.5 italic truncate">{m.nombre_original}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="shrink-0 w-7 h-7 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition text-sm">✕</button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-neutral-400 py-4">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              Cargando criterios e idiomas…
+            </div>
+          )}
+
+          {/* Universidad + CCAA */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-xs font-bold bg-neutral-800 text-white px-2 py-1 rounded-md">{m.universidad?.sigla}</span>
+            <span className="text-sm font-semibold text-neutral-700">{m.universidad?.nombre_completo}</span>
+            <span className="text-xs text-neutral-400">·</span>
+            <span className="text-xs text-neutral-500">{m.universidad?.comunidad?.nombre}</span>
+            <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "ECTS",     value: m.ects },
+              { label: "Precio",   value: formatPrecio(m.precio_total_estimado) },
+              { label: "Duración", value: duracionLabel(m.duracion_anios) },
+              { label: "Modalidad",value: modLabel(m.modalidad) },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">{label}</p>
+                <p className="text-sm font-bold text-neutral-800 tabular-nums">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Rama + tags */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${ramaCls}`}>
+              {ramaLabel(m.rama)}
+            </span>
+            {m.es_habilitante      && <Chip label="Habilitante"      color="amber" />}
+            {m.es_interuniversitario && <Chip label="Interuniversitario" color="blue" />}
+            {m.es_dual             && <Chip label="Dual (empresa)"   color="blue" />}
+            {m.tiene_practicas === true  && <Chip label="Con prácticas"  color="green" />}
+            {m.tiene_practicas === false && <Chip label="Sin prácticas"  color="neutral" />}
+          </div>
+
+          {/* Título de acceso */}
+          {m.titulo_acceso && (
+            <div className="bg-neutral-50 rounded-xl px-4 py-3">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Título de acceso</p>
+              <p className="text-sm text-neutral-700">{m.titulo_acceso}</p>
+            </div>
+          )}
+
+          {/* Notas */}
+          {m.notas && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-amber-500 mb-1">Notas internas</p>
+              <p className="text-sm text-amber-800">{m.notas}</p>
+            </div>
+          )}
+
+          {/* Criterios de admisión */}
+          {!loading && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Criterios de admisión</p>
+                <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-full font-semibold">{criterios.length}</span>
+              </div>
+              {criterios.length > 0 ? (
+                <div className="border border-neutral-200 rounded-xl overflow-hidden divide-y divide-neutral-100">
+                  {criterios.map((c, i) => (
+                    <div key={c.id_criterio || i} className="flex items-start gap-3 px-4 py-2.5 text-xs bg-white hover:bg-neutral-50 transition">
+                      <span className="shrink-0 text-neutral-300 tabular-nums w-4 text-right">{c.orden ?? i+1}</span>
+                      <span className="shrink-0 bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold text-[10px] whitespace-nowrap">
+                        {categoriaLabel(c.categoria)}
+                      </span>
+                      <span className="flex-1 text-neutral-700 leading-relaxed">{c.descripcion || "—"}</span>
+                      {c.peso_porcentaje != null && (
+                        <span className="shrink-0 font-bold text-neutral-500 tabular-nums">{c.peso_porcentaje}%</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-400 italic bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">Sin criterios registrados.</p>
+              )}
+            </div>
+          )}
+
+          {/* Idiomas */}
+          {!loading && idiomas.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Idiomas requeridos</p>
+                <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-full font-semibold">{idiomas.length}</span>
+              </div>
+              <div className="border border-neutral-200 rounded-xl overflow-hidden divide-y divide-neutral-100">
+                {idiomas.map((id, i) => (
+                  <div key={id.id_idioma_req || i} className="flex items-center gap-2 px-4 py-2.5 text-xs bg-white flex-wrap">
+                    <span className="font-bold text-neutral-800">{id.idioma}</span>
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-semibold text-[10px]">
+                      {nivelLabel(id.nivel_minimo)}
+                    </span>
+                    {id.es_obligatorio && (
+                      <span className="bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-semibold text-[10px]">Obligatorio</span>
+                    )}
+                    {id.peso_porcentaje != null && (
+                      <span className="text-neutral-500 tabular-nums">{id.peso_porcentaje}%</span>
+                    )}
+                    {id.detalle && <span className="text-neutral-400 italic">{id.detalle}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-2">
+          <button type="button" onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition text-neutral-700">
+            Cerrar
+          </button>
+          <button type="button" onClick={onEditar}
+            className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition">
+            Editar máster
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal EDITAR / CREAR ──────────────────────────────────────────────────────
 function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved }) {
   const isEdit = !!item?.id_master;
   const [form, setForm] = useState(
@@ -65,27 +250,15 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
         }
       : { ...FORM_INIT }
   );
-  const [saving,         setSaving]         = useState(false);
-  const [err,            setErr]            = useState(null);
-  const [detalle,        setDetalle]        = useState(null);
-  const [loadingDetalle, setLoadingDetalle] = useState(false);
-  const [showCriterios,  setShowCriterios]  = useState(false);
-
+  const [saving, setSaving] = useState(false);
+  const [err,    setErr]    = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const univSel = universidades.find((u) => String(u.id_universidad) === String(form.id_universidad));
-  const comUniv = univSel ? comunidades.find((c) => c.id_comunidad === univSel.id_comunidad) : null;
+  const univSel    = universidades.find((u) => String(u.id_universidad) === String(form.id_universidad));
+  const comUniv    = univSel ? comunidades.find((c) => c.id_comunidad === univSel.id_comunidad) : null;
   const precioPreview = comUniv && form.ects
     ? Number(comUniv.precio_credito_extranjero) * Number(form.ects)
     : null;
-
-  useEffect(() => {
-    if (!isEdit) return;
-    setLoadingDetalle(true);
-    boGET(`/backoffice/catalogo/masters/${item.id_master}`)
-      .then((d) => { if (d.ok) setDetalle(d.master); })
-      .finally(() => setLoadingDetalle(false));
-  }, [item?.id_master, isEdit]); // eslint-disable-line
 
   async function submit(e) {
     e.preventDefault();
@@ -111,23 +284,19 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
     finally { setSaving(false); }
   }
 
-  const criterios = detalle?.criterios || [];
-  const idiomas   = detalle?.idiomas   || [];
-
   return (
     <div className={MODAL_OVERLAY} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={MODAL_PANEL}>
         <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-primary">{isEdit ? "Editar Máster" : "Nuevo Máster"}</h2>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 text-xl leading-none">✕</button>
+          <h2 className="text-base font-bold text-primary">{isEdit ? "Editar Máster" : "Nuevo Máster"}</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition text-sm">✕</button>
         </div>
         <form onSubmit={submit} className="px-6 py-5 space-y-4">
-          {err && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{err}</p>}
+          {err && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{err}</p>}
 
-          {/* Universidad */}
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">Universidad *</label>
-            <select required className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <select required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={form.id_universidad} onChange={(e) => set("id_universidad", e.target.value)}>
               <option value="">Seleccionar…</option>
               {universidades.map((u) => (
@@ -141,27 +310,24 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             )}
           </div>
 
-          {/* Nombre limpio */}
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">Nombre limpio *</label>
-            <input required className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <input required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={form.nombre_limpio} onChange={(e) => set("nombre_limpio", e.target.value)}
               placeholder="Sin sufijos como '(a distancia)' o '(Interuniversitario)'" />
           </div>
 
-          {/* Nombre original */}
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">Nombre original</label>
-            <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <input className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={form.nombre_original} onChange={(e) => set("nombre_original", e.target.value)}
-              placeholder="Tal cual aparece en la web de la universidad (opcional)" />
+              placeholder="Tal cual aparece en la web (opcional)" />
           </div>
 
-          {/* Rama + Modalidad */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-neutral-500 mb-1">Rama *</label>
-              <select required className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              <select required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={form.rama} onChange={(e) => set("rama", e.target.value)}>
                 <option value="">Seleccionar…</option>
                 {ramas.filter((r) => r.activo).map((r) => (
@@ -171,20 +337,19 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-500 mb-1">Modalidad *</label>
-              <select required className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              <select required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={form.modalidad} onChange={(e) => set("modalidad", e.target.value)}>
                 {MODALIDADES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
           </div>
 
-          {/* ECTS */}
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">
               ECTS * <span className="font-normal text-neutral-400">— precio = ECTS × €/crédito CCAA</span>
             </label>
             <input required type="number" min="1" max="300"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={form.ects} onChange={(e) => set("ects", e.target.value)} />
             {precioPreview != null && (
               <p className="mt-1 text-xs text-neutral-500">
@@ -197,8 +362,7 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             )}
           </div>
 
-          {/* Flags */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             {[["es_habilitante","Máster habilitante"],["es_interuniversitario","Interuniversitario"],["es_dual","Dual (empresa)"]].map(([key, label]) => (
               <label key={key} className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                 <input type="checkbox" checked={form[key]} onChange={(e) => set(key, e.target.checked)}
@@ -208,7 +372,7 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             ))}
             <div>
               <label className="block text-xs font-semibold text-neutral-500 mb-1">Prácticas</label>
-              <select className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              <select className="w-full border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 value={form.tiene_practicas} onChange={(e) => set("tiene_practicas", e.target.value)}>
                 {TIENE_PRACTICAS_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -217,13 +381,13 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
 
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">Título de acceso</label>
-            <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <input className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               value={form.titulo_acceso} onChange={(e) => set("titulo_acceso", e.target.value)}
               placeholder="Carreras que dan acceso al máster" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-neutral-500 mb-1">Notas internas</label>
-            <textarea rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            <textarea rows={2} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
               value={form.notas} onChange={(e) => set("notas", e.target.value)} />
           </div>
           <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
@@ -232,81 +396,13 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
             Activo
           </label>
 
-          {/* ── Criterios e idiomas (solo en edición) ── */}
-          {isEdit && (
-            <div className="border border-neutral-200 rounded-xl overflow-hidden">
-              <button type="button"
-                onClick={() => setShowCriterios((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 hover:bg-neutral-100 transition text-sm font-semibold text-neutral-700">
-                <span className="flex items-center gap-2">
-                  Criterios de admisión e idiomas
-                  {loadingDetalle
-                    ? <span className="text-xs text-neutral-400 font-normal">Cargando…</span>
-                    : <span className="text-xs bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded-full font-normal">
-                        {criterios.length} criterios · {idiomas.length} idiomas
-                      </span>
-                  }
-                </span>
-                <span className="text-neutral-400 text-xs">{showCriterios ? "▲" : "▼"}</span>
-              </button>
-
-              {showCriterios && (
-                <div className="px-4 py-3 space-y-4">
-                  {/* Criterios */}
-                  {criterios.length > 0 ? (
-                    <div>
-                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">Criterios de admisión</p>
-                      <div className="divide-y divide-neutral-50">
-                        {criterios.map((c, i) => (
-                          <div key={c.id_criterio || i} className="flex items-start gap-2 py-1.5 text-xs">
-                            <span className="shrink-0 font-semibold text-neutral-400 w-4 text-right tabular-nums">{c.orden ?? i + 1}.</span>
-                            <span className="shrink-0 text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
-                              {categoriaLabel(c.categoria)}
-                            </span>
-                            <span className="flex-1 text-neutral-700 leading-relaxed">{c.descripcion || "—"}</span>
-                            {c.peso_porcentaje != null && (
-                              <span className="shrink-0 font-bold text-neutral-500 tabular-nums whitespace-nowrap">{c.peso_porcentaje}%</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-neutral-400 italic">Sin criterios de admisión registrados.</p>
-                  )}
-
-                  {/* Idiomas */}
-                  {idiomas.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">Idiomas requeridos</p>
-                      <div className="divide-y divide-neutral-50">
-                        {idiomas.map((id, i) => (
-                          <div key={id.id_idioma_req || i} className="flex items-center gap-2 py-1.5 text-xs flex-wrap">
-                            <span className="font-semibold text-neutral-800">{id.idioma}</span>
-                            <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold">
-                              {nivelLabel(id.nivel_minimo)}
-                            </span>
-                            {id.es_obligatorio && (
-                              <span className="text-[10px] bg-red-50 text-red-600 border border-red-100 px-1.5 py-0.5 rounded font-semibold">Obligatorio</span>
-                            )}
-                            {id.peso_porcentaje != null && (
-                              <span className="text-neutral-500 tabular-nums">{id.peso_porcentaje}%</span>
-                            )}
-                            {id.detalle && <span className="text-neutral-400 italic">{id.detalle}</span>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="flex justify-end gap-2 pt-2 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border text-sm hover:bg-neutral-50 transition">Cancelar</button>
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium hover:bg-neutral-50 transition">
+              Cancelar
+            </button>
             <button type="submit" disabled={saving}
-              className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-60">
+              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-60">
               {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear máster"}
             </button>
           </div>
@@ -322,24 +418,22 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   const [total,      setTotal]      = useState(0);
   const [page,       setPage]       = useState(1);
   const [loading,    setLoading]    = useState(false);
-  const [modal,      setModal]      = useState(null);
+  const [modal,      setModal]      = useState(null); // { item } → editar/crear
+  const [modalVer,   setModalVer]   = useState(null); // { item } → solo lectura
   const [toggling,   setToggling]   = useState(null);
 
-  // Filtros
   const [search,       setSearch]       = useState("");
   const [filtroCC,     setFiltroCC]     = useState("");
   const [filtroUniv,   setFiltroUniv]   = useState("");
   const [filtroRama,   setFiltroRama]   = useState("");
   const [filtroMod,    setFiltroMod]    = useState("");
   const [filtroActivo, setFiltroActivo] = useState("");
-  // Ordenamiento (server-side)
   const [sortCol, setSortCol] = useState("nombre_limpio");
   const [sortDir, setSortDir] = useState("asc");
 
   const searchRef = useRef("");
   const LIMIT = 25;
 
-  // Lista de universidades para el filtro, acotada por CCAA si hay una seleccionada
   const universidadesFiltradas = filtroCC
     ? universidades.filter((u) => String(u.id_comunidad) === String(filtroCC))
     : universidades;
@@ -348,18 +442,18 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
     setLoading(true);
     try {
       const q = new URLSearchParams({
-        page:          String(overrides.page      ?? page),
-        limit:         String(LIMIT),
-        search:        overrides.search           !== undefined ? overrides.search      : searchRef.current,
-        id_comunidad:  overrides.filtroCC         !== undefined ? overrides.filtroCC    : filtroCC,
-        id_universidad: overrides.filtroUniv      !== undefined ? overrides.filtroUniv  : filtroUniv,
-        rama:          overrides.filtroRama       !== undefined ? overrides.filtroRama  : filtroRama,
-        modalidad:     overrides.filtroMod        !== undefined ? overrides.filtroMod   : filtroMod,
-        activo:        overrides.filtroActivo     !== undefined ? overrides.filtroActivo: filtroActivo,
-        sortBy:        overrides.sortCol          !== undefined ? overrides.sortCol     : sortCol,
-        sortDir:       overrides.sortDir          !== undefined ? overrides.sortDir     : sortDir,
+        page:           String(overrides.page       ?? page),
+        limit:          String(LIMIT),
+        search:         overrides.search            !== undefined ? overrides.search      : searchRef.current,
+        id_comunidad:   overrides.filtroCC          !== undefined ? overrides.filtroCC    : filtroCC,
+        id_universidad: overrides.filtroUniv        !== undefined ? overrides.filtroUniv  : filtroUniv,
+        rama:           overrides.filtroRama        !== undefined ? overrides.filtroRama  : filtroRama,
+        modalidad:      overrides.filtroMod         !== undefined ? overrides.filtroMod   : filtroMod,
+        activo:         overrides.filtroActivo      !== undefined ? overrides.filtroActivo: filtroActivo,
+        sortBy:         overrides.sortCol           !== undefined ? overrides.sortCol     : sortCol,
+        sortDir:        overrides.sortDir           !== undefined ? overrides.sortDir     : sortDir,
       });
-      ["search", "id_comunidad", "id_universidad", "rama", "modalidad", "activo"].forEach((k) => {
+      ["search","id_comunidad","id_universidad","rama","modalidad","activo"].forEach((k) => {
         if (!q.get(k)) q.delete(k);
       });
       const data = await boGET(`/backoffice/catalogo/masters?${q}`);
@@ -369,143 +463,180 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
 
   useEffect(() => { fetchMasters(); }, [fetchMasters]);
 
-  function applySearch() {
-    searchRef.current = search;
-    setPage(1);
-    fetchMasters({ page: 1, search });
-  }
-  function resetSearch() {
-    setSearch(""); searchRef.current = "";
-    setPage(1); fetchMasters({ page: 1, search: "" });
-  }
-  function handleFilter(key, val, setter) {
-    setter(val); setPage(1);
-    fetchMasters({ page: 1, [key]: val });
-  }
-  // Al cambiar CCAA, resetear también el filtro de universidad
+  function applySearch() { searchRef.current = search; setPage(1); fetchMasters({ page:1, search }); }
+  function resetSearch()  { setSearch(""); searchRef.current = ""; setPage(1); fetchMasters({ page:1, search:"" }); }
+  function handleFilter(key, val, setter) { setter(val); setPage(1); fetchMasters({ page:1, [key]: val }); }
   function handleFiltroCC(val) {
-    setFiltroCC(val);
-    setFiltroUniv("");
-    setPage(1);
-    fetchMasters({ page: 1, filtroCC: val, filtroUniv: "" });
+    setFiltroCC(val); setFiltroUniv(""); setPage(1);
+    fetchMasters({ page:1, filtroCC: val, filtroUniv: "" });
   }
   function handleSort(col) {
     const newDir = sortCol === col && sortDir === "asc" ? "desc" : "asc";
     setSortCol(col); setSortDir(newDir); setPage(1);
-    fetchMasters({ page: 1, sortCol: col, sortDir: newDir });
+    fetchMasters({ page:1, sortCol: col, sortDir: newDir });
   }
-
-  async function toggleEstado(m) {
+  async function toggleEstado(e, m) {
+    e.stopPropagation();
     setToggling(m.id_master);
     try { await boPOST(`/backoffice/catalogo/masters/${m.id_master}/estado`, { activo: !m.activo }); fetchMasters(); }
     finally { setToggling(null); }
   }
 
   const totalPages = Math.ceil(total / LIMIT);
-  const thProps = { sortCol, sortDir, onSort: handleSort };
+  const thProps    = { sortCol, sortDir, onSort: handleSort };
+
+  // Abrir editar desde el modal de vista
+  function abrirEditar(item) {
+    setModalVer(null);
+    setModal({ item });
+  }
 
   return (
     <div>
+      {/* Encabezado */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-base font-bold text-neutral-800">Másteres</h2>
           <p className="text-xs text-neutral-500 mt-0.5">
             precio = ECTS × €/crédito CCAA
-            {total > 0 && <span className="ml-2 text-neutral-400">— {total} registros</span>}
+            {total > 0 && <span className="ml-2 font-medium text-neutral-400">— {total} registros</span>}
           </p>
         </div>
         <button onClick={() => setModal({ item: null })}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition">
-          <span className="text-lg leading-none">+</span> Nuevo máster
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-95 transition shadow-sm">
+          <span className="text-base leading-none">+</span> Nuevo máster
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="flex flex-1 min-w-[220px] items-center gap-1">
-          <input className="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+      <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-1 min-w-[200px] items-center gap-1">
+          <input
+            className="flex-1 border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
             placeholder="Buscar por nombre…" value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applySearch()} />
-          <button onClick={applySearch} className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition">Buscar</button>
+          <button onClick={applySearch}
+            className="px-3 py-1.5 text-sm bg-primary text-white rounded-xl hover:bg-primary/90 transition font-medium">
+            Buscar
+          </button>
           {search && (
-            <button onClick={resetSearch} className="px-3 py-1.5 text-sm text-neutral-500 border rounded-lg hover:bg-neutral-50 transition">✕</button>
+            <button onClick={resetSearch}
+              className="px-2.5 py-1.5 text-sm text-neutral-400 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition">✕</button>
           )}
         </div>
-        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroCC} onChange={(e) => handleFiltroCC(e.target.value)}>
-          <option value="">Todas las CCAA</option>
-          {comunidades.map((c) => <option key={c.id_comunidad} value={c.id_comunidad}>{c.nombre}</option>)}
-        </select>
-        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroUniv} onChange={(e) => handleFilter("filtroUniv", e.target.value, setFiltroUniv)}>
-          <option value="">Todas las universidades</option>
-          {universidadesFiltradas.map((u) => (
-            <option key={u.id_universidad} value={u.id_universidad}>{u.sigla} — {u.nombre_completo}</option>
-          ))}
-        </select>
-        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroRama} onChange={(e) => handleFilter("filtroRama", e.target.value, setFiltroRama)}>
-          <option value="">Todas las ramas</option>
-          {RAMAS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </select>
-        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroMod} onChange={(e) => handleFilter("filtroMod", e.target.value, setFiltroMod)}>
-          <option value="">Todas las modalidades</option>
-          {MODALIDADES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </select>
-        <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          value={filtroActivo} onChange={(e) => handleFilter("filtroActivo", e.target.value, setFiltroActivo)}>
-          <option value="">Activos e inactivos</option>
-          <option value="true">Solo activos</option>
-          <option value="false">Solo inactivos</option>
-        </select>
+        {[
+          { value: filtroCC,     onChange: handleFiltroCC,                                       placeholder: "Todas las CCAA",          opts: comunidades.map((c) => ({ value: c.id_comunidad, label: c.nombre })) },
+          { value: filtroUniv,   onChange: (v) => handleFilter("filtroUniv", v, setFiltroUniv),  placeholder: "Todas las universidades",  opts: universidadesFiltradas.map((u) => ({ value: u.id_universidad, label: `${u.sigla} — ${u.nombre_completo}` })) },
+          { value: filtroRama,   onChange: (v) => handleFilter("filtroRama", v, setFiltroRama),  placeholder: "Todas las ramas",          opts: RAMAS.map((r) => ({ value: r.value, label: r.label })) },
+          { value: filtroMod,    onChange: (v) => handleFilter("filtroMod",  v, setFiltroMod),   placeholder: "Todas las modalidades",    opts: MODALIDADES.map((m) => ({ value: m.value, label: m.label })) },
+          { value: filtroActivo, onChange: (v) => handleFilter("filtroActivo",v,setFiltroActivo),placeholder: "Activos e inactivos",      opts: [{ value:"true", label:"Solo activos" }, { value:"false", label:"Solo inactivos" }] },
+        ].map(({ value, onChange, placeholder, opts }) => (
+          <select key={placeholder}
+            className="border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white text-neutral-700"
+            value={value} onChange={(e) => onChange(e.target.value)}>
+            <option value="">{placeholder}</option>
+            {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-neutral-200">
+      {/* Tabla */}
+      <div className="overflow-x-auto rounded-2xl border border-neutral-200 shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase tracking-wide">
+          <thead className="bg-neutral-50 text-[11px] text-neutral-400 uppercase tracking-wider">
             <tr>
-              <th className="text-left px-4 py-3">Universidad</th>
+              <th className="text-left px-3 py-2.5">Universidad</th>
               <Th col="nombre_limpio"         label="Máster"      {...thProps} />
               <Th col="rama"                  label="Rama"        {...thProps} />
               <Th col="modalidad"             label="Mod."        {...thProps} center />
               <Th col="ects"                  label="ECTS"        {...thProps} center />
               <Th col="precio_total_estimado" label="Precio est." {...thProps} right />
-              <th className="text-center px-4 py-3">Estado</th>
-              <th className="px-4 py-3"></th>
+              <th className="text-center px-3 py-2.5">Estado</th>
+              <th className="px-3 py-2.5 w-[130px]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {loading && <tr><td colSpan={8} className="text-center py-10 text-neutral-400">Cargando…</td></tr>}
-            {!loading && masters.length === 0 && <tr><td colSpan={8} className="text-center py-10 text-neutral-400">Sin másteres</td></tr>}
+            {loading && (
+              <tr><td colSpan={8} className="text-center py-12 text-neutral-400">
+                <div className="inline-flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  Cargando…
+                </div>
+              </td></tr>
+            )}
+            {!loading && masters.length === 0 && (
+              <tr><td colSpan={8} className="text-center py-12 text-neutral-400 text-sm">Sin másteres para los filtros seleccionados.</td></tr>
+            )}
             {!loading && masters.map((m) => {
-              const badge     = activoBadge(m.activo);
-              const ramaLabel = RAMAS.find((r) => r.value === m.rama)?.label || m.rama;
-              const modLabel  = MODALIDADES.find((md) => md.value === m.modalidad)?.label || m.modalidad;
+              const badge   = activoBadge(m.activo);
+              const ramaCls = RAMA_COLOR[m.rama] || "bg-neutral-100 text-neutral-600 border-neutral-200";
               return (
-                <tr key={m.id_master} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="font-mono text-xs font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded">{m.universidad?.sigla}</span>
-                    <span className="ml-1.5 text-xs text-neutral-500">{m.universidad?.comunidad?.nombre}</span>
+                <tr key={m.id_master}
+                  onClick={() => setModalVer({ item: m })}
+                  className="hover:bg-neutral-50/80 transition-colors cursor-pointer group">
+                  {/* Universidad */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span className="font-mono text-[11px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-md">{m.universidad?.sigla}</span>
+                    <span className="ml-1.5 text-[11px] text-neutral-400">{m.universidad?.comunidad?.nombre}</span>
                   </td>
-                  <td className="px-4 py-3 max-w-[220px]">
-                    <p className="truncate font-medium text-neutral-800" title={m.nombre_limpio}>{m.nombre_limpio}</p>
-                    <p className="text-xs text-neutral-400 truncate">{m.titulo_acceso || ""}</p>
+                  {/* Nombre */}
+                  <td className="px-3 py-2.5 max-w-[200px]">
+                    <p className="truncate font-medium text-neutral-800 text-sm group-hover:text-primary transition-colors" title={m.nombre_limpio}>
+                      {m.nombre_limpio}
+                    </p>
+                    {m.titulo_acceso && (
+                      <p className="text-[11px] text-neutral-400 truncate mt-0.5">{m.titulo_acceso}</p>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-neutral-600 whitespace-nowrap">{ramaLabel}</td>
-                  <td className="px-4 py-3 text-center text-xs text-neutral-600 whitespace-nowrap">{modLabel}</td>
-                  <td className="px-4 py-3 text-center tabular-nums text-neutral-700">{m.ects}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-neutral-700">{formatPrecio(m.precio_total_estimado)}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
+                  {/* Rama */}
+                  <td className="px-3 py-2.5">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${ramaCls}`}>
+                      {ramaLabel(m.rama)}
+                    </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => setModal({ item: m })} className="text-xs text-primary hover:underline">Editar</button>
-                      <button disabled={toggling === m.id_master} onClick={() => toggleEstado(m)}
-                        className="text-xs text-neutral-500 hover:text-neutral-800 disabled:opacity-40">
-                        {m.activo ? "Desactivar" : "Activar"}
+                  {/* Modalidad */}
+                  <td className="px-3 py-2.5 text-center text-[11px] text-neutral-600 whitespace-nowrap">{modLabel(m.modalidad)}</td>
+                  {/* ECTS */}
+                  <td className="px-3 py-2.5 text-center tabular-nums text-neutral-700 font-medium">{m.ects}</td>
+                  {/* Precio */}
+                  <td className="px-3 py-2.5 text-right tabular-nums text-neutral-700 font-medium">{formatPrecio(m.precio_total_estimado)}</td>
+                  {/* Estado */}
+                  <td className="px-3 py-2.5 text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badge.cls}`}>{badge.label}</span>
+                  </td>
+                  {/* Acciones */}
+                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setModalVer({ item: m }); }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition"
+                        title="Ver detalle">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.641 0-8.583-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Ver
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setModal({ item: m }); }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition"
+                        title="Editar">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                        </svg>
+                        Editar
+                      </button>
+                      <button
+                        disabled={toggling === m.id_master}
+                        onClick={(e) => toggleEstado(e, m)}
+                        className={`inline-flex items-center px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-40 ${
+                          m.activo
+                            ? "bg-red-50 hover:bg-red-100 text-red-600"
+                            : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                        }`}
+                        title={m.activo ? "Desactivar" : "Activar"}>
+                        {toggling === m.id_master ? "…" : m.activo ? "Desactivar" : "Activar"}
                       </button>
                     </div>
                   </td>
@@ -519,21 +650,41 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 text-sm">
-          <span className="text-neutral-500">Página {page} de {totalPages} — {total} másteres</span>
+          <span className="text-neutral-500">Página {page} de {totalPages} · {total} másteres</span>
           <div className="flex gap-2">
             <button disabled={page <= 1}
-              onClick={() => { const p = page - 1; setPage(p); fetchMasters({ page: p }); }}
-              className="px-3 py-1.5 border rounded-lg hover:bg-neutral-50 disabled:opacity-40 transition">← Anterior</button>
+              onClick={() => { const p = page-1; setPage(p); fetchMasters({ page:p }); }}
+              className="px-3 py-1.5 border border-neutral-200 rounded-xl hover:bg-neutral-50 disabled:opacity-40 transition text-sm">
+              ← Anterior
+            </button>
             <button disabled={page >= totalPages}
-              onClick={() => { const p = page + 1; setPage(p); fetchMasters({ page: p }); }}
-              className="px-3 py-1.5 border rounded-lg hover:bg-neutral-50 disabled:opacity-40 transition">Siguiente →</button>
+              onClick={() => { const p = page+1; setPage(p); fetchMasters({ page:p }); }}
+              className="px-3 py-1.5 border border-neutral-200 rounded-xl hover:bg-neutral-50 disabled:opacity-40 transition text-sm">
+              Siguiente →
+            </button>
           </div>
         </div>
       )}
 
+      {/* Modal ver */}
+      {modalVer && (
+        <ModalVerMaster
+          item={modalVer.item}
+          onClose={() => setModalVer(null)}
+          onEditar={() => abrirEditar(modalVer.item)}
+        />
+      )}
+
+      {/* Modal editar / crear */}
       {modal && (
-        <ModalMaster item={modal.item} universidades={universidades} comunidades={comunidades} ramas={ramas}
-          onClose={() => setModal(null)} onSaved={() => { setModal(null); fetchMasters(); }} />
+        <ModalMaster
+          item={modal.item}
+          universidades={universidades}
+          comunidades={comunidades}
+          ramas={ramas}
+          onClose={() => setModal(null)}
+          onSaved={() => { setModal(null); fetchMasters(); }}
+        />
       )}
     </div>
   );
