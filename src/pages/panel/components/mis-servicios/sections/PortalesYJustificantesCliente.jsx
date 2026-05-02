@@ -67,19 +67,95 @@ function AccesoCard({ item }) {
   );
 }
 
-function SubSeccion({ numero, titulo, items }) {
+function EmptyMinisterios() {
+  return (
+    <div className="border border-neutral-200 rounded-xl overflow-hidden">
+      <div className="px-4 py-3.5 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-bold text-neutral-800">7.1 Ministerios (nota media y homologación)</p>
+          <p className="text-xs text-neutral-500 mt-0.5">Portales del Ministerio de Educación para homologar tu título y obtener nota media española.</p>
+        </div>
+        <span className="text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">Sin iniciar</span>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="flex flex-col items-center py-6 border-2 border-dashed border-neutral-200 rounded-xl text-center gap-2">
+          <span className="text-3xl">🏛️</span>
+          <p className="text-sm font-semibold text-neutral-700">Sin portales registrados aún</p>
+          <p className="text-xs text-neutral-400 max-w-[280px]">
+            Tu asesor registrará los portales del ministerio cuando inicie el trámite de homologación.
+          </p>
+        </div>
+        <div className="flex items-start gap-2 bg-[#e8f2ef] border border-[#1D6A4A]/20 rounded-xl px-4 py-3">
+          <span className="text-sm shrink-0">📌</span>
+          <p className="text-xs text-[#2d5f4f]">
+            <strong>¿Para qué sirve esto?</strong> La nota media española y la homologación del título son requisitos de muchas universidades para admitir candidatos latinoamericanos a posgrado.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyPortalesMaster() {
+  return (
+    <div className="border border-neutral-200 rounded-xl overflow-hidden">
+      <div className="px-4 py-3.5 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-bold text-neutral-800">7.2 Universidades / Portales de máster</p>
+          <p className="text-xs text-neutral-500 mt-0.5">Portales de admisión de cada universidad a la que postularás.</p>
+        </div>
+        <span className="text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">Sin iniciar</span>
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="flex flex-col items-center py-6 border-2 border-dashed border-neutral-200 rounded-xl text-center gap-2">
+          <span className="text-3xl">🎓</span>
+          <p className="text-sm font-semibold text-neutral-700">Se generará automáticamente al confirmar tu elección</p>
+          <p className="text-xs text-neutral-400 max-w-[300px]">
+            Cuando confirmes los másteres en la Sección 5, tu asesor creará un portal por cada universidad y te enviará las instrucciones de acceso.
+          </p>
+        </div>
+
+        {/* Ejemplo de cómo se verá */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
+            Ejemplo de cómo se verá cada portal:
+          </p>
+          <div className="border border-neutral-200 rounded-xl p-4 opacity-50 pointer-events-none">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <div>
+                <p className="text-sm font-bold text-neutral-800">🏛️ Universidad de Valencia</p>
+                <p className="text-xs text-neutral-500">Máster en Marketing Digital y Comunicación</p>
+              </div>
+              <span className="text-xs font-bold bg-neutral-100 text-neutral-500 px-2.5 py-1 rounded-full">Pendiente apertura</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                { label: "PORTAL",       val: "uv.es/admision" },
+                { label: "ESTADO",       val: "Por abrir",    cls: "text-amber-600 font-semibold" },
+                { label: "FECHA LÍMITE", val: "30 Jun 2026" },
+                { label: "JUSTIFICANTE", val: "Pendiente" },
+              ].map((cell) => (
+                <div key={cell.label} className="bg-neutral-50 rounded-lg px-3 py-2">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase mb-0.5">{cell.label}</p>
+                  <p className={cell.cls || "text-neutral-700"}>{cell.val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SubSeccion({ codigo, titulo, descripcion, items }) {
+  if (!items || items.length === 0) return null;
   return (
     <div>
-      <p className="text-sm font-bold text-neutral-700 mb-3">{numero} {titulo}</p>
-      {!items || items.length === 0 ? (
-        <div className="flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
-          <p className="text-sm text-neutral-400">Aún no hay accesos configurados en esta sección.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((p) => <AccesoCard key={p.id_acceso} item={p} />)}
-        </div>
-      )}
+      <p className="text-sm font-bold text-neutral-700 mb-3">{codigo} {titulo}</p>
+      <div className="space-y-3">
+        {items.map((p) => <AccesoCard key={p.id_acceso} item={p} />)}
+      </div>
     </div>
   );
 }
@@ -111,7 +187,7 @@ export default function PortalesYJustificantesCliente({ idSolicitud }) {
     ? "Cargando…"
     : total > 0
     ? `${total} acceso${total > 1 ? "s" : ""} configurado${total > 1 ? "s" : ""}`
-    : "Tus accesos a ministerios y portales universitarios.";
+    : "Accesos a ministerios y portales universitarios.";
 
   return (
     <SeccionPanel
@@ -133,9 +209,30 @@ export default function PortalesYJustificantesCliente({ idSolicitud }) {
         </div>
       )}
       {!loading && !error && (
-        <div className="space-y-6">
-          <SubSeccion numero="7.1" titulo="Tus accesos a ministerios" items={ministerios} />
-          <SubSeccion numero="7.2" titulo="Tus accesos a portales de máster" items={masters} />
+        <div className="space-y-4">
+          {/* Aviso cuando aún no hay datos */}
+          {total === 0 && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <span className="text-lg shrink-0">⚠️</span>
+              <p className="text-sm text-amber-800">
+                Esta sección se activa tras confirmar tu elección de másteres. Tu asesor registrará los portales y gestionará los accesos contigo.
+              </p>
+            </div>
+          )}
+
+          {/* 7.1 */}
+          {ministerios.length === 0 ? (
+            <EmptyMinisterios />
+          ) : (
+            <SubSeccion codigo="7.1" titulo="Tus accesos a ministerios" items={ministerios} />
+          )}
+
+          {/* 7.2 */}
+          {masters.length === 0 ? (
+            <EmptyPortalesMaster />
+          ) : (
+            <SubSeccion codigo="7.2" titulo="Tus accesos a portales de máster" items={masters} />
+          )}
         </div>
       )}
     </SeccionPanel>

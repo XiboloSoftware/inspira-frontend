@@ -1,5 +1,5 @@
 // src/pages/panel/components/mis-servicios/sections/ProgramacionPostulacionesCliente.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiGET } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
@@ -17,6 +17,37 @@ const ESTADO_TAREA_CFG = {
 };
 function getTareaCfg(estado) {
   return ESTADO_TAREA_CFG[(estado || "pendiente").toLowerCase().replace(" ", "_")] || ESTADO_TAREA_CFG.pendiente;
+}
+
+const TIMELINE_VACIO = [
+  { label: "Confirmación de másteres por asesor",  fecha: "Pendiente tu elección" },
+  { label: "Apertura de portales de admisión",     fecha: "A definir según máster" },
+  { label: "Envío de documentación",               fecha: "A definir según portal" },
+  { label: "Resolución de admisión",               fecha: "Estimado: 4-6 semanas tras cierre" },
+];
+
+function StatCard({ label, value, colorClass }) {
+  return (
+    <div className={`text-center p-4 rounded-xl ${colorClass}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-3xl font-black mt-1">{value}</p>
+    </div>
+  );
+}
+
+function TimelineVacio() {
+  return (
+    <div className="relative pl-5 mt-2">
+      <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-neutral-200" />
+      {TIMELINE_VACIO.map((item, idx) => (
+        <div key={idx} className="relative mb-4">
+          <div className="absolute -left-4 top-1 w-3 h-3 rounded-full border-2 border-neutral-300 bg-white" />
+          <p className="text-sm font-semibold text-neutral-700">{item.label}</p>
+          <p className="text-xs text-neutral-400 mt-0.5">{item.fecha}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
@@ -39,6 +70,15 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
     load();
     return () => { cancelled = true; };
   }, [idSolicitud]);
+
+  const stats = useMemo(() => {
+    const allTareas = masters.flatMap((m) => m.tareas || []);
+    return {
+      pendiente:  allTareas.filter((t) => (t.estado_tarea || "pendiente").toLowerCase() === "pendiente").length,
+      en_proceso: allTareas.filter((t) => (t.estado_tarea || "").toLowerCase() === "en_proceso").length,
+      completado: allTareas.filter((t) => (t.estado_tarea || "").toLowerCase() === "completado").length,
+    };
+  }, [masters]);
 
   const subtitulo = loading
     ? "Cargando…"
@@ -68,18 +108,49 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
       )}
 
       {!loading && !error && masters.length === 0 && (
-        <div className="flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
-          <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
+        <div className="space-y-4">
+          {/* Aviso de sección bloqueada */}
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <span className="text-lg shrink-0">⚠️</span>
+            <p className="text-sm text-amber-800">
+              Esta sección se desbloqueará una vez tu asesor confirme tu elección de másteres.
+            </p>
           </div>
-          <p className="text-sm text-neutral-500">Aún no se ha configurado la programación de postulaciones.</p>
+
+          {/* Stats en cero */}
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard label="Pendiente"  value="0" colorClass="border border-neutral-200 text-neutral-400" />
+            <StatCard label="En proceso" value="0" colorClass="bg-sky-50 text-sky-600" />
+            <StatCard label="Admitido"   value="0" colorClass="bg-emerald-50 text-emerald-700" />
+          </div>
+
+          {/* Timeline vacío */}
+          <TimelineVacio />
         </div>
       )}
 
       {!loading && !error && masters.length > 0 && (
         <div className="space-y-4">
+          {/* Stats derivadas de las tareas */}
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard
+              label="Pendiente"
+              value={stats.pendiente}
+              colorClass="border border-neutral-200 text-neutral-400"
+            />
+            <StatCard
+              label="En proceso"
+              value={stats.en_proceso}
+              colorClass="bg-sky-50 text-sky-600"
+            />
+            <StatCard
+              label="Completado"
+              value={stats.completado}
+              colorClass="bg-emerald-50 text-emerald-700"
+            />
+          </div>
+
+          {/* Lista de másteres con sus tareas */}
           {masters.map((m) => (
             <div key={m.master_prioridad ?? m.master_label} className="border border-neutral-200 rounded-xl overflow-hidden">
               <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-100">

@@ -154,6 +154,8 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
     if (cargarTodo) cargarTodo();
   }
 
+  const sinDoc = total - aprobados;
+
   return (
     <SeccionPanel
       numero="1"
@@ -162,6 +164,19 @@ export default function ChecklistDocumentos({ checklist, cargarTodo, idSolicitud
       estado={estadoGlobal}
       sectionId="1"
     >
+      {/* Barra de progreso resumida */}
+      {total > 0 && (
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <p className="text-sm text-neutral-500">
+            Sube todos tus documentos para que tu asesor pueda revisarlos.
+          </p>
+          <div className="flex gap-4 text-xs font-semibold">
+            <span className="text-emerald-600">● {aprobados} Listos</span>
+            <span className="text-neutral-400">● {sinDoc} Sin doc.</span>
+          </div>
+        </div>
+      )}
+
       {Object.keys(grupos).length === 0 && (
         <p className="text-sm text-neutral-400 py-4 text-center">
           Aún no hay checklist configurado.
