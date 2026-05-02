@@ -8,9 +8,6 @@ import {
   MODAL_OVERLAY, MODAL_PANEL,
 } from "./catalogoConstants";
 
-const STD_RAMAS = RAMAS.map((r) => r.value);
-const RAMA_CUSTOM = "__custom__";
-
 const FORM_INIT = {
   id_universidad: "", nombre_limpio: "", nombre_original: "",
   rama: "CIENCIAS_SOCIALES_JURIDICAS", modalidad: "PRESENCIAL", ects: "60",
@@ -33,43 +30,9 @@ function Th({ col, label, sortCol, sortDir, onSort, right, center }) {
   );
 }
 
-// ── Campo Rama: select estándar + opción libre ────────────────────────────────
-function RamaField({ value, onChange }) {
-  const isCustom = value !== "" && !STD_RAMAS.includes(value);
-  const [sel, setSel] = useState(isCustom ? RAMA_CUSTOM : value || "CIENCIAS_SOCIALES_JURIDICAS");
-
-  function handleSel(v) {
-    setSel(v);
-    if (v !== RAMA_CUSTOM) onChange(v);
-    else onChange(""); // espera que el usuario escriba
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <select
-        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-        value={sel}
-        onChange={(e) => handleSel(e.target.value)}
-      >
-        {RAMAS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-        <option value={RAMA_CUSTOM}>Otra (escribir)…</option>
-      </select>
-      {sel === RAMA_CUSTOM && (
-        <input
-          required
-          autoFocus
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          placeholder="Escribe la nueva rama de conocimiento"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )}
-    </div>
-  );
-}
 
 // ── Modal crear / editar ──────────────────────────────────────────────────────
-function ModalMaster({ item, universidades, comunidades, onClose, onSaved }) {
+function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved }) {
   const isEdit = !!item?.id_master;
   const [form, setForm] = useState(
     isEdit
@@ -171,7 +134,13 @@ function ModalMaster({ item, universidades, comunidades, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-neutral-500 mb-1">Rama *</label>
-              <RamaField value={form.rama} onChange={(v) => set("rama", v)} />
+              <select required className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                value={form.rama} onChange={(e) => set("rama", e.target.value)}>
+                <option value="">Seleccionar…</option>
+                {ramas.filter((r) => r.activo).map((r) => (
+                  <option key={r.id_rama} value={r.valor}>{r.etiqueta}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-500 mb-1">Modalidad *</label>
@@ -250,7 +219,7 @@ function ModalMaster({ item, universidades, comunidades, onClose, onSaved }) {
 }
 
 // ── Tabla principal ───────────────────────────────────────────────────────────
-export default function SeccionMasters({ universidades, comunidades }) {
+export default function SeccionMasters({ universidades, comunidades, ramas }) {
   const [masters,    setMasters]    = useState([]);
   const [total,      setTotal]      = useState(0);
   const [page,       setPage]       = useState(1);
@@ -444,7 +413,7 @@ export default function SeccionMasters({ universidades, comunidades }) {
       )}
 
       {modal && (
-        <ModalMaster item={modal.item} universidades={universidades} comunidades={comunidades}
+        <ModalMaster item={modal.item} universidades={universidades} comunidades={comunidades} ramas={ramas}
           onClose={() => setModal(null)} onSaved={() => { setModal(null); fetchMasters(); }} />
       )}
     </div>

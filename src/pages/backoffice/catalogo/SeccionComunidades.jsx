@@ -128,6 +128,7 @@ function Modal({ item, onClose, onSaved }) {
 export default function SeccionComunidades({ comunidades, onReload }) {
   const [modal,    setModal]    = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [search,   setSearch]   = useState("");
   const [sortCol,  setSortCol]  = useState("nombre");
   const [sortDir,  setSortDir]  = useState("asc");
 
@@ -137,7 +138,11 @@ export default function SeccionComunidades({ comunidades, onReload }) {
   }
 
   const sorted = useMemo(() => {
-    return [...comunidades].sort((a, b) => {
+    const q = search.toLowerCase();
+    const base = q
+      ? comunidades.filter((c) => c.nombre.toLowerCase().includes(q) || (c.sistema_postulacion || "").toLowerCase().includes(q))
+      : comunidades;
+    return [...base].sort((a, b) => {
       let valA, valB;
       if (sortCol === "universidades") { valA = a._count?.universidades ?? 0; valB = b._count?.universidades ?? 0; }
       else if (sortCol === "precio_credito_extranjero" || sortCol === "precio_estimado_60ects") {
@@ -167,6 +172,15 @@ export default function SeccionComunidades({ comunidades, onReload }) {
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition">
           <span className="text-lg leading-none">+</span> Nueva comunidad
         </button>
+      </div>
+
+      <div className="mb-3">
+        <input
+          className="border rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          placeholder="Buscar comunidad…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-neutral-200">

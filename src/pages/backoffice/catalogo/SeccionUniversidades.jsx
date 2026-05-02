@@ -154,6 +154,7 @@ function Modal({ item, comunidades, onClose, onSaved }) {
 export default function SeccionUniversidades({ universidades, comunidades, onReload }) {
   const [modal,    setModal]    = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [search,   setSearch]   = useState("");
   const [filtroCC, setFiltroCC] = useState("");
   const [sortCol,  setSortCol]  = useState("nombre_completo");
   const [sortDir,  setSortDir]  = useState("asc");
@@ -163,9 +164,14 @@ export default function SeccionUniversidades({ universidades, comunidades, onRel
     else { setSortCol(col); setSortDir("asc"); }
   }
 
-  const filtered = filtroCC
-    ? universidades.filter((u) => String(u.id_comunidad) === filtroCC)
-    : universidades;
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return universidades.filter((u) => {
+      if (filtroCC && String(u.id_comunidad) !== filtroCC) return false;
+      if (q && !u.sigla.toLowerCase().includes(q) && !u.nombre_completo.toLowerCase().includes(q) && !u.ciudad.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [universidades, filtroCC, search]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -203,7 +209,13 @@ export default function SeccionUniversidades({ universidades, comunidades, onRel
         </button>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <input
+          className="border rounded-lg px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          placeholder="Buscar sigla, nombre, ciudad…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={filtroCC} onChange={(e) => setFiltroCC(e.target.value)}>
           <option value="">Todas las CCAA ({universidades.length})</option>
