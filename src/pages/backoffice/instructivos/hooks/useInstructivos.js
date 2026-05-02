@@ -44,6 +44,13 @@ export function useInstructivos() {
     setModo("nuevo");
   }
 
+  function seleccionarServicio(id) {
+    if (!id) { setSelectedServicio(null); setInstructivos([]); resetForm(); return; }
+    setSelectedServicio(id);
+    resetForm();
+    cargarInstructivos(id);
+  }
+
   function editarInstructivo(inst) {
     setModo("editar");
     setForm({
@@ -57,10 +64,11 @@ export function useInstructivos() {
   }
 
   async function eliminarInstructivo(id_instructivo) {
-    if (!window.confirm("¿Eliminar este instructivo? (se desactiva)")) return;
+    if (!window.confirm("¿Eliminar este instructivo?")) return;
     const r = await boDELETE(`/backoffice/instructivos/${id_instructivo}`);
     if (!r.ok) { alert(r.msg || "No se pudo eliminar"); return; }
     if (selectedServicio) cargarInstructivos(selectedServicio);
+    cargarServicios();
   }
 
   async function handleUploadArchivo(e) {
@@ -97,24 +105,16 @@ export function useInstructivos() {
 
       if (!r.ok) { alert(r.msg || "No se pudo guardar"); return; }
       resetForm();
-      if (selectedServicio) cargarInstructivos(selectedServicio);
+      cargarInstructivos(selectedServicio);
+      cargarServicios();
     } finally {
       setSaving(false);
     }
   }
 
-  function manejarCambioServicio(e) {
-    const val = e.target.value;
-    if (!val) { setSelectedServicio(null); setInstructivos([]); resetForm(); return; }
-    const id = Number(val);
-    setSelectedServicio(id);
-    resetForm();
-    cargarInstructivos(id);
-  }
-
   return {
     servicios, loadingServicios, cargarServicios,
-    selectedServicio, manejarCambioServicio,
+    selectedServicio, seleccionarServicio,
     instructivos, loadingInstructivos,
     form, setForm, modo, saving, subiendoArchivo,
     resetForm, editarInstructivo, eliminarInstructivo,
