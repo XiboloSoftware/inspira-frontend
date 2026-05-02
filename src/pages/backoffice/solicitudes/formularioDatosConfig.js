@@ -1,63 +1,85 @@
-// Configuración de campos del formulario de datos académicos
+// Configuración canónica de campos del formulario académico
+// Sección → orden de aparición en el componente admin
+
+const UBICACION = { tercio: "Tercio superior", quinto: "Quinto superior", decimo: "Décimo superior", ninguno: "No estuvo en ninguno" };
+const INGLES    = { uni: "Cert. universitaria", intl: "Cert. internacional (IELTS/TOEFL…)", instituto: "Instituto (sin cert.)", sabe_sin_cert: "Sin certificar", no: "Sin inglés" };
+const DURACION  = { "1": "Máx. 1 año", "1.5": "Máx. 1,5 años", "2": "Máx. 2 años", indiferente: "Me da igual" };
+const PRACTICAS = { imprescindible: "Imprescindible", deseable: "Deseable", no_importante: "No es criterio" };
+const MODALIDAD = { presencial: "Presencial", semipresencial: "Semipresencial", online: "Online", indiferente: "Me da igual" };
+const INICIO    = { sep_2025: "Sep 2025", ene_2026: "Ene 2026", sep_2026: "Sep 2026", ene_2027: "Ene 2027", flexible: "Flexible / No sé" };
+
 export const FIELD_CONFIG = {
-  carrera_titulo:              { label: "Carrera o título universitario", section: "Perfil académico" },
-  area_carrera:                { label: "Área de la carrera", section: "Perfil académico" },
-  universidad_origen:          { label: "Universidad de origen", section: "Perfil académico" },
-  promedio_peru:               { label: "Promedio universitario", section: "Perfil académico" },
-  promedio_escala:             { label: "Escala del promedio", section: "Perfil académico",
-                                 format: (v) => ({ "20": "Escala /20 (Perú)", "10": "Escala /10", "5": "Escala /5 (Colombia)", "4": "GPA 0–4.0", "100": "Porcentaje %" }[v] || v) },
-  ubicacion_grupo:             { label: "¿Estuvo en tercio/quinto/décimo superior?", section: "Perfil académico",
-                                 format: (v) => ({ tercio: "Tercio superior", quinto: "Quinto superior", decimo: "Décimo superior", ninguno: "No estuvo en ninguno" }[v] || v) },
+  // ── Perfil académico ─────────────────────────────────────────────────
+  carrera_titulo:              { label: "Carrera / título",             section: "Perfil académico" },
+  area_carrera:                { label: "Área de la carrera",           section: "Perfil académico" },
+  universidad_origen:          { label: "Universidad de origen",        section: "Perfil académico" },
+  es_auip:                     { label: "Afiliada a AUIP",              section: "Perfil académico",
+                                 format: (v) => ({ si: "Sí", no: "No" }[v] || v) },
+  promedio_peru:               { label: "Promedio",                     section: "Perfil académico" },
+  promedio_escala:             { label: "Escala",                       section: "Perfil académico",
+                                 format: (v) => ({ "20": "/20", "10": "/10", "5": "/5", "4": "GPA 0–4", "100": "%" }[v] || v) },
+  ubicacion_grupo:             { label: "Posición académica",           section: "Perfil académico",
+                                 format: (v) => UBICACION[v] || v },
+  otra_maestria_tiene:         { label: "Tiene otra maestría",          section: "Perfil académico" },
+  otra_maestria_detalle:       { label: "Detalle maestría",             section: "Perfil académico", fullWidth: true },
 
-  experiencia_anios:           { label: "Años de experiencia profesional", section: "Experiencia profesional y vinculación" },
-  experiencia_vinculada:       { label: "¿La experiencia está vinculada a los másteres de interés?", section: "Experiencia profesional y vinculación" },
-  experiencia_vinculada_detalle: { label: "Detalle de la experiencia vinculada", section: "Experiencia profesional y vinculación", fullWidth: true },
-  otra_maestria_tiene:         { label: "¿Cuenta con otra maestría?", section: "Experiencia profesional y vinculación" },
-  otra_maestria_detalle:       { label: "Nombre de la maestría y universidad", section: "Experiencia profesional y vinculación", fullWidth: true },
+  // ── Experiencia profesional ──────────────────────────────────────────
+  experiencia_anios:           { label: "Años de experiencia",          section: "Experiencia profesional" },
+  experiencia_vinculada:       { label: "Vinculada al área del máster", section: "Experiencia profesional",
+                                 format: (v) => ({ si: "Sí, directamente", parcial: "Parcialmente", no: "No directamente" }[v] || v) },
+  experiencia_vinculada_detalle: { label: "Descripción de la experiencia", section: "Experiencia profesional", fullWidth: true },
 
-  investigacion_experiencia:   { label: "¿Tiene experiencia en investigación?", section: "Investigación y formación complementaria" },
-  investigacion_detalle:       { label: "Detalle de publicaciones o grupos de investigación", section: "Investigación y formación complementaria", fullWidth: true },
-  formacion_encuentros:        { label: "Formación complementaria (encuentros, escuelas de verano, etc.)", section: "Investigación y formación complementaria" },
-  formacion_otra_maestria:     { label: "Otra formación complementaria relacionada con el máster", section: "Investigación y formación complementaria" },
+  // ── Investigación y formación ────────────────────────────────────────
+  investigacion_experiencia:   { label: "Experiencia en investigación", section: "Investigación y formación" },
+  investigacion_detalle:       { label: "Publicaciones / grupos",       section: "Investigación y formación", fullWidth: true },
+  formacion_diplomados:        { label: "Diplomados / cursos",          section: "Investigación y formación" },
+  formacion_encuentros:        { label: "Encuentros / congresos",       section: "Investigación y formación" },
+  formacion_otros:             { label: "Otras certificaciones",        section: "Investigación y formación" },
+  formacion_otros_detalle:     { label: "Detalle otras formaciones",    section: "Investigación y formación", fullWidth: true },
+  formacion_ninguna:           { label: "Sin formación complementaria", section: "Investigación y formación" },
 
-  ingles_situacion:            { label: "Situación actual de inglés", section: "Idiomas y certificaciones",
-                                 format: (v) => ({ uni: "Certificación de inglés emitida por mi universidad", intl: "Certificación internacional (IELTS, TOEFL, Cambridge, etc.)", inst: "Inglés de instituto (sin certificación oficial)", sabe_sin_cert: "Sé inglés pero aún no lo he certificado", no: "No tengo inglés" }[v] || v) },
-  ingles_uni_nivel:            { label: "Nivel de inglés en la universidad", section: "Idiomas y certificaciones" },
-  ingles_intl_tipo:            { label: "Tipo de certificación internacional", section: "Idiomas y certificaciones" },
-  ingles_intl_puntaje:         { label: "Puntaje / nivel en certificación internacional", section: "Idiomas y certificaciones" },
+  // ── Idiomas ──────────────────────────────────────────────────────────
+  ingles_situacion:            { label: "Situación inglés",             section: "Idiomas",
+                                 format: (v) => INGLES[v] || v },
+  ingles_uni_nivel:            { label: "Nivel cert. universitaria",    section: "Idiomas" },
+  ingles_intl_tipo:            { label: "Tipo cert. internacional",     section: "Idiomas" },
+  ingles_intl_puntaje:         { label: "Puntaje / nivel",             section: "Idiomas" },
+  idioma_master_es:            { label: "Acepta máster en español",     section: "Idiomas" },
+  idioma_master_bilingue:      { label: "Acepta máster bilingüe",       section: "Idiomas" },
+  idioma_master_ingles:        { label: "Acepta máster en inglés",      section: "Idiomas" },
 
-  idioma_master_es:            { label: "Acepta máster solo en español", section: "Idioma del máster que prefiere" },
-  idioma_master_bilingue:      { label: "Acepta máster bilingüe (español + inglés)", section: "Idioma del máster que prefiere" },
-  idioma_master_ingles:        { label: "Acepta máster totalmente en inglés", section: "Idioma del máster que prefiere" },
+  // ── Becas ─────────────────────────────────────────────────────────────
+  beca_desea:                  { label: "Desea beca / ayuda",           section: "Becas" },
+  beca_completa:               { label: "Becas completas",              section: "Becas" },
+  beca_parcial:                { label: "Becas parciales / descuentos", section: "Becas" },
+  beca_ayuda_uni:              { label: "Ayudas de la universidad",      section: "Becas" },
+  beca_auip:                   { label: "Becas AUIP",                   section: "Becas" },
 
-  beca_desea:                  { label: "¿Desea postular a una beca o ayuda económica?", section: "Becas y ayudas económicas" },
-  beca_completa:               { label: "Interés en becas completas", section: "Becas y ayudas económicas" },
-  beca_parcial:                { label: "Interés en becas parciales / descuentos", section: "Becas y ayudas económicas" },
-  beca_ayuda_uni:              { label: "Interés en ayudas de la propia universidad", section: "Becas y ayudas económicas" },
+  // ── Preferencias del máster ──────────────────────────────────────────
+  area_interes_master:         { label: "Rama del máster",              section: "Preferencias del máster" },
+  duracion_preferida:          { label: "Duración",                     section: "Preferencias del máster",
+                                 format: (v) => DURACION[v] || v },
+  practicas_preferencia:       { label: "Prácticas",                    section: "Preferencias del máster",
+                                 format: (v) => PRACTICAS[v] || v },
+  modalidad_preferida:         { label: "Modalidad",                    section: "Preferencias del máster",
+                                 format: (v) => MODALIDAD[v] || v },
+  presupuesto_hasta:           { label: "Presupuesto hasta",            section: "Preferencias del máster",
+                                 format: (v) => v ? `${Number(v).toLocaleString("es-ES")} €/año` : v },
+  comunidades_preferidas:      { label: "Comunidades preferidas",       section: "Preferencias del máster",
+                                 format: (v) => Array.isArray(v) ? v.join(" · ") : v },
+  inicio_previsto:             { label: "Inicio previsto",              section: "Preferencias del máster",
+                                 format: (v) => INICIO[v] || v },
 
-  duracion_preferida:          { label: "Duración máxima que prefiere para el máster", section: "Preferencias del máster",
-                                 format: (v) => ({ "1": "Máximo 1 año", "2": "Máximo 2 años", "3": "Máximo 3 años", "4": "Programas más largos", indiferente: "Indiferente" }[v] || v) },
-  practicas_preferencia:       { label: "Prácticas curriculares", section: "Preferencias del máster",
-                                 format: (v) => ({ imprescindible: "Es imprescindible que el máster tenga prácticas", deseable: "Me gustaría que tenga prácticas, pero no es imprescindible", no_importante: "No es un criterio importante para mí" }[v] || v) },
-  presupuesto_desde:           { label: "Presupuesto mínimo para la matrícula (solo estudios, €)", section: "Preferencias del máster" },
-  presupuesto_hasta:           { label: "Presupuesto máximo para la matrícula (solo estudios, €)", section: "Preferencias del máster" },
-  area_interes_master:         { label: "Tipo de máster que le interesa estudiar", section: "Preferencias del máster" },
-  comunidades_preferidas:      { label: "Comunidades autónomas preferidas en España", section: "Preferencias del máster",
-                                 format: (v) => Array.isArray(v) ? v.join(", ") : v },
-
-  comentario_especial:         { label: "Comentario especial para IA / asesores", section: "Comentario especial", fullWidth: true },
-
-  es_auip:                     { label: "Universidad afiliada a AUIP", section: "Perfil académico",
-                                 format: (v) => ({ si: "Sí (AUIP)", no: "No" }[v] || v) },
+  // ── Comentario especial ───────────────────────────────────────────────
+  comentario_especial:         { label: "Comentario para IA / asesores", section: "Comentario especial", fullWidth: true },
 };
 
 export const SECTIONS_ORDER = [
   "Perfil académico",
-  "Experiencia profesional y vinculación",
-  "Investigación y formación complementaria",
-  "Idiomas y certificaciones",
-  "Idioma del máster que prefiere",
-  "Becas y ayudas económicas",
+  "Experiencia profesional",
+  "Investigación y formación",
+  "Idiomas",
+  "Becas",
   "Preferencias del máster",
   "Comentario especial",
   "Otros datos",
