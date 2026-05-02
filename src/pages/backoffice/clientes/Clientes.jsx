@@ -4,6 +4,7 @@ import { boGET, boPOST, boPUT } from "../../../services/backofficeApi";
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
 import ServiciosClienteModal from "./ServiciosClienteModal";
+import PerfilClienteModal from "./PerfilClienteModal";
 
 const FORM_INICIAL = {
   id_cliente: null,
@@ -47,6 +48,7 @@ export default function Clientes({ user }) {
   const [modo, setModo] = useState("nuevo");
   const [showModal, setShowModal] = useState(false);
   const [clienteServicios, setClienteServicios] = useState(null);
+  const [clientePerfil, setClientePerfil] = useState(null);
   const [toast, setToast] = useState(null); // { msg, tipo }
 
   const debounceRef = useRef(null);
@@ -63,11 +65,12 @@ export default function Clientes({ user }) {
       if (e.key === "Escape") {
         if (showModal) closeModal();
         if (clienteServicios) setClienteServicios(null);
+        if (clientePerfil) setClientePerfil(null);
       }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [showModal, clienteServicios]);
+  }, [showModal, clienteServicios, clientePerfil]);
 
   async function cargar(qParam) {
     setLoading(true);
@@ -120,6 +123,10 @@ export default function Clientes({ user }) {
 
   function onVerServiciosCliente(c) {
     setClienteServicios(c);
+  }
+
+  function onVerPerfilCliente(c) {
+    setClientePerfil(c);
   }
 
   async function onSubmitForm(e) {
@@ -263,6 +270,7 @@ export default function Clientes({ user }) {
         onVerServicios={onVerServiciosCliente}
         onToggleActivo={onToggleActivoCliente}
         onPurgar={onPurgarCliente}
+        onVerPerfil={onVerPerfilCliente}
         isAdmin={isAdmin}
       />
 
@@ -283,6 +291,14 @@ export default function Clientes({ user }) {
         <ServiciosClienteModal
           cliente={clienteServicios}
           onClose={() => setClienteServicios(null)}
+        />
+      )}
+
+      {/* Modal perfil completo */}
+      {clientePerfil && (
+        <PerfilClienteModal
+          cliente={clientePerfil}
+          onClose={() => setClientePerfil(null)}
         />
       )}
 
