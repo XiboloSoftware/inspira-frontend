@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /panel
+Disallow: /panel/
+Disallow: /backoffice
+Disallow: /backoffice/
+Disallow: /auth/
+
+Sitemap: https://inspira-legal.cloud/sitemap.xml

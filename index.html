@@ -1,12 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <title>Inspira Legal - Migración & Estudios</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <!-- SEO base — useSEO.js sobreescribe estos valores por ruta -->
+    <title>Tu camino a estudiar en España | Inspira Legal</title>
+    <meta name="description" content="Inspira Legal te acompaña desde la elección del máster hasta la matrícula en universidades españolas de primer nivel. Gestión de visas, apostilla y extranjería." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://inspira-legal.cloud/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Inspira Legal" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:title" content="Tu camino a estudiar en España | Inspira Legal" />
+    <meta property="og:description" content="Inspira Legal te acompaña desde la elección del máster hasta la matrícula en universidades españolas de primer nivel. Gestión de visas, apostilla y extranjería." />
+    <meta property="og:url" content="https://inspira-legal.cloud/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Tu camino a estudiar en España | Inspira Legal" />
+    <meta name="twitter:description" content="Inspira Legal te acompaña desde la elección del máster hasta la matrícula en universidades españolas. Gestión de visas y extranjería." />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&display=swap" rel="stylesheet" />
@@ -14,16 +32,10 @@
 
   <body>
     <div id="root"></div>
-
-    <!-- Script de tu app -->
     <script type="module" src="/src/main.jsx"></script>
-
-    <!-- 🔥 FIX para el botón Atrás que muestra estado viejo de login -->
     <script>
       window.addEventListener("pageshow", function (e) {
-        if (e.persisted) {
-          window.location.reload();
-        }
+        if (e.persisted) { window.location.reload(); }
       });
     </script>
   </body>
