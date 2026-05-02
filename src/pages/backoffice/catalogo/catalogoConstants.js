@@ -21,6 +21,21 @@ export const LISTAS_INSPIRA = [
   { value: "LISTA_3", label: "Lista 3 — Referencia" },
 ];
 
+export const CATEGORIAS_CRITERIO = [
+  { value: "EXPEDIENTE_ACADEMICO",     label: "Expediente académico",      color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "EXPERIENCIA_PROFESIONAL",  label: "Experiencia profesional",   color: "bg-violet-50 text-violet-700 border-violet-200" },
+  { value: "CURRICULUM_VITAE",         label: "Currículum Vitae",          color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  { value: "IDIOMAS",                  label: "Idiomas",                   color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "FORMACION_COMPLEMENTARIA", label: "Formación complementaria",  color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+  { value: "ADECUACION_TITULO",        label: "Adecuación del título",     color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { value: "CARTAS_REFERENCIA",        label: "Cartas de referencia",      color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "ENTREVISTA",               label: "Entrevista",                color: "bg-rose-50 text-rose-700 border-rose-200" },
+  { value: "MOTIVACION",               label: "Motivación",                color: "bg-pink-50 text-pink-700 border-pink-200" },
+  { value: "INVESTIGACION",            label: "Investigación",             color: "bg-teal-50 text-teal-700 border-teal-200" },
+  { value: "DOSSIER_PORTFOLIO",        label: "Dossier / Portfolio",       color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { value: "OTROS_MERITOS",            label: "Otros méritos",             color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+];
+
 export const TIENE_PRACTICAS_OPCIONES = [
   { value: "",      label: "Sin dato" },
   { value: "true",  label: "Sí" },

@@ -5,12 +5,14 @@ import SeccionRamas         from "./SeccionRamas";
 import SeccionComunidades   from "./SeccionComunidades";
 import SeccionUniversidades from "./SeccionUniversidades";
 import SeccionMasters       from "./SeccionMasters";
+import SeccionCriterios     from "./SeccionCriterios";
 
 const TABS = [
   { key: "ramas",         label: "Ramas" },
   { key: "comunidades",   label: "Comunidades Autónomas" },
   { key: "universidades", label: "Universidades" },
   { key: "masters",       label: "Másteres" },
+  { key: "criterios",     label: "Criterios" },
 ];
 
 export default function CatalogoMasters() {
@@ -100,7 +102,8 @@ export default function CatalogoMasters() {
             {tab === "ramas"         && <SeccionRamas         ramas={ramas}                   onReload={loadAll} />}
             {tab === "comunidades"   && <SeccionComunidades   comunidades={comunidades}        onReload={loadAll} />}
             {tab === "universidades" && <SeccionUniversidades universidades={universidades} comunidades={comunidades} onReload={loadAll} />}
-            {tab === "masters"       && <SeccionMasters        universidades={universidades} comunidades={comunidades} ramas={ramas} />}
+            {tab === "masters"       && <SeccionMasters    universidades={universidades} comunidades={comunidades} ramas={ramas} />}
+            {tab === "criterios"     && <SeccionCriterios  universidades={universidades} />}
           </>
         )}
       </div>

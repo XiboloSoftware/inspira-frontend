@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
 import {
-  RAMAS, MODALIDADES, TIENE_PRACTICAS_OPCIONES,
+  RAMAS, MODALIDADES, TIENE_PRACTICAS_OPCIONES, CATEGORIAS_CRITERIO,
   formatPrecio, duracionLabel, activoBadge,
   MODAL_OVERLAY, MODAL_PANEL,
 } from "./catalogoConstants";
@@ -33,8 +33,10 @@ function nivelLabel(nivel) {
   return map[nivel] || nivel || "—";
 }
 function categoriaLabel(cat) {
-  if (!cat) return "—";
-  return cat.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return CATEGORIAS_CRITERIO.find((c) => c.value === cat)?.label || (cat || "—");
+}
+function categoriaCls(cat) {
+  return CATEGORIAS_CRITERIO.find((c) => c.value === cat)?.color || "bg-neutral-100 text-neutral-600 border-neutral-200";
 }
 
 // ── Th sorteable ──────────────────────────────────────────────────────────────
@@ -168,7 +170,7 @@ function ModalVerMaster({ item, onClose, onEditar }) {
                   {criterios.map((c, i) => (
                     <div key={c.id_criterio || i} className="flex items-start gap-3 px-4 py-2.5 text-xs bg-white hover:bg-neutral-50 transition">
                       <span className="shrink-0 text-neutral-300 tabular-nums w-4 text-right">{c.orden ?? i+1}</span>
-                      <span className="shrink-0 bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold text-[10px] whitespace-nowrap">
+                      <span className={`shrink-0 border px-1.5 py-0.5 rounded font-semibold text-[10px] whitespace-nowrap ${categoriaCls(c.categoria)}`}>
                         {categoriaLabel(c.categoria)}
                       </span>
                       <span className="flex-1 text-neutral-700 leading-relaxed">{c.descripcion || "—"}</span>
@@ -250,8 +252,11 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
         }
       : { ...FORM_INIT }
   );
-  const [saving, setSaving] = useState(false);
-  const [err,    setErr]    = useState(null);
+  const [saving,    setSaving]    = useState(false);
+  const [err,       setErr]       = useState(null);
+  const [criterios, setCriterios] = useState([]);
+  const [loadingCrit, setLoadingCrit] = useState(false);
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const univSel    = universidades.find((u) => String(u.id_universidad) === String(form.id_universidad));
@@ -259,6 +264,22 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
   const precioPreview = comUniv && form.ects
     ? Number(comUniv.precio_credito_extranjero) * Number(form.ects)
     : null;
+
+  useEffect(() => {
+    if (!isEdit) return;
+    setLoadingCrit(true);
+    boGET(`/backoffice/catalogo/masters/${item.id_master}`)
+      .then((d) => {
+        if (d.ok) setCriterios((d.master.criterios || []).map((c) => ({
+          categoria: c.categoria, descripcion: c.descripcion, peso_porcentaje: c.peso_porcentaje ?? "",
+        })));
+      })
+      .finally(() => setLoadingCrit(false));
+  }, [item?.id_master, isEdit]); // eslint-disable-line
+
+  function addCriterio()          { setCriterios((prev) => [...prev, { categoria: "EXPEDIENTE_ACADEMICO", descripcion: "", peso_porcentaje: "" }]); }
+  function removeCriterio(i)      { setCriterios((prev) => prev.filter((_, idx) => idx !== i)); }
+  function updateCriterio(i, k, v){ setCriterios((prev) => prev.map((c, idx) => idx === i ? { ...c, [k]: v } : c)); }
 
   async function submit(e) {
     e.preventDefault();
@@ -279,6 +300,10 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
         activo: form.activo,
       });
       if (!data.ok) throw new Error(data.msg || "Error guardando");
+      const masterId = isEdit ? item.id_master : data.master?.id_master;
+      if (masterId) {
+        await boPOST(`/backoffice/catalogo/masters/${masterId}/criterios`, { criterios });
+      }
       onSaved();
     } catch (ex) { setErr(ex.message); }
     finally { setSaving(false); }
@@ -395,6 +420,56 @@ function ModalMaster({ item, universidades, comunidades, ramas, onClose, onSaved
               className="w-4 h-4 rounded border-neutral-300 text-primary focus:ring-primary" />
             Activo
           </label>
+
+          {/* ── Editor criterios de admisión ── */}
+          <div className="border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-neutral-50 border-b">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-neutral-700">Criterios de admisión</span>
+                {loadingCrit
+                  ? <span className="text-[10px] text-neutral-400">Cargando…</span>
+                  : <span className="text-[10px] bg-neutral-200 text-neutral-500 px-1.5 py-0.5 rounded-full font-semibold">{criterios.length}</span>
+                }
+              </div>
+              <button type="button" onClick={addCriterio}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition">
+                + Añadir
+              </button>
+            </div>
+
+            {criterios.length === 0 && !loadingCrit && (
+              <p className="text-xs text-neutral-400 text-center py-4 italic">Sin criterios. Pulsa "Añadir" para agregar.</p>
+            )}
+
+            {criterios.map((c, i) => (
+              <div key={i} className="flex items-start gap-2 px-3 py-2.5 border-b border-neutral-100 last:border-0 bg-white">
+                <span className="shrink-0 text-[10px] text-neutral-300 tabular-nums w-4 text-right pt-2">{i + 1}</span>
+                <select
+                  value={c.categoria}
+                  onChange={(e) => updateCriterio(i, "categoria", e.target.value)}
+                  className="shrink-0 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                  {CATEGORIAS_CRITERIO.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <input
+                  value={c.descripcion}
+                  onChange={(e) => updateCriterio(i, "descripcion", e.target.value)}
+                  placeholder="Descripción del criterio…"
+                  className="flex-1 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <input
+                  type="number" min="0" max="100"
+                  value={c.peso_porcentaje}
+                  onChange={(e) => updateCriterio(i, "peso_porcentaje", e.target.value)}
+                  placeholder="%"
+                  className="shrink-0 w-14 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <button type="button" onClick={() => removeCriterio(i)}
+                  className="shrink-0 w-6 h-6 mt-1 rounded-md bg-red-50 hover:bg-red-100 text-red-500 text-xs flex items-center justify-center transition">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={onClose}
