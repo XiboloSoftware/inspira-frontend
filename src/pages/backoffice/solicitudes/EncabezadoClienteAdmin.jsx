@@ -48,7 +48,8 @@ export default function EncabezadoClienteAdmin({ detalle }) {
   const extra  = cli.datos_extra || {};
   const datos  = detalle?.datos_formulario || {};
 
-  const alerta = alertaPasaporte(extra.vencimiento_pasaporte);
+  const vencPasaporte = extra.pasaporte_vencimiento ?? null;
+  const alerta        = alertaPasaporte(vencPasaporte);
 
   // Comunidades geográficas del plan
   const comunidades = Array.isArray(datos.comunidades_preferidas)
@@ -69,11 +70,11 @@ export default function EncabezadoClienteAdmin({ detalle }) {
   const finEstudios    = extra.fin_estudios    ?? datos.fin_estudios    ?? null;
   const fechaTitulo    = extra.fecha_titulo    ?? datos.fecha_titulo    ?? null;
   const fechaNac       = extra.fecha_nacimiento ?? null;
-  const vencPasaporte  = extra.vencimiento_pasaporte ?? null;
-  const emiPasaporte   = extra.fecha_emision_pasaporte ?? null;
+  const emiPasaporte   = extra.pasaporte_emision ?? null;
 
-  const tituloUniv = datos.carrera_titulo ?? extra.titulo_universitario ?? null;
-  const uniOrigen  = datos.universidad_origen ?? null;
+  // Datos académicos: primero del formulario, si no del perfil del cliente
+  const tituloUniv = datos.carrera_titulo    ?? extra.carrera_titulo    ?? null;
+  const uniOrigen  = datos.universidad_origen ?? extra.universidad_origen ?? null;
 
   // Inicios previstos
   const inicioPrevisto = datos.inicio_previsto ?? extra.inicio_previsto ?? null;
@@ -106,10 +107,10 @@ export default function EncabezadoClienteAdmin({ detalle }) {
 
       {/* Grid de campos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-5 pb-3">
-        <Campo label="Fecha nacimiento"   value={fechaNac ? formatearFecha(fechaNac) : null} highlight={!!fechaNac} />
-        <Campo label="Pasaporte"          value={cli.pasaporte}        warn={!!alerta && alerta.nivel === "rojo"} />
-        <Campo label="Vencimiento pasap." value={vencPasaporte ? formatearFecha(vencPasaporte) : null} warn={!!alerta} />
-        <Campo label="Fecha emisión"      value={emiPasaporte  ? formatearFecha(emiPasaporte) : null}  highlight={!!emiPasaporte} />
+        <Campo label="Fecha nacimiento"     value={fechaNac ? formatearFecha(fechaNac) : null} highlight={!!fechaNac} />
+        <Campo label="Pasaporte"            value={cli.pasaporte}        warn={!!alerta && alerta.nivel === "rojo"} />
+        <Campo label="Venc. pasaporte"      value={vencPasaporte ? formatearFecha(vencPasaporte) : null} warn={!!alerta} />
+        <Campo label="Emisión pasaporte"    value={emiPasaporte  ? formatearFecha(emiPasaporte) : null}  highlight={!!emiPasaporte} />
         <Campo label="Título universitario"  value={tituloUniv}      highlight={!!tituloUniv} />
         <Campo label="Universidad origen" value={uniOrigen}           highlight={!!uniOrigen} />
         <Campo label="Inicio estudios"    value={inicioEstudios}      highlight={!!inicioEstudios} />
