@@ -16,14 +16,24 @@ const RING_C = 2 * Math.PI * RING_R;
 function calcClienteEstado(detalle) {
   const c  = detalle?.cliente || {};
   const ex = c.datos_extra || {};
-  if (!c.nombre || !c.pasaporte || !c.pais_origen) return "pendiente";
-  const venc = ex.pasaporte_vencimiento;
-  if (venc) {
-    const d = new Date(venc);
-    if (!isNaN(d)) {
-      const meses = (d - new Date()) / (1000 * 60 * 60 * 24 * 30);
-      if (meses < 18) return "observado";
-    }
+  const df = detalle?.datos_formulario || {};
+
+  const tituloUniv = df.carrera_titulo      || ex.carrera_titulo      || "";
+  const uniOrigen  = df.universidad_origen  || ex.universidad_origen  || "";
+  const inicioEst  = ex.inicio_estudios     || df.inicio_estudios     || "";
+  const finEst     = ex.fin_estudios        || df.fin_estudios        || "";
+
+  const tieneCore = !!(
+    c.nombre && c.pasaporte && c.pais_origen &&
+    ex.fecha_nacimiento && ex.pasaporte_vencimiento &&
+    tituloUniv && uniOrigen && inicioEst && finEst
+  );
+  if (!tieneCore) return "pendiente";
+
+  const d = new Date(ex.pasaporte_vencimiento);
+  if (!isNaN(d)) {
+    const meses = (d - new Date()) / (1000 * 60 * 60 * 24 * 30);
+    if (meses < 18) return "observado";
   }
   return "completado";
 }
