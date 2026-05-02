@@ -263,7 +263,12 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               })()
             } />
             <CBox>
-              <EncabezadoClienteAdmin detalle={detalle} />
+              <EncabezadoClienteAdmin
+                detalle={detalle}
+                onClienteActualizado={(clienteActualizado) =>
+                  setDetalle((prev) => ({ ...prev, cliente: clienteActualizado }))
+                }
+              />
             </CBox>
           </div>
 

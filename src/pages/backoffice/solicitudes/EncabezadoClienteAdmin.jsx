@@ -1,7 +1,7 @@
 // src/pages/backoffice/solicitudes/EncabezadoClienteAdmin.jsx
-// Bloque 1 — Encabezado del cliente con datos personales, académicos y plan contratado.
-
+import { useState } from "react";
 import { formatearFecha } from "./utils";
+import { boPATCH } from "../../../services/backofficeApi";
 
 function iniciales(nombre) {
   if (!nombre) return "?";
@@ -43,45 +43,104 @@ function alertaPasaporte(vencimiento) {
   return null;
 }
 
-export default function EncabezadoClienteAdmin({ detalle }) {
+function CampoEdit({ label, name, value, onChange, type = "text", placeholder = "" }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="text-[12px] font-medium text-neutral-800 border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#1D6A4A] focus:border-[#1D6A4A] placeholder:text-neutral-300"
+      />
+    </div>
+  );
+}
+
+export default function EncabezadoClienteAdmin({ detalle, onClienteActualizado }) {
   const cli    = detalle?.cliente || {};
   const extra  = cli.datos_extra || {};
   const datos  = detalle?.datos_formulario || {};
 
+  const [editando, setEditando]   = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorEdit, setErrorEdit] = useState(null);
+  const [form, setForm]           = useState({});
+
+  function abrirEditor() {
+    setForm({
+      nombre:               cli.nombre               || "",
+      telefono:             cli.telefono             || "",
+      pasaporte:            cli.pasaporte            || "",
+      pais_origen:          cli.pais_origen          || "",
+      nacionalidad:         extra.nacionalidad       || cli.nacionalidad || "",
+      fecha_nacimiento:     extra.fecha_nacimiento   || "",
+      pasaporte_emision:    extra.pasaporte_emision  || "",
+      pasaporte_vencimiento: extra.pasaporte_vencimiento || "",
+      carrera_titulo:       extra.carrera_titulo     || datos.carrera_titulo    || "",
+      universidad_origen:   extra.universidad_origen || datos.universidad_origen || "",
+      inicio_estudios:      extra.inicio_estudios    || datos.inicio_estudios   || "",
+      fin_estudios:         extra.fin_estudios       || datos.fin_estudios      || "",
+      fecha_titulo:         extra.fecha_titulo       || datos.fecha_titulo      || "",
+    });
+    setErrorEdit(null);
+    setEditando(true);
+  }
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function guardar() {
+    setGuardando(true);
+    setErrorEdit(null);
+    try {
+      const res = await boPATCH(`/backoffice/clientes/${cli.id_cliente}/perfil`, form);
+      if (res.ok) {
+        onClienteActualizado?.(res.cliente);
+        setEditando(false);
+      } else {
+        setErrorEdit(res.msg || res.error || "Error al guardar");
+      }
+    } catch {
+      setErrorEdit("Error de conexión");
+    } finally {
+      setGuardando(false);
+    }
+  }
+
   const vencPasaporte = extra.pasaporte_vencimiento ?? null;
   const alerta        = alertaPasaporte(vencPasaporte);
 
-  // Comunidades geográficas del plan
   const comunidades = Array.isArray(datos.comunidades_preferidas)
     ? datos.comunidades_preferidas
     : datos.comunidades_preferidas
       ? [datos.comunidades_preferidas]
       : [];
 
-  // Presupuesto
   const presupuesto = datos.presupuesto_hasta
     ? `Máx. ${Number(datos.presupuesto_hasta).toLocaleString("es-ES")} €/año`
     : null;
 
-  // Tipo universidad / título
-  const tipoUni    = datos.tipo_universidad    ?? null;
-  const tipoTitulo = datos.tipo_titulo         ?? null;
-  const inicioEstudios = extra.inicio_estudios ?? datos.inicio_estudios ?? null;
-  const finEstudios    = extra.fin_estudios    ?? datos.fin_estudios    ?? null;
-  const fechaTitulo    = extra.fecha_titulo    ?? datos.fecha_titulo    ?? null;
-  const fechaNac       = extra.fecha_nacimiento ?? null;
-  const emiPasaporte   = extra.pasaporte_emision ?? null;
-
-  // Datos académicos: primero del formulario, si no del perfil del cliente
-  const tituloUniv = datos.carrera_titulo    ?? extra.carrera_titulo    ?? null;
-  const uniOrigen  = datos.universidad_origen ?? extra.universidad_origen ?? null;
-
-  // Inicios previstos
-  const inicioPrevisto = datos.inicio_previsto ?? extra.inicio_previsto ?? null;
+  const tipoUni        = datos.tipo_universidad    ?? null;
+  const tipoTitulo     = datos.tipo_titulo         ?? null;
+  const inicioEstudios = extra.inicio_estudios     ?? datos.inicio_estudios ?? null;
+  const finEstudios    = extra.fin_estudios         ?? datos.fin_estudios    ?? null;
+  const fechaTitulo    = extra.fecha_titulo         ?? datos.fecha_titulo    ?? null;
+  const fechaNac       = extra.fecha_nacimiento     ?? null;
+  const emiPasaporte   = extra.pasaporte_emision    ?? null;
+  const tituloUniv     = datos.carrera_titulo       ?? extra.carrera_titulo    ?? null;
+  const uniOrigen      = datos.universidad_origen   ?? extra.universidad_origen ?? null;
+  const inicioPrevisto = datos.inicio_previsto      ?? extra.inicio_previsto    ?? null;
 
   return (
     <div className="space-y-0">
-      {/* Avatar + nombre + contacto */}
+      {/* Avatar + nombre + contacto + botón editar */}
       <div className="flex items-start gap-3 px-5 pt-5 pb-3">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#E8F5EE] to-[#EEF2F8] border-2 border-neutral-200 flex items-center justify-center shrink-0">
           <span className="font-serif text-lg font-bold text-[#1A3557]">{iniciales(cli.nombre)}</span>
@@ -103,22 +162,87 @@ export default function EncabezadoClienteAdmin({ detalle }) {
             )}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={editando ? () => setEditando(false) : abrirEditor}
+          className={`shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+            editando
+              ? "border-neutral-300 bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              : "border-[#1D6A4A]/30 bg-[#E8F5EE] text-[#1D6A4A] hover:bg-[#d4eddf]"
+          }`}
+        >
+          {editando ? "Cancelar" : "✏ Editar"}
+        </button>
       </div>
 
-      {/* Grid de campos */}
+      {/* Formulario de edición (inline) */}
+      {editando && (
+        <div className="mx-5 mb-3 border border-[#1A3557]/15 rounded-xl bg-[#F8FAFC] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
+            Editar datos del cliente
+          </p>
+
+          {/* Datos personales */}
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1D6A4A] mb-2 mt-1">Datos personales</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <CampoEdit label="Nombre completo"     name="nombre"     value={form.nombre}     onChange={handleChange} />
+            <CampoEdit label="Teléfono"            name="telefono"   value={form.telefono}   onChange={handleChange} placeholder="+34 600..." />
+            <CampoEdit label="País de origen"      name="pais_origen"  value={form.pais_origen}  onChange={handleChange} placeholder="Perú" />
+            <CampoEdit label="Nacionalidad"        name="nacionalidad" value={form.nacionalidad} onChange={handleChange} placeholder="Peruana" />
+          </div>
+
+          {/* Documentos */}
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1D6A4A] mb-2">Documentos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <CampoEdit label="Fecha nacimiento"    name="fecha_nacimiento"      type="date" value={form.fecha_nacimiento}      onChange={handleChange} />
+            <CampoEdit label="Nº pasaporte"        name="pasaporte"             value={form.pasaporte}             onChange={handleChange} placeholder="AB123456" />
+            <CampoEdit label="Emisión pasaporte"   name="pasaporte_emision"     type="date" value={form.pasaporte_emision}     onChange={handleChange} />
+            <CampoEdit label="Vencimiento pasaporte" name="pasaporte_vencimiento" type="date" value={form.pasaporte_vencimiento} onChange={handleChange} />
+          </div>
+
+          {/* Datos académicos */}
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1D6A4A] mb-2">Datos académicos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+            <CampoEdit label="Título universitario" name="carrera_titulo"     value={form.carrera_titulo}     onChange={handleChange} placeholder="Lic. Administración" />
+            <CampoEdit label="Universidad origen"   name="universidad_origen" value={form.universidad_origen} onChange={handleChange} placeholder="PUCP" />
+            <CampoEdit label="Inicio estudios"      name="inicio_estudios"    value={form.inicio_estudios}    onChange={handleChange} placeholder="2016" />
+            <CampoEdit label="Fin estudios"         name="fin_estudios"       value={form.fin_estudios}       onChange={handleChange} placeholder="2021" />
+            <CampoEdit label="Fecha del título"     name="fecha_titulo"       type="date" value={form.fecha_titulo} onChange={handleChange} />
+          </div>
+
+          {errorEdit && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+              {errorEdit}
+            </p>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={guardando}
+              className="text-[12px] font-semibold px-5 py-2 rounded-lg bg-[#1D6A4A] text-white hover:bg-[#15533a] disabled:opacity-50 transition-colors"
+            >
+              {guardando ? "Guardando…" : "Guardar cambios"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Grid de campos (vista) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-5 pb-3">
         <Campo label="Fecha nacimiento"     value={fechaNac ? formatearFecha(fechaNac) : null} highlight={!!fechaNac} />
         <Campo label="Pasaporte"            value={cli.pasaporte}        warn={!!alerta && alerta.nivel === "rojo"} />
         <Campo label="Venc. pasaporte"      value={vencPasaporte ? formatearFecha(vencPasaporte) : null} warn={!!alerta} />
         <Campo label="Emisión pasaporte"    value={emiPasaporte  ? formatearFecha(emiPasaporte) : null}  highlight={!!emiPasaporte} />
         <Campo label="Título universitario"  value={tituloUniv}      highlight={!!tituloUniv} />
-        <Campo label="Universidad origen" value={uniOrigen}           highlight={!!uniOrigen} />
-        <Campo label="Inicio estudios"    value={inicioEstudios}      highlight={!!inicioEstudios} />
-        <Campo label="Fin estudios"       value={finEstudios}         highlight={!!finEstudios} />
-        <Campo label="Fecha del título"   value={fechaTitulo ? formatearFecha(fechaTitulo) : null} highlight={!!fechaTitulo} />
-        <Campo label="País de origen"     value={cli.pais_origen}     highlight={!!cli.pais_origen} />
-        <Campo label="Inicio previsto"    value={inicioPrevisto}      highlight={!!inicioPrevisto} />
-        <Campo label="Presupuesto máx."   value={presupuesto}         highlight={!!presupuesto} />
+        <Campo label="Universidad origen"   value={uniOrigen}           highlight={!!uniOrigen} />
+        <Campo label="Inicio estudios"      value={inicioEstudios}      highlight={!!inicioEstudios} />
+        <Campo label="Fin estudios"         value={finEstudios}         highlight={!!finEstudios} />
+        <Campo label="Fecha del título"     value={fechaTitulo ? formatearFecha(fechaTitulo) : null} highlight={!!fechaTitulo} />
+        <Campo label="País de origen"       value={cli.pais_origen}     highlight={!!cli.pais_origen} />
+        <Campo label="Inicio previsto"      value={inicioPrevisto}      highlight={!!inicioPrevisto} />
+        <Campo label="Presupuesto máx."     value={presupuesto}         highlight={!!presupuesto} />
         {tipoUni    && <Campo label="Tipo universidad" value={tipoUni}    highlight />}
         {tipoTitulo && <Campo label="Tipo título"      value={tipoTitulo} highlight />}
       </div>
