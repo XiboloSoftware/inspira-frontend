@@ -78,6 +78,15 @@ const LONG_TEL = {
   "+44": [10, 10],
 };
 
+const MESES = [
+  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+];
+
+const PRES_MIN = 500;
+const PRES_MAX = 15000;
+const PRES_STEP = 250;
+
 function norm(s) {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
@@ -101,6 +110,14 @@ function fmtPresupuesto(val) {
   if (!val) return null;
   const n = Number(val);
   return isNaN(n) ? String(val) : `${n.toLocaleString("es-ES")} €/año`;
+}
+
+function parseInicioPrevisto(str) {
+  if (!str) return { mes: "", anio: "" };
+  const parts = String(str).trim().split(" ");
+  const mes = MESES.includes(parts[0]) ? parts[0] : "";
+  const anio = parts[1] || "";
+  return { mes, anio };
 }
 
 // ── Combobox ───────────────────────────────────────────────────────────────────
@@ -183,13 +200,20 @@ function FL({ children, noEdit }) {
   );
 }
 
-function TI({ name, value, onChange, placeholder, type = "text", disabled, min, className = "" }) {
+function TI({ name, value, onChange, placeholder, type = "text", disabled, className = "", err }) {
   return (
     <input type={type} name={name} value={value} onChange={onChange}
-      placeholder={placeholder} disabled={disabled} min={min}
-      className={`w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed ${className}`}
+      placeholder={placeholder} disabled={disabled}
+      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 transition disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed
+        ${err ? "border-red-300 bg-red-50 focus:ring-red-200 focus:border-red-400" : "border-neutral-200 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A]"}
+        ${className}`}
     />
   );
+}
+
+function ErrMsg({ msg }) {
+  if (!msg) return null;
+  return <p className="text-[10px] text-red-500 mt-0.5">{msg}</p>;
 }
 
 function TelefonoInput({ prefijo, numero, onPrefijo, onNumero }) {
@@ -212,13 +236,68 @@ function TelefonoInput({ prefijo, numero, onPrefijo, onNumero }) {
       </div>
       {hintLong && digits.length > 0 && (
         <p className={`text-[10px] mt-0.5 ${invalido ? "text-red-500" : valido ? "text-emerald-600" : "text-neutral-400"}`}>
-          {invalido ? `Esperado: ${hintLong} (tienes ${digits.length})` : `✓ Longitud correcta`}
+          {invalido ? `Esperado: ${hintLong} (tienes ${digits.length})` : "✓ Longitud correcta"}
         </p>
       )}
     </div>
   );
 }
 
+// ── Slider de presupuesto ──────────────────────────────────────────────────────
+function SliderPresupuesto({ value, onChange }) {
+  const val = Number(value) || PRES_MIN;
+  const pct = ((val - PRES_MIN) / (PRES_MAX - PRES_MIN)) * 100;
+  return (
+    <div>
+      <p className="text-2xl font-bold text-[#1D6A4A] mb-2">
+        {val.toLocaleString("es-ES")} €
+      </p>
+      <input
+        type="range"
+        min={PRES_MIN} max={PRES_MAX} step={PRES_STEP}
+        value={val}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{
+          background: `linear-gradient(to right, #1D6A4A ${pct}%, #e5e7eb ${pct}%)`,
+        }}
+        className="w-full h-1.5 rounded-full outline-none cursor-pointer appearance-none
+          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#1D6A4A]
+          [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-white
+          [&::-webkit-slider-thumb]:shadow-[0_2px_8px_rgba(29,106,74,.35)]
+          [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5
+          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#1D6A4A]
+          [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-white"
+      />
+      <div className="flex justify-between text-[11px] text-neutral-400 mt-1">
+        <span>500 €</span><span>7.500 €</span><span>15.000 €</span>
+      </div>
+      <p className="text-[11px] text-neutral-400 mt-0.5">Solo tasas universitarias. No incluye alojamiento ni manutención.</p>
+    </div>
+  );
+}
+
+// ── Selector mes / año ─────────────────────────────────────────────────────────
+function MesAnioSelect({ mes, anio, onMes, onAnio, err }) {
+  const anioActual = new Date().getFullYear();
+  const anios = Array.from({ length: 6 }, (_, i) => anioActual + i);
+  const cls = `rounded-lg border px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 transition
+    ${err ? "border-red-300 focus:ring-red-200" : "border-neutral-200 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A]"}`;
+  return (
+    <div className="flex gap-2">
+      <select value={mes} onChange={e => onMes(e.target.value)} className={`flex-1 ${cls}`}>
+        <option value="">— Mes —</option>
+        {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+      </select>
+      <select value={anio} onChange={e => onAnio(e.target.value)} className={`w-24 ${cls}`}>
+        <option value="">— Año —</option>
+        {anios.map(a => <option key={a} value={a}>{a}</option>)}
+      </select>
+    </div>
+  );
+}
+
+// ── Chip de vista ──────────────────────────────────────────────────────────────
 function Chip({ label, value, span2 }) {
   const vacio = !value;
   return (
@@ -235,6 +314,29 @@ function SecLabel({ children }) {
   return <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[#1D6A4A] mb-1.5">{children}</p>;
 }
 
+// ── Validación ─────────────────────────────────────────────────────────────────
+const REQUIRED = [
+  ["nombre",               "El nombre es obligatorio"],
+  ["pais_origen",          "Selecciona tu país de origen"],
+  ["fecha_nacimiento",     "La fecha de nacimiento es obligatoria"],
+  ["pasaporte",            "El número de pasaporte es obligatorio"],
+  ["pasaporte_vencimiento","La fecha de vencimiento del pasaporte es obligatoria"],
+  ["carrera_titulo",       "El título universitario es obligatorio"],
+  ["universidad_origen",   "La universidad de origen es obligatoria"],
+  ["inicio_estudios",      "El año de inicio de estudios es obligatorio"],
+  ["fin_estudios",         "El año de fin de estudios es obligatorio"],
+];
+
+function validar(form) {
+  const errs = {};
+  for (const [key, msg] of REQUIRED) {
+    if (!form[key] || !String(form[key]).trim()) errs[key] = msg;
+  }
+  if (!form.mes_inicio || !form.anio_inicio) errs.inicio_previsto = "Selecciona mes y año de inicio previsto";
+  if (!form.presupuesto_hasta) errs.presupuesto_hasta = "Define tu presupuesto máximo";
+  return errs;
+}
+
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function PerfilCliente({ user, onUserUpdated }) {
   const [editMode, setEditMode] = useState(false);
@@ -242,6 +344,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
   const [error, setError]       = useState("");
   const [okMsg, setOkMsg]       = useState("");
   const [form, setForm]         = useState({});
+  const [errs, setErrs]         = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -249,6 +352,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     const de = user.datos_extra || {};
     const wp = parseTelefono(de.whatsapp);
     const mismoWA = !de.whatsapp || de.whatsapp === user.telefono;
+    const ip = parseInicioPrevisto(de.inicio_previsto);
     setForm({
       nombre:                user.nombre        || "",
       pais_origen:           user.pais_origen   || "",
@@ -272,15 +376,21 @@ export default function PerfilCliente({ user, onUserUpdated }) {
       inicio_estudios:       de.inicio_estudios       || "",
       fin_estudios:          de.fin_estudios          || "",
       fecha_titulo:          de.fecha_titulo          || "",
-      inicio_previsto:       de.inicio_previsto       || "",
-      presupuesto_hasta:     de.presupuesto_hasta     || "",
+      mes_inicio:            ip.mes,
+      anio_inicio:           ip.anio,
+      presupuesto_hasta:     de.presupuesto_hasta ? Number(de.presupuesto_hasta) : 3000,
     });
+    setErrs({});
   }, [user]);
 
   if (!user) return <p className="text-sm text-neutral-400 p-4">Cargando…</p>;
 
-  function set(key, val) { setForm(p => ({ ...p, [key]: val })); }
-  function handleChange(e) { set(e.target.name, e.target.value); }
+  function set(key, val) { setForm(p => ({ ...p, [key]: val })); setErrs(p => ({ ...p, [key]: "" })); }
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm(p => ({ ...p, [name]: value }));
+    setErrs(p => ({ ...p, [name]: "" }));
+  }
 
   function handlePaisChange(nombre) {
     const pais = PAISES.find(p => p.nombre === nombre);
@@ -290,10 +400,14 @@ export default function PerfilCliente({ user, onUserUpdated }) {
       prefijo_telefono: pais?.prefijo || p.prefijo_telefono,
       prefijo_whatsapp: p.mismo_whatsapp ? (pais?.prefijo || p.prefijo_whatsapp) : p.prefijo_whatsapp,
     }));
+    setErrs(p => ({ ...p, pais_origen: "" }));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const errores = validar(form);
+    if (Object.keys(errores).length > 0) { setErrs(errores); return; }
+
     setSaving(true); setError(""); setOkMsg("");
     try {
       const telefono = form.telefono_numero
@@ -301,6 +415,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
       const whatsapp = form.mismo_whatsapp
         ? telefono
         : (form.whatsapp_numero ? `${form.prefijo_whatsapp} ${form.whatsapp_numero}`.trim() : null);
+      const inicio_previsto = (form.mes_inicio && form.anio_inicio)
+        ? `${form.mes_inicio} ${form.anio_inicio}` : null;
 
       const body = {
         nombre:      form.nombre      || null,
@@ -323,8 +439,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           inicio_estudios:       form.inicio_estudios       || null,
           fin_estudios:          form.fin_estudios          || null,
           fecha_titulo:          form.fecha_titulo          || null,
-          inicio_previsto:       form.inicio_previsto       || null,
-          presupuesto_hasta:     form.presupuesto_hasta ? Number(form.presupuesto_hasta) || form.presupuesto_hasta : null,
+          inicio_previsto,
+          presupuesto_hasta:     form.presupuesto_hasta     || null,
         },
       };
 
@@ -349,7 +465,6 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     return (
       <div className="space-y-3">
         <div className="bg-white border border-neutral-100 rounded-2xl shadow-sm overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-[#1A3557] to-[#023A4B] px-5 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -365,7 +480,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </p>
               </div>
             </div>
-            <button type="button" onClick={() => { setEditMode(true); setError(""); setOkMsg(""); }}
+            <button type="button" onClick={() => { setEditMode(true); setError(""); setOkMsg(""); setErrs({}); }}
               className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 text-white text-xs font-semibold hover:bg-white/25 transition border border-white/20">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
@@ -374,7 +489,6 @@ export default function PerfilCliente({ user, onUserUpdated }) {
             </button>
           </div>
 
-          {/* Chips */}
           <div className="px-5 py-4 space-y-3">
             <SecLabel>Datos personales</SecLabel>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
@@ -423,32 +537,35 @@ export default function PerfilCliente({ user, onUserUpdated }) {
   }
 
   // ── Edición ──────────────────────────────────────────────────────────────────
+  const numErrs = Object.values(errs).filter(Boolean).length;
+
   return (
     <div className="bg-white border border-neutral-100 rounded-2xl shadow-sm overflow-hidden">
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-[#1A3557] to-[#023A4B] px-5 py-3 flex items-center justify-between">
         <div>
           <p className="text-sm font-bold text-white">Editar mi perfil</p>
           <p className="text-[11px] text-white/50">Los datos académicos se pre-rellenan en tus solicitudes</p>
         </div>
-        <button type="button" onClick={() => { setEditMode(false); setError(""); }}
+        <button type="button" onClick={() => { setEditMode(false); setError(""); setErrs({}); }}
           className="text-xs text-white/60 hover:text-white transition px-2 py-1">
           ✕ Cancelar
         </button>
       </div>
 
-      <form id="perfil-edit-form" onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <div className="px-5 py-4 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4">
 
-          {error && (
+          {(error || numErrs > 0) && (
             <div className="lg:col-span-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              <span className="text-red-500 text-xs">⚠</span>
-              <p className="text-xs text-red-700">{error}</p>
+              <span className="text-red-500 text-sm">⚠</span>
+              <p className="text-xs text-red-700">
+                {error || `Hay ${numErrs} campo${numErrs > 1 ? "s" : ""} obligatorio${numErrs > 1 ? "s" : ""} sin completar.`}
+              </p>
             </div>
           )}
 
-          {/* ── Columna izquierda: Personal + Contacto ── */}
+          {/* ── Columna izquierda ── */}
           <div className="space-y-3">
 
             <div>
@@ -456,7 +573,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2">
                   <FL>Nombre completo</FL>
-                  <TI name="nombre" value={form.nombre} onChange={handleChange} placeholder="María García" />
+                  <TI name="nombre" value={form.nombre} onChange={handleChange} placeholder="María García" err={errs.nombre} />
+                  <ErrMsg msg={errs.nombre} />
                 </div>
                 <div className="col-span-2">
                   <FL noEdit>Email</FL>
@@ -464,7 +582,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </div>
                 <div>
                   <FL>Fecha de nacimiento</FL>
-                  <TI name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} type="date" />
+                  <TI name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} type="date" err={errs.fecha_nacimiento} />
+                  <ErrMsg msg={errs.fecha_nacimiento} />
                 </div>
                 <div>
                   <FL>Nacionalidad</FL>
@@ -492,6 +611,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                       </span>
                     )}
                   />
+                  <ErrMsg msg={errs.pais_origen} />
                 </div>
               </div>
             </div>
@@ -529,7 +649,7 @@ export default function PerfilCliente({ user, onUserUpdated }) {
 
           </div>
 
-          {/* ── Columna derecha: Documentos + Académico ── */}
+          {/* ── Columna derecha ── */}
           <div className="space-y-3">
 
             <div>
@@ -549,7 +669,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </div>
                 <div>
                   <FL>Nº Pasaporte</FL>
-                  <TI name="pasaporte" value={form.pasaporte} onChange={handleChange} placeholder="AB123456" />
+                  <TI name="pasaporte" value={form.pasaporte} onChange={handleChange} placeholder="AB123456" err={errs.pasaporte} />
+                  <ErrMsg msg={errs.pasaporte} />
                 </div>
                 <div>
                   <FL>Pasaporte — Emisión</FL>
@@ -557,7 +678,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </div>
                 <div>
                   <FL>Pasaporte — Vencimiento</FL>
-                  <TI name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange} type="date" />
+                  <TI name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange} type="date" err={errs.pasaporte_vencimiento} />
+                  <ErrMsg msg={errs.pasaporte_vencimiento} />
                 </div>
               </div>
             </div>
@@ -567,7 +689,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <FL>Carrera / Título</FL>
-                  <TI name="carrera_titulo" value={form.carrera_titulo} onChange={handleChange} placeholder="Ingeniería Industrial" />
+                  <TI name="carrera_titulo" value={form.carrera_titulo} onChange={handleChange} placeholder="Ingeniería Industrial" err={errs.carrera_titulo} />
+                  <ErrMsg msg={errs.carrera_titulo} />
                 </div>
                 <div>
                   <FL>Área de estudio</FL>
@@ -579,11 +702,13 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </div>
                 <div>
                   <FL>Inicio de estudios</FL>
-                  <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" />
+                  <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" err={errs.inicio_estudios} />
+                  <ErrMsg msg={errs.inicio_estudios} />
                 </div>
                 <div>
                   <FL>Fin de estudios</FL>
-                  <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" />
+                  <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" err={errs.fin_estudios} />
+                  <ErrMsg msg={errs.fin_estudios} />
                 </div>
                 <div>
                   <FL>Fecha del título</FL>
@@ -591,22 +716,33 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                 </div>
                 <div>
                   <FL>Inicio previsto en España</FL>
-                  <TI name="inicio_previsto" value={form.inicio_previsto} onChange={handleChange} placeholder="Septiembre 2026" />
-                </div>
-                <div>
-                  <FL>Presupuesto máx. (€/año)</FL>
-                  <TI name="presupuesto_hasta" value={form.presupuesto_hasta} onChange={handleChange}
-                    type="number" min="0" placeholder="15000" />
+                  <MesAnioSelect
+                    mes={form.mes_inicio}    onMes={v => { set("mes_inicio", v);  setErrs(p => ({ ...p, inicio_previsto: "" })); }}
+                    anio={form.anio_inicio}  onAnio={v => { set("anio_inicio", v); setErrs(p => ({ ...p, inicio_previsto: "" })); }}
+                    err={errs.inicio_previsto}
+                  />
+                  <ErrMsg msg={errs.inicio_previsto} />
                 </div>
                 <div className="col-span-2">
                   <FL>Universidad de origen</FL>
                   <Combobox
                     value={form.universidad_origen}
-                    onChange={v => set("universidad_origen", v)}
+                    onChange={v => { set("universidad_origen", v); }}
                     options={UNIS}
                     placeholder="Busca tu universidad o escribe el nombre…"
                     allowCustom
                   />
+                  <ErrMsg msg={errs.universidad_origen} />
+                </div>
+                <div className="col-span-2">
+                  <FL>Presupuesto máximo en matrícula (€/año)</FL>
+                  <div className={`border rounded-xl px-4 py-3 mt-1 ${errs.presupuesto_hasta ? "border-red-300 bg-red-50" : "border-neutral-200 bg-neutral-50"}`}>
+                    <SliderPresupuesto
+                      value={form.presupuesto_hasta}
+                      onChange={v => { set("presupuesto_hasta", v); }}
+                    />
+                  </div>
+                  <ErrMsg msg={errs.presupuesto_hasta} />
                 </div>
               </div>
             </div>
@@ -614,9 +750,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           </div>
         </div>
 
-        {/* Pie */}
         <div className="border-t border-neutral-100 px-5 py-3 flex items-center justify-end gap-3 bg-neutral-50">
-          <button type="button" onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
+          <button type="button" onClick={() => { setEditMode(false); setError(""); setOkMsg(""); setErrs({}); }}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-white transition">
             Cancelar
           </button>
