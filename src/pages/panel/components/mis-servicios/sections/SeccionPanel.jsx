@@ -1,6 +1,5 @@
 // src/pages/panel/components/mis-servicios/sections/SeccionPanel.jsx
 import { useState } from "react";
-import { useAccordion } from "./AccordionContext";
 
 const ESTADO_CFG = {
   pendiente:  { label: "Pendiente",  bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
@@ -15,42 +14,22 @@ export default function SeccionPanel({
   estado,
   children,
   defaultOpen = false,
-  sectionId,
+  sectionId,        // reservado, ya no controla visibilidad global
   contentClassName,
-  grow = false,
+  grow,             // reservado, ya no se usa
   // modo controlado opcional
   open: openProp,
   onToggle: onToggleProp,
 }) {
   const [openInternal, setOpenInternal] = useState(defaultOpen);
-  const accordion = useAccordion();
 
-  let open, toggle;
-  if (sectionId && accordion) {
-    open = accordion.openId === sectionId;
-    toggle = () => accordion.setOpenId(open ? null : sectionId);
-  } else if (openProp !== undefined) {
-    open = openProp;
-    toggle = onToggleProp;
-  } else {
-    open = openInternal;
-    toggle = () => setOpenInternal((v) => !v);
-  }
-
-  // En modo acordeón: si otra sección está abierta, esta desaparece completamente
-  if (sectionId && accordion && accordion.openId !== null && accordion.openId !== sectionId) {
-    return null;
-  }
-
-  const isFullScreen = !!(sectionId && accordion && open);
-  // grow=true → ocupa toda la altura disponible (para formularios con pie fijo)
-  // grow=false (default) → se adapta al contenido, sin espacio en blanco
-  const needsGrow = isFullScreen && grow;
+  const open   = openProp !== undefined ? openProp : openInternal;
+  const toggle = openProp !== undefined ? onToggleProp : () => setOpenInternal((v) => !v);
 
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
   return (
-    <section className={`border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden ${needsGrow ? "flex flex-col flex-1 min-h-0" : isFullScreen ? "flex flex-col" : ""}`}>
+    <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
       {/* Header clickable */}
       <button
         type="button"
@@ -92,9 +71,7 @@ export default function SeccionPanel({
         <div className={`border-t border-neutral-100 ${
           contentClassName !== undefined
             ? contentClassName
-            : needsGrow
-              ? "flex-1 min-h-0 overflow-y-auto px-5 py-4"
-              : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]"
+            : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]"
         }`}>
           {children}
         </div>

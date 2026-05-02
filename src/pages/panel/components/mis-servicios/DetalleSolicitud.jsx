@@ -1,7 +1,6 @@
 // inspira-frontend/src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
-import { AccordionContext } from "./sections/AccordionContext";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
@@ -22,7 +21,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [loading, setLoading] = useState(true);
   const [savingForm, setSavingForm] = useState(false);
   const [error, setError] = useState("");
-  const [accordionOpenId, setAccordionOpenId] = useState(null);
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
 
@@ -156,43 +154,28 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         Mis servicios
       </button>
 
-      {/* Encabezado — se oculta cuando hay una sección abierta */}
-      {accordionOpenId === null && (
-        <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
-          {loading && (
-            <div className="flex items-center gap-2 py-2 text-neutral-400">
-              <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Cargando…</span>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
-              <span className="text-red-500">⚠</span>
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-          {!loading && !error && detalle && (
-            <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
-          )}
-        </div>
-      )}
+      {/* Encabezado */}
+      <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
+        {loading && (
+          <div className="flex items-center gap-2 py-2 text-neutral-400">
+            <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Cargando…</span>
+          </div>
+        )}
+        {error && (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
+            <span className="text-red-500">⚠</span>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+        {!loading && !error && detalle && (
+          <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
+        )}
+      </div>
 
-      {/* Lista de secciones — crece y scrollea internamente */}
+      {/* Lista de secciones */}
       {!loading && !error && detalle && (
-        <AccordionContext.Provider value={{ openId: accordionOpenId, setOpenId: setAccordionOpenId }}>
-          {accordionOpenId !== null && (
-            <button
-              type="button"
-              onClick={() => setAccordionOpenId(null)}
-              className="shrink-0 self-start inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-medium hover:bg-neutral-200 active:scale-95 transition-all mb-2 group"
-            >
-              <svg className="w-4 h-4 text-neutral-500 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Ver todas las secciones
-            </button>
-          )}
-          <div className={accordionOpenId !== null ? "flex-1 min-h-0 flex flex-col" : "flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1"}>
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
             <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
 
             <InstructivosPlantillas instructivos={instructivos} />
@@ -228,8 +211,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
             <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
 
             {!esVisado && <CierreServicioMasterCliente idSolicitud={idSolicitud} />}
-          </div>
-        </AccordionContext.Provider>
+        </div>
       )}
     </div>
   );
