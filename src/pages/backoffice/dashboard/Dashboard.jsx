@@ -66,7 +66,7 @@ export default function Dashboard() {
             const [y, mo] = m.split("-");
             return new Date(Number(y), Number(mo) - 1, 1).toLocaleDateString("es-ES", { month: "short" });
           }}
-          color="bg-[#1D6A4A]"
+          color="#1D6A4A"
         />
         <TopClientes data={top_clientes || []} />
       </div>
@@ -78,14 +78,14 @@ export default function Dashboard() {
           data={solicitudes_por_estado.slice(0, 8)}
           labelKey="nombre"
           valueKey="count"
-          colorClass="bg-[#1D6A4A]"
+          barColor="#1D6A4A"
         />
         <HorizontalBarChart
           title="Expedientes por servicio"
           data={solicitudes_por_tipo.slice(0, 8)}
           labelKey="nombre"
           valueKey="count"
-          colorClass="bg-[#1A3557]"
+          barColor="#1A3557"
         />
       </div>
 
@@ -138,7 +138,7 @@ function KpiCard({ title, value, sub, accent = "blue" }) {
 }
 
 /* ── Vertical Bar Chart ───────────────────────────────────────── */
-function VerticalBarChart({ title, subtitle, data, labelKey, valueKey, formatLabel, color = "bg-[#1D6A4A]" }) {
+function VerticalBarChart({ title, subtitle, data, labelKey, valueKey, formatLabel, color = "#1D6A4A" }) {
   const max   = Math.max(...data.map((d) => d[valueKey]), 1);
   const total = data.reduce((s, d) => s + d[valueKey], 0);
 
@@ -160,8 +160,8 @@ function VerticalBarChart({ title, subtitle, data, labelKey, valueKey, formatLab
                 <span className="text-[10px] font-semibold text-neutral-600">{d[valueKey]}</span>
               )}
               <div
-                className={`w-full ${color} rounded-t transition-all opacity-80 hover:opacity-100`}
-                style={{ height: `${pct}%` }}
+                className="w-full rounded-t transition-all"
+                style={{ height: `${pct}%`, backgroundColor: color, opacity: 0.85 }}
                 title={`${formatLabel ? formatLabel(d[labelKey]) : d[labelKey]}: ${d[valueKey]}`}
               />
               <span className="text-[9px] text-neutral-400 text-center truncate w-full">
@@ -176,7 +176,7 @@ function VerticalBarChart({ title, subtitle, data, labelKey, valueKey, formatLab
 }
 
 /* ── Horizontal Bar Chart ─────────────────────────────────────── */
-function HorizontalBarChart({ title, data, labelKey, valueKey, colorClass = "bg-[#1D6A4A]" }) {
+function HorizontalBarChart({ title, data, labelKey, valueKey, barColor = "#1D6A4A" }) {
   const max = Math.max(...data.map((d) => d[valueKey]), 1);
 
   return (
@@ -194,8 +194,8 @@ function HorizontalBarChart({ title, data, labelKey, valueKey, colorClass = "bg-
               </div>
               <div className="w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className={`${colorClass} h-full rounded-full transition-all`}
-                  style={{ width: `${(d[valueKey] / max) * 100}%` }}
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${(d[valueKey] / max) * 100}%`, backgroundColor: barColor }}
                 />
               </div>
             </div>
@@ -208,31 +208,45 @@ function HorizontalBarChart({ title, data, labelKey, valueKey, colorClass = "bg-
 
 /* ── Top Clientes ─────────────────────────────────────────────── */
 function TopClientes({ data }) {
-  const max = Math.max(...data.map((d) => d.solicitudes), 1);
+  const hasEur = data.some((c) => c.total_eur > 0);
+  const maxVal = Math.max(...data.map((c) => hasEur ? c.total_eur : c.solicitudes), 1);
+
   return (
     <div className="bg-white border border-neutral-200 rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-neutral-700 mb-4">Top clientes</h3>
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="text-sm font-semibold text-neutral-700">Top clientes</h3>
+        <span className="text-[10px] text-neutral-400">{hasEur ? "por inversión" : "por expedientes"}</span>
+      </div>
       {data.length === 0 ? (
         <p className="text-xs text-neutral-400">Sin datos</p>
       ) : (
-        <div className="space-y-2.5">
-          {data.map((c, i) => (
-            <div key={c.id_cliente} className="flex items-center gap-3">
-              <span className="text-[11px] font-bold text-neutral-300 w-4 shrink-0 text-right">{i + 1}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <p className="text-xs font-semibold text-neutral-800 truncate">{c.nombre}</p>
-                  <span className="text-xs font-bold text-[#1D6A4A] shrink-0 ml-2">{c.solicitudes}</span>
-                </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-[#1D6A4A] h-full rounded-full transition-all"
-                    style={{ width: `${(c.solicitudes / max) * 100}%` }}
-                  />
+        <div className="space-y-3">
+          {data.map((c, i) => {
+            const val = hasEur ? c.total_eur : c.solicitudes;
+            const label = hasEur
+              ? `${c.total_eur.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €`
+              : `${c.solicitudes} exp.`;
+            return (
+              <div key={c.id_cliente} className="flex items-center gap-2.5">
+                <span className="text-[11px] font-bold text-neutral-300 w-4 shrink-0 text-right">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="text-xs font-medium text-neutral-800 truncate">{c.nombre}</p>
+                    <span className="text-xs font-bold text-[#1D6A4A] shrink-0 ml-2">{label}</span>
+                  </div>
+                  <div className="w-full bg-neutral-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${(val / maxVal) * 100}%`, backgroundColor: '#1D6A4A' }}
+                    />
+                  </div>
+                  {hasEur && c.solicitudes > 0 && (
+                    <p className="text-[10px] text-neutral-400 mt-0.5">{c.solicitudes} expediente{c.solicitudes > 1 ? 's' : ''}</p>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
