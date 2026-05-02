@@ -1,17 +1,31 @@
 // src/pages/panel/PanelCliente.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { apiGET } from "../../services/api";
-
 import PanelSidebar from "./components/PanelSidebar";
 import PerfilCliente from "./components/PerfilCliente";
 import MisServicios from "./components/MisServicios";
+
+const BecasEspana = lazy(() => import("./BecasEspana"));
+const GuiaMaster  = lazy(() => import("./GuiaMaster"));
+
+const VALID_TABS = ["servicios", "perfil", "becas", "guia"];
+
+function LoadingPage() {
+  return (
+    <div className="flex-1 flex items-center justify-center py-16">
+      <div className="flex items-center gap-3 text-neutral-400">
+        <div className="w-5 h-5 border-2 border-[#1D6A4A] border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm">Cargando…</span>
+      </div>
+    </div>
+  );
+}
 
 export default function PanelCliente() {
   const [tab, setTab] = useState(() => {
     if (typeof window === "undefined") return "servicios";
     const saved = window.localStorage.getItem("panel_tab");
-    if (saved === "perfil" || saved === "servicios") return saved;
-    return "servicios";
+    return VALID_TABS.includes(saved) ? saved : "servicios";
   });
 
   const [user, setUser] = useState(null);
@@ -42,9 +56,13 @@ export default function PanelCliente() {
   }
 
   const esServicios = tab === "servicios";
+  const esScrollInterno = esServicios;
+
+  // Tab titles
+  const titles = { servicios: "Mis Servicios", perfil: "Mi Perfil", becas: "Becas España", guia: "Guía Máster" };
 
   return (
-    <div className="h-screen overflow-hidden flex bg-neutral-50 relative">
+    <div className="h-screen overflow-hidden flex bg-[#F4F6F9] relative">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -57,12 +75,11 @@ export default function PanelCliente() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* main: cuando es servicios NO scrollea — el scroll es interno */}
-      <main className={`flex-1 min-w-0 flex flex-col ${esServicios ? "min-h-0" : "overflow-y-auto"}`}>
+      <main className={`flex-1 min-w-0 flex flex-col ${esScrollInterno ? "min-h-0" : "overflow-y-auto"}`}>
         {/* Topbar */}
-        <div className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm border-b border-neutral-200 px-5 sm:px-8 py-3 flex items-center gap-4 shrink-0">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-[#E2E8F0] px-5 sm:px-7 py-3 flex items-center gap-4 shrink-0 shadow-[0_1px_4px_rgba(0,0,0,.06)]">
           <button
-            className="md:hidden flex flex-col justify-center gap-[5px] w-9 h-9 p-2 rounded-lg bg-white border border-neutral-200 shadow-sm shrink-0"
+            className="md:hidden flex flex-col justify-center gap-[5px] w-9 h-9 p-2 rounded-lg bg-white border border-[#E2E8F0] shadow-sm shrink-0"
             onClick={() => setSidebarOpen(true)}
             aria-label="Abrir menú"
           >
@@ -70,27 +87,54 @@ export default function PanelCliente() {
             <span className="block w-full h-[2px] bg-neutral-600 rounded" />
             <span className="block w-full h-[2px] bg-neutral-600 rounded" />
           </button>
-          <div>
-            <p className="text-xs font-bold text-[#046C8C] uppercase tracking-widest leading-none mb-0.5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-[#1D6A4A] uppercase tracking-widest leading-none mb-0.5 font-mono">
               Panel de cliente
             </p>
-            <h1 className="text-lg font-bold text-neutral-900 leading-tight">Mi panel</h1>
+            <h1 className="text-[17px] font-serif font-bold text-[#1A3557] leading-tight truncate">
+              {titles[tab] || "Mi panel"}
+            </h1>
           </div>
+          {user?.nombre && (
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              <span className="hidden sm:block text-[12px] text-neutral-500">{user.nombre}</span>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold text-[#1A3557] font-serif"
+                style={{ background: "linear-gradient(135deg, #E8F5EE, #EEF2F8)" }}>
+                {user.nombre?.[0]?.toUpperCase() || "?"}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contenido */}
-        <div className={`flex-1 min-h-0 px-4 sm:px-6 py-4 flex flex-col ${esServicios ? "" : "overflow-auto"}`}>
-          {/* Servicios: cadena de altura completa sin overflow externo */}
+        <div className={`flex-1 min-h-0 flex flex-col ${esScrollInterno ? "" : "overflow-auto"}`}>
+
+          {/* Servicios: scroll interno */}
           {esServicios && (
-            <div className="flex-1 min-h-0 flex flex-col w-full max-w-4xl mx-auto">
+            <div className="flex-1 min-h-0 flex flex-col w-full max-w-4xl mx-auto px-4 sm:px-6 py-5">
               <MisServicios />
             </div>
           )}
-          {/* Otras tabs: scroll normal */}
-          {!esServicios && (
-            <div className={tab === "perfil" ? "w-full" : "max-w-4xl"}>
-              {tab === "perfil" && <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />}
+
+          {/* Perfil: scroll externo */}
+          {tab === "perfil" && (
+            <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-5">
+              <PerfilCliente user={user} onUserUpdated={(nuevo) => setUser(nuevo)} />
             </div>
+          )}
+
+          {/* Becas España */}
+          {tab === "becas" && (
+            <Suspense fallback={<LoadingPage />}>
+              <BecasEspana />
+            </Suspense>
+          )}
+
+          {/* Guía Máster */}
+          {tab === "guia" && (
+            <Suspense fallback={<LoadingPage />}>
+              <GuiaMaster />
+            </Suspense>
           )}
         </div>
       </main>
