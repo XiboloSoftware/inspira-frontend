@@ -332,6 +332,11 @@ function validar(form) {
   for (const [key, msg] of REQUIRED) {
     if (!form[key] || !String(form[key]).trim()) errs[key] = msg;
   }
+  const anioRe = /^\d{4}$/;
+  if (form.inicio_estudios && !anioRe.test(String(form.inicio_estudios).trim()))
+    errs.inicio_estudios = "Ingresa un año válido (ej. 2018)";
+  if (form.fin_estudios && !anioRe.test(String(form.fin_estudios).trim()))
+    errs.fin_estudios = "Ingresa un año válido (ej. 2023)";
   if (!form.mes_inicio || !form.anio_inicio) errs.inicio_previsto = "Selecciona mes y año de inicio previsto";
   if (!form.presupuesto_hasta) errs.presupuesto_hasta = "Define tu presupuesto máximo";
   return errs;
@@ -700,21 +705,23 @@ export default function PerfilCliente({ user, onUserUpdated }) {
                     {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
-                <div>
-                  <FL>Inicio de estudios</FL>
-                  <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" err={errs.inicio_estudios} />
-                  <ErrMsg msg={errs.inicio_estudios} />
+                <div className="col-span-2 grid grid-cols-3 gap-2">
+                  <div>
+                    <FL>Inicio de estudios</FL>
+                    <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" err={errs.inicio_estudios} />
+                    <ErrMsg msg={errs.inicio_estudios} />
+                  </div>
+                  <div>
+                    <FL>Fin de estudios</FL>
+                    <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" err={errs.fin_estudios} />
+                    <ErrMsg msg={errs.fin_estudios} />
+                  </div>
+                  <div>
+                    <FL>Fecha del título</FL>
+                    <TI name="fecha_titulo" value={form.fecha_titulo} onChange={handleChange} type="date" />
+                  </div>
                 </div>
-                <div>
-                  <FL>Fin de estudios</FL>
-                  <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" err={errs.fin_estudios} />
-                  <ErrMsg msg={errs.fin_estudios} />
-                </div>
-                <div>
-                  <FL>Fecha del título</FL>
-                  <TI name="fecha_titulo" value={form.fecha_titulo} onChange={handleChange} type="date" />
-                </div>
-                <div>
+                <div className="col-span-2">
                   <FL>Inicio previsto en España</FL>
                   <MesAnioSelect
                     mes={form.mes_inicio}    onMes={v => { set("mes_inicio", v);  setErrs(p => ({ ...p, inicio_previsto: "" })); }}
