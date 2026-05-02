@@ -86,6 +86,8 @@ export default function EncabezadoClienteAdmin({ detalle, onClienteActualizado }
       inicio_estudios:      extra.inicio_estudios    || datos.inicio_estudios   || "",
       fin_estudios:         extra.fin_estudios       || datos.fin_estudios      || "",
       fecha_titulo:         extra.fecha_titulo       || datos.fecha_titulo      || "",
+      inicio_previsto:      extra.inicio_previsto    || datos.inicio_previsto   || "",
+      presupuesto_hasta:    extra.presupuesto_hasta  || datos.presupuesto_hasta || "",
     });
     setErrorEdit(null);
     setEditando(true);
@@ -123,8 +125,9 @@ export default function EncabezadoClienteAdmin({ detalle, onClienteActualizado }
       ? [datos.comunidades_preferidas]
       : [];
 
-  const presupuesto = datos.presupuesto_hasta
-    ? `Máx. ${Number(datos.presupuesto_hasta).toLocaleString("es-ES")} €/año`
+  const presupuestoVal = datos.presupuesto_hasta ?? extra.presupuesto_hasta ?? null;
+  const presupuesto = presupuestoVal
+    ? `Máx. ${Number(presupuestoVal).toLocaleString("es-ES")} €/año`
     : null;
 
   const tipoUni        = datos.tipo_universidad    ?? null;
@@ -200,14 +203,16 @@ export default function EncabezadoClienteAdmin({ detalle, onClienteActualizado }
             <CampoEdit label="Vencimiento pasaporte" name="pasaporte_vencimiento" type="date" value={form.pasaporte_vencimiento} onChange={handleChange} />
           </div>
 
-          {/* Datos académicos */}
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1D6A4A] mb-2">Datos académicos</p>
+          {/* Datos académicos y plan */}
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1D6A4A] mb-2">Datos académicos y plan</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             <CampoEdit label="Título universitario" name="carrera_titulo"     value={form.carrera_titulo}     onChange={handleChange} placeholder="Lic. Administración" />
             <CampoEdit label="Universidad origen"   name="universidad_origen" value={form.universidad_origen} onChange={handleChange} placeholder="PUCP" />
             <CampoEdit label="Inicio estudios"      name="inicio_estudios"    value={form.inicio_estudios}    onChange={handleChange} placeholder="2016" />
             <CampoEdit label="Fin estudios"         name="fin_estudios"       value={form.fin_estudios}       onChange={handleChange} placeholder="2021" />
             <CampoEdit label="Fecha del título"     name="fecha_titulo"       type="date" value={form.fecha_titulo} onChange={handleChange} />
+            <CampoEdit label="Inicio previsto"      name="inicio_previsto"    value={form.inicio_previsto}    onChange={handleChange} placeholder="Septiembre 2026" />
+            <CampoEdit label="Presupuesto (€/año)"  name="presupuesto_hasta"  type="number" value={form.presupuesto_hasta} onChange={handleChange} placeholder="15000" />
           </div>
 
           {errorEdit && (

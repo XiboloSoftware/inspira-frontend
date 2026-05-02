@@ -97,6 +97,12 @@ function fmtFecha(iso) {
   return new Date(iso + "T12:00:00").toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function fmtPresupuesto(val) {
+  if (!val) return null;
+  const n = Number(val);
+  return isNaN(n) ? String(val) : `${n.toLocaleString("es-ES")} €/año`;
+}
+
 // ── Combobox ───────────────────────────────────────────────────────────────────
 function Combobox({ value, onChange, options, placeholder, renderOption, getLabel, allowCustom = false }) {
   const [query, setQuery]     = useState("");
@@ -112,12 +118,9 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
     const h = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) {
         if (allowCustom && queryRef.current.trim()) {
-          const custom = queryRef.current.trim();
-          onChange(custom);
-          setDisplay(custom);
+          const c = queryRef.current.trim(); onChange(c); setDisplay(c);
         }
-        setQuery("");
-        setOpen(false);
+        setQuery(""); setOpen(false);
       }
     };
     document.addEventListener("mousedown", h);
@@ -125,23 +128,18 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
   }, [allowCustom]); // eslint-disable-line
 
   const filtered = query.length >= 1
-    ? options.filter(o => {
-        const label = getLabel ? getLabel(o) : String(o);
-        return norm(label).includes(norm(query));
-      }).slice(0, 8)
+    ? options.filter(o => norm(getLabel ? getLabel(o) : String(o)).includes(norm(query))).slice(0, 8)
     : options.slice(0, 8);
 
   function select(opt) {
     onChange(opt);
     setDisplay(getLabel ? getLabel(opt) : String(opt));
-    setQuery("");
-    setOpen(false);
+    setQuery(""); setOpen(false);
   }
 
   return (
     <div ref={wrapRef} className="relative">
-      <input
-        type="text"
+      <input type="text"
         value={open ? query : display}
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => { setQuery(""); setOpen(true); }}
@@ -149,13 +147,11 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
           if (e.key === "Enter") {
             e.preventDefault();
             if (filtered.length > 0) select(filtered[0]);
-            else if (allowCustom && query.trim()) {
-              const c = query.trim(); onChange(c); setDisplay(c); setQuery(""); setOpen(false);
-            }
+            else if (allowCustom && query.trim()) { const c = query.trim(); onChange(c); setDisplay(c); setQuery(""); setOpen(false); }
           } else if (e.key === "Escape") { setQuery(""); setOpen(false); }
         }}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition"
+        className="w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition"
       />
       {open && filtered.length > 0 && (
         <ul className="absolute z-30 mt-1 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden max-h-44 overflow-y-auto">
@@ -168,8 +164,8 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
             </li>
           ))}
           {allowCustom && (
-            <li className="px-3 py-1.5 text-[11px] text-neutral-400 border-t italic">
-              Escribe el nombre si no aparece en la lista
+            <li className="px-3 py-1 text-[11px] text-neutral-400 border-t italic">
+              Escribe si no aparece en la lista
             </li>
           )}
         </ul>
@@ -178,20 +174,20 @@ function Combobox({ value, onChange, options, placeholder, renderOption, getLabe
   );
 }
 
-// ── Primitivos de formulario ────────────────────────────────────────────────────
-function FL({ children, opt }) {
+// ── Primitivos ─────────────────────────────────────────────────────────────────
+function FL({ children, noEdit }) {
   return (
-    <label className="block text-[11px] font-semibold text-neutral-500 mb-1 uppercase tracking-wide">
-      {children}{opt && <span className="ml-1 font-normal normal-case tracking-normal text-neutral-400">(opcional)</span>}
+    <label className="block text-[10px] font-bold text-neutral-400 mb-1 uppercase tracking-wider">
+      {children}{noEdit && <span className="ml-1 font-normal normal-case tracking-normal">(no editable)</span>}
     </label>
   );
 }
 
-function TI({ name, value, onChange, placeholder, type = "text", disabled, className = "" }) {
+function TI({ name, value, onChange, placeholder, type = "text", disabled, min, className = "" }) {
   return (
     <input type={type} name={name} value={value} onChange={onChange}
-      placeholder={placeholder} disabled={disabled}
-      className={`w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed ${className}`}
+      placeholder={placeholder} disabled={disabled} min={min}
+      className={`w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed ${className}`}
     />
   );
 }
@@ -202,33 +198,31 @@ function TelefonoInput({ prefijo, numero, onPrefijo, onNumero }) {
   const invalido = digits.length > 0 && rango && (digits.length < rango[0] || digits.length > rango[1]);
   const valido   = digits.length > 0 && rango && digits.length >= rango[0] && digits.length <= rango[1];
   const hintLong = rango ? (rango[0] === rango[1] ? `${rango[0]} dígitos` : `${rango[0]}–${rango[1]} dígitos`) : null;
-
   return (
     <div>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <select value={prefijo} onChange={e => onPrefijo(e.target.value)}
-          className="w-24 rounded-lg border border-neutral-200 px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition shrink-0">
+          className="w-24 rounded-lg border border-neutral-200 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition shrink-0">
           {PAISES.map(p => <option key={p.codigo} value={p.prefijo}>{p.emoji} {p.prefijo}</option>)}
         </select>
         <input type="tel" value={numero} onChange={e => onNumero(e.target.value)}
           placeholder="999 999 999"
-          className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition ${invalido ? "border-red-300 focus:ring-red-200" : "border-neutral-200 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A]"}`}
+          className={`flex-1 rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 transition ${invalido ? "border-red-300 focus:ring-red-200" : "border-neutral-200 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A]"}`}
         />
       </div>
       {hintLong && digits.length > 0 && (
-        <p className={`text-[11px] mt-1 ${invalido ? "text-red-500" : valido ? "text-emerald-600" : "text-neutral-400"}`}>
-          {invalido ? `Se esperan ${hintLong} (tienes ${digits.length})` : `✓ Longitud correcta (${digits.length} dígitos)`}
+        <p className={`text-[10px] mt-0.5 ${invalido ? "text-red-500" : valido ? "text-emerald-600" : "text-neutral-400"}`}>
+          {invalido ? `Esperado: ${hintLong} (tienes ${digits.length})` : `✓ Longitud correcta`}
         </p>
       )}
     </div>
   );
 }
 
-// ── Chip de vista ──────────────────────────────────────────────────────────────
-function Chip({ label, value, full }) {
+function Chip({ label, value, span2 }) {
   const vacio = !value;
   return (
-    <div className={`border rounded-xl px-3 py-2 ${full ? "col-span-2" : ""} ${!vacio ? "border-[#1D6A4A]/20 bg-[#E8F5EE]" : "border-neutral-200 bg-neutral-50"}`}>
+    <div className={`border rounded-xl px-3 py-2 ${span2 ? "col-span-2" : ""} ${!vacio ? "border-[#1D6A4A]/20 bg-[#E8F5EE]" : "border-neutral-200 bg-neutral-50"}`}>
       <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-0.5">{label}</p>
       <p className={`text-[12px] font-semibold truncate ${vacio ? "text-neutral-300 italic" : "text-neutral-800"}`}>
         {vacio ? "N/D" : value}
@@ -238,9 +232,7 @@ function Chip({ label, value, full }) {
 }
 
 function SecLabel({ children }) {
-  return (
-    <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[#1D6A4A] mb-2 mt-1">{children}</p>
-  );
+  return <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[#1D6A4A] mb-1.5">{children}</p>;
 }
 
 // ── Componente principal ───────────────────────────────────────────────────────
@@ -280,6 +272,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
       inicio_estudios:       de.inicio_estudios       || "",
       fin_estudios:          de.fin_estudios          || "",
       fecha_titulo:          de.fecha_titulo          || "",
+      inicio_previsto:       de.inicio_previsto       || "",
+      presupuesto_hasta:     de.presupuesto_hasta     || "",
     });
   }, [user]);
 
@@ -329,6 +323,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
           inicio_estudios:       form.inicio_estudios       || null,
           fin_estudios:          form.fin_estudios          || null,
           fecha_titulo:          form.fecha_titulo          || null,
+          inicio_previsto:       form.inicio_previsto       || null,
+          presupuesto_hasta:     form.presupuesto_hasta ? Number(form.presupuesto_hasta) || form.presupuesto_hasta : null,
         },
       };
 
@@ -353,7 +349,6 @@ export default function PerfilCliente({ user, onUserUpdated }) {
     return (
       <div className="space-y-3">
         <div className="bg-white border border-neutral-100 rounded-2xl shadow-sm overflow-hidden">
-
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1A3557] to-[#023A4B] px-5 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -379,9 +374,8 @@ export default function PerfilCliente({ user, onUserUpdated }) {
             </button>
           </div>
 
-          {/* Chips grid */}
+          {/* Chips */}
           <div className="px-5 py-4 space-y-3">
-
             <SecLabel>Datos personales</SecLabel>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <Chip label="Fecha de nacimiento" value={fmtFecha(de.fecha_nacimiento)} />
@@ -396,22 +390,24 @@ export default function PerfilCliente({ user, onUserUpdated }) {
 
             <SecLabel>Documentos de identidad</SecLabel>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              <Chip label="DNI / Cédula"           value={user.dni} />
-              <Chip label="DNI — Emisión"          value={fmtFecha(de.dni_emision)} />
-              <Chip label="DNI — Vencimiento"      value={fmtFecha(de.dni_vencimiento)} />
-              <Chip label="Pasaporte"              value={user.pasaporte} />
-              <Chip label="Pasaporte — Emisión"    value={fmtFecha(de.pasaporte_emision)} />
+              <Chip label="DNI / Cédula"            value={user.dni} />
+              <Chip label="DNI — Emisión"           value={fmtFecha(de.dni_emision)} />
+              <Chip label="DNI — Vencimiento"       value={fmtFecha(de.dni_vencimiento)} />
+              <Chip label="Pasaporte"               value={user.pasaporte} />
+              <Chip label="Pasaporte — Emisión"     value={fmtFecha(de.pasaporte_emision)} />
               <Chip label="Pasaporte — Vencimiento" value={fmtFecha(de.pasaporte_vencimiento)} />
             </div>
 
-            <SecLabel>Datos académicos</SecLabel>
+            <SecLabel>Datos académicos y plan</SecLabel>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              <Chip label="Carrera / Título"    value={de.carrera_titulo} />
-              <Chip label="Área de estudio"     value={de.area_carrera} />
-              <Chip label="Universidad"         value={de.universidad_origen} full />
-              <Chip label="Inicio de estudios"  value={de.inicio_estudios} />
-              <Chip label="Fin de estudios"     value={de.fin_estudios} />
-              <Chip label="Fecha del título"    value={fmtFecha(de.fecha_titulo)} />
+              <Chip label="Carrera / Título"   value={de.carrera_titulo} />
+              <Chip label="Área de estudio"    value={de.area_carrera} />
+              <Chip label="Inicio de estudios" value={de.inicio_estudios} />
+              <Chip label="Fin de estudios"    value={de.fin_estudios} />
+              <Chip label="Fecha del título"   value={fmtFecha(de.fecha_titulo)} />
+              <Chip label="Inicio previsto"    value={de.inicio_previsto} />
+              <Chip label="Presupuesto máx."   value={fmtPresupuesto(de.presupuesto_hasta)} />
+              <Chip label="Universidad"        value={de.universidad_origen} span2 />
             </div>
           </div>
         </div>
@@ -430,199 +426,211 @@ export default function PerfilCliente({ user, onUserUpdated }) {
   return (
     <div className="bg-white border border-neutral-100 rounded-2xl shadow-sm overflow-hidden">
 
-      {/* Header formulario */}
-      <div className="bg-gradient-to-r from-[#1A3557] to-[#023A4B] px-5 py-3.5 flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#1A3557] to-[#023A4B] px-5 py-3 flex items-center justify-between">
         <div>
           <p className="text-sm font-bold text-white">Editar mi perfil</p>
           <p className="text-[11px] text-white/50">Los datos académicos se pre-rellenan en tus solicitudes</p>
         </div>
         <button type="button" onClick={() => { setEditMode(false); setError(""); }}
-          className="text-xs text-white/60 hover:text-white transition">
+          className="text-xs text-white/60 hover:text-white transition px-2 py-1">
           ✕ Cancelar
         </button>
       </div>
 
-      <form id="perfil-edit-form" onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+      <form id="perfil-edit-form" onSubmit={handleSubmit}>
+        <div className="px-5 py-4 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4">
 
-        {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
-            <span className="text-red-500 text-xs">⚠</span>
-            <p className="text-xs text-red-700">{error}</p>
-          </div>
-        )}
+          {error && (
+            <div className="lg:col-span-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              <span className="text-red-500 text-xs">⚠</span>
+              <p className="text-xs text-red-700">{error}</p>
+            </div>
+          )}
 
-        {/* ── Datos personales ── */}
-        <div>
-          <SecLabel>Datos personales</SecLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="sm:col-span-2">
-              <FL>Nombre completo</FL>
-              <TI name="nombre" value={form.nombre} onChange={handleChange} placeholder="María García" />
-            </div>
-            <div className="sm:col-span-2">
-              <FL>Email <span className="font-normal text-neutral-400">(no editable)</span></FL>
-              <TI name="email" value={user.email_contacto || ""} disabled />
-            </div>
-            <div>
-              <FL opt>Fecha de nacimiento</FL>
-              <TI name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} type="date" />
-            </div>
-            <div>
-              <FL opt>Nacionalidad</FL>
-              <TI name="nacionalidad" value={form.nacionalidad} onChange={handleChange} placeholder="Peruana" />
-            </div>
-            <div>
-              <FL opt>Ciudad</FL>
-              <TI name="ciudad" value={form.ciudad} onChange={handleChange} placeholder="Lima" />
-            </div>
-            <div>
-              <FL>País de origen</FL>
-              <Combobox
-                value={form.pais_origen}
-                onChange={p => handlePaisChange(typeof p === "string" ? p : p.nombre)}
-                options={PAISES}
-                placeholder="Busca tu país…"
-                getLabel={p => {
-                  if (typeof p === "string") {
-                    const f = PAISES.find(x => x.nombre === p);
-                    return f ? `${f.emoji} ${f.nombre}` : p;
-                  }
-                  return `${p.emoji} ${p.nombre}`;
-                }}
-                renderOption={p => (
-                  <span className="flex items-center gap-2">
-                    <span>{p.emoji}</span><span>{p.nombre}</span>
-                    <span className="ml-auto text-neutral-400 text-xs">{p.prefijo}</span>
-                  </span>
-                )}
-              />
-            </div>
-          </div>
-        </div>
+          {/* ── Columna izquierda: Personal + Contacto ── */}
+          <div className="space-y-3">
 
-        {/* ── Contacto ── */}
-        <div>
-          <SecLabel>Contacto</SecLabel>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <FL opt>Teléfono</FL>
-              <TelefonoInput
-                prefijo={form.prefijo_telefono} numero={form.telefono_numero}
-                onPrefijo={v => set("prefijo_telefono", v)} onNumero={v => set("telefono_numero", v)}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">WhatsApp</span>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer ml-auto">
-                  <input type="checkbox" checked={form.mismo_whatsapp}
-                    onChange={e => set("mismo_whatsapp", e.target.checked)}
-                    className="w-3.5 h-3.5 rounded accent-[#1D6A4A]" />
-                  <span className="text-xs text-neutral-500">Mismo que teléfono</span>
-                </label>
-              </div>
-              {form.mismo_whatsapp
-                ? <p className="text-xs text-neutral-400 italic py-2">Se usará el mismo número</p>
-                : <TelefonoInput
-                    prefijo={form.prefijo_whatsapp} numero={form.whatsapp_numero}
-                    onPrefijo={v => set("prefijo_whatsapp", v)} onNumero={v => set("whatsapp_numero", v)}
+              <SecLabel>Datos personales</SecLabel>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2">
+                  <FL>Nombre completo</FL>
+                  <TI name="nombre" value={form.nombre} onChange={handleChange} placeholder="María García" />
+                </div>
+                <div className="col-span-2">
+                  <FL noEdit>Email</FL>
+                  <TI value={user.email_contacto || ""} disabled />
+                </div>
+                <div>
+                  <FL>Fecha de nacimiento</FL>
+                  <TI name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} type="date" />
+                </div>
+                <div>
+                  <FL>Nacionalidad</FL>
+                  <TI name="nacionalidad" value={form.nacionalidad} onChange={handleChange} placeholder="Peruana" />
+                </div>
+                <div>
+                  <FL>Ciudad</FL>
+                  <TI name="ciudad" value={form.ciudad} onChange={handleChange} placeholder="Lima" />
+                </div>
+                <div>
+                  <FL>País de origen</FL>
+                  <Combobox
+                    value={form.pais_origen}
+                    onChange={p => handlePaisChange(typeof p === "string" ? p : p.nombre)}
+                    options={PAISES}
+                    placeholder="Busca tu país…"
+                    getLabel={p => {
+                      if (typeof p === "string") { const f = PAISES.find(x => x.nombre === p); return f ? `${f.emoji} ${f.nombre}` : p; }
+                      return `${p.emoji} ${p.nombre}`;
+                    }}
+                    renderOption={p => (
+                      <span className="flex items-center gap-2">
+                        <span>{p.emoji}</span><span>{p.nombre}</span>
+                        <span className="ml-auto text-neutral-400 text-xs">{p.prefijo}</span>
+                      </span>
+                    )}
                   />
-              }
+                </div>
+              </div>
             </div>
+
+            <div>
+              <SecLabel>Contacto</SecLabel>
+              <div className="space-y-2">
+                <div>
+                  <FL>Teléfono</FL>
+                  <TelefonoInput
+                    prefijo={form.prefijo_telefono} numero={form.telefono_numero}
+                    onPrefijo={v => set("prefijo_telefono", v)} onNumero={v => set("telefono_numero", v)}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">WhatsApp</span>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer ml-auto">
+                      <input type="checkbox" checked={form.mismo_whatsapp}
+                        onChange={e => set("mismo_whatsapp", e.target.checked)}
+                        className="w-3.5 h-3.5 rounded accent-[#1D6A4A]" />
+                      <span className="text-xs text-neutral-500">Mismo que teléfono</span>
+                    </label>
+                  </div>
+                  {form.mismo_whatsapp
+                    ? <p className="text-xs text-neutral-400 italic">Se usará el mismo número</p>
+                    : <TelefonoInput
+                        prefijo={form.prefijo_whatsapp} numero={form.whatsapp_numero}
+                        onPrefijo={v => set("prefijo_whatsapp", v)} onNumero={v => set("whatsapp_numero", v)}
+                      />
+                  }
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ── Columna derecha: Documentos + Académico ── */}
+          <div className="space-y-3">
+
+            <div>
+              <SecLabel>Documentos de identidad</SecLabel>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <FL>DNI / NIE / Cédula</FL>
+                  <TI name="dni" value={form.dni} onChange={handleChange} placeholder="12345678" />
+                </div>
+                <div>
+                  <FL>DNI — Emisión</FL>
+                  <TI name="dni_emision" value={form.dni_emision} onChange={handleChange} type="date" />
+                </div>
+                <div>
+                  <FL>DNI — Vencimiento</FL>
+                  <TI name="dni_vencimiento" value={form.dni_vencimiento} onChange={handleChange} type="date" />
+                </div>
+                <div>
+                  <FL>Nº Pasaporte</FL>
+                  <TI name="pasaporte" value={form.pasaporte} onChange={handleChange} placeholder="AB123456" />
+                </div>
+                <div>
+                  <FL>Pasaporte — Emisión</FL>
+                  <TI name="pasaporte_emision" value={form.pasaporte_emision} onChange={handleChange} type="date" />
+                </div>
+                <div>
+                  <FL>Pasaporte — Vencimiento</FL>
+                  <TI name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange} type="date" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <SecLabel>Datos académicos y plan</SecLabel>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <FL>Carrera / Título</FL>
+                  <TI name="carrera_titulo" value={form.carrera_titulo} onChange={handleChange} placeholder="Ingeniería Industrial" />
+                </div>
+                <div>
+                  <FL>Área de estudio</FL>
+                  <select value={form.area_carrera} onChange={e => set("area_carrera", e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition">
+                    <option value="">— Selecciona —</option>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FL>Inicio de estudios</FL>
+                  <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" />
+                </div>
+                <div>
+                  <FL>Fin de estudios</FL>
+                  <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" />
+                </div>
+                <div>
+                  <FL>Fecha del título</FL>
+                  <TI name="fecha_titulo" value={form.fecha_titulo} onChange={handleChange} type="date" />
+                </div>
+                <div>
+                  <FL>Inicio previsto en España</FL>
+                  <TI name="inicio_previsto" value={form.inicio_previsto} onChange={handleChange} placeholder="Septiembre 2026" />
+                </div>
+                <div>
+                  <FL>Presupuesto máx. (€/año)</FL>
+                  <TI name="presupuesto_hasta" value={form.presupuesto_hasta} onChange={handleChange}
+                    type="number" min="0" placeholder="15000" />
+                </div>
+                <div className="col-span-2">
+                  <FL>Universidad de origen</FL>
+                  <Combobox
+                    value={form.universidad_origen}
+                    onChange={v => set("universidad_origen", v)}
+                    options={UNIS}
+                    placeholder="Busca tu universidad o escribe el nombre…"
+                    allowCustom
+                  />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* ── Documentos ── */}
-        <div>
-          <SecLabel>Documentos de identidad</SecLabel>
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <div>
-              <FL opt>DNI / NIE / Cédula</FL>
-              <TI name="dni" value={form.dni} onChange={handleChange} placeholder="12345678" />
-            </div>
-            <div>
-              <FL opt>DNI — Emisión</FL>
-              <TI name="dni_emision" value={form.dni_emision} onChange={handleChange} type="date" />
-            </div>
-            <div>
-              <FL opt>DNI — Vencimiento</FL>
-              <TI name="dni_vencimiento" value={form.dni_vencimiento} onChange={handleChange} type="date" />
-            </div>
-            <div>
-              <FL opt>Nº Pasaporte</FL>
-              <TI name="pasaporte" value={form.pasaporte} onChange={handleChange} placeholder="AB123456" />
-            </div>
-            <div>
-              <FL opt>Pasaporte — Emisión</FL>
-              <TI name="pasaporte_emision" value={form.pasaporte_emision} onChange={handleChange} type="date" />
-            </div>
-            <div>
-              <FL opt>Pasaporte — Vencimiento</FL>
-              <TI name="pasaporte_vencimiento" value={form.pasaporte_vencimiento} onChange={handleChange} type="date" />
-            </div>
-          </div>
+        {/* Pie */}
+        <div className="border-t border-neutral-100 px-5 py-3 flex items-center justify-end gap-3 bg-neutral-50">
+          <button type="button" onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-white transition">
+            Cancelar
+          </button>
+          <button type="submit" disabled={saving}
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg bg-[#1D6A4A] text-white hover:bg-[#15533a] disabled:opacity-50 transition">
+            {saving
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
+              : <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>Guardar cambios</>
+            }
+          </button>
         </div>
-
-        {/* ── Datos académicos ── */}
-        <div>
-          <SecLabel>Datos académicos</SecLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
-            <div>
-              <FL opt>Carrera / Título</FL>
-              <TI name="carrera_titulo" value={form.carrera_titulo} onChange={handleChange}
-                placeholder="Ej: Ingeniería Industrial" />
-            </div>
-            <div>
-              <FL opt>Área de estudio</FL>
-              <select value={form.area_carrera} onChange={e => set("area_carrera", e.target.value)}
-                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1D6A4A]/20 focus:border-[#1D6A4A] transition">
-                <option value="">— Selecciona —</option>
-                {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div>
-              <FL opt>Inicio de estudios</FL>
-              <TI name="inicio_estudios" value={form.inicio_estudios} onChange={handleChange} placeholder="2018" />
-            </div>
-            <div>
-              <FL opt>Fin de estudios</FL>
-              <TI name="fin_estudios" value={form.fin_estudios} onChange={handleChange} placeholder="2023" />
-            </div>
-            <div>
-              <FL opt>Fecha del título</FL>
-              <TI name="fecha_titulo" value={form.fecha_titulo} onChange={handleChange} type="date" />
-            </div>
-          </div>
-          <div>
-            <FL opt>Universidad de origen</FL>
-            <Combobox
-              value={form.universidad_origen}
-              onChange={v => set("universidad_origen", v)}
-              options={UNIS}
-              placeholder="Busca tu universidad o escribe el nombre…"
-              allowCustom
-            />
-          </div>
-        </div>
-
       </form>
-
-      {/* Pie */}
-      <div className="border-t border-neutral-100 px-5 py-3 flex items-center justify-end gap-3 bg-neutral-50 rounded-b-2xl">
-        <button type="button" onClick={() => { setEditMode(false); setError(""); setOkMsg(""); }}
-          className="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-white transition">
-          Cancelar
-        </button>
-        <button type="submit" form="perfil-edit-form" disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg bg-[#1D6A4A] text-white hover:bg-[#15533a] disabled:opacity-50 transition">
-          {saving
-            ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
-            : <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>Guardar cambios</>
-          }
-        </button>
-      </div>
     </div>
   );
 }
