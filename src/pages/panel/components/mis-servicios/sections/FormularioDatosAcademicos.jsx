@@ -1178,16 +1178,16 @@ export default function FormularioDatosAcademicos({
                   <button type="button"
                     onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
                     title={s.title}
-                    className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold transition-all ${
-                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
-                      : i === step ? "bg-[#023A4B] text-white shadow ring-2 ring-[#023A4B]/20"
-                      : hasData    ? "bg-neutral-100 text-neutral-500 cursor-pointer hover:bg-neutral-200"
+                    className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold transition-all active:scale-90 ${
+                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-400 shadow-sm"
+                      : i === step ? "bg-[#023A4B] text-white shadow-md ring-[3px] ring-[#023A4B]/25"
+                      : hasData    ? "bg-[#046C8C]/15 text-[#046C8C] cursor-pointer hover:bg-[#046C8C]/30"
                       :              "bg-neutral-100 text-neutral-400 cursor-default"
                     }`}>
                     {i < step ? "✓" : i + 1}
                   </button>
                   {i < STEPS.length - 1 && (
-                    <div className={`flex-1 h-px mx-0.5 ${i < step ? "bg-emerald-400" : "bg-neutral-200"}`} />
+                    <div className={`flex-1 h-px mx-1 ${i < step ? "bg-emerald-300" : "bg-neutral-200"}`} />
                   )}
                 </div>
               ))}
@@ -1314,16 +1314,16 @@ export default function FormularioDatosAcademicos({
                   <button type="button"
                     onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
                     title={s.title}
-                    className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold transition-all ${
-                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
-                      : i === step ? "bg-[#023A4B] text-white ring-4 ring-[#023A4B]/15 shadow"
-                      : hasData    ? "bg-neutral-100 text-neutral-500 cursor-pointer hover:bg-neutral-200"
+                    className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold transition-all active:scale-90 ${
+                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-400 shadow-sm"
+                      : i === step ? "bg-[#023A4B] text-white shadow-md ring-[3px] ring-[#023A4B]/25"
+                      : hasData    ? "bg-[#046C8C]/15 text-[#046C8C] cursor-pointer hover:bg-[#046C8C]/30"
                       :              "bg-neutral-100 text-neutral-400 cursor-default"
                     }`}>
                     {i < step ? "✓" : i + 1}
                   </button>
                   {i < STEPS.length - 1 && (
-                    <div className={`flex-1 h-px mx-0.5 ${i < step ? "bg-emerald-400" : "bg-neutral-200"}`} />
+                    <div className={`flex-1 h-px mx-1 ${i < step ? "bg-emerald-300" : "bg-neutral-200"}`} />
                   )}
                 </div>
               ))}
