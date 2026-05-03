@@ -111,6 +111,7 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
         <p className="text-[11px] text-neutral-500 leading-tight mt-0.5 truncate">
           {master.universidad.nombre_completo}
           {master.universidad.ciudad ? ` · ${master.universidad.ciudad}` : ""}
+          {master.universidad.comunidad ? ` · ${master.universidad.comunidad}` : ""}
         </p>
         <div className="flex flex-wrap gap-1 mt-1.5">
           {precio && (
@@ -627,6 +628,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
                           <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
                             {r.master.universidad.nombre_completo}
                             {r.master.universidad.ciudad ? ` · ${r.master.universidad.ciudad}` : ""}
+                            {r.master.universidad.comunidad ? ` · ${r.master.universidad.comunidad}` : ""}
                           </p>
                         </div>
                         <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(r.score)}`}>
