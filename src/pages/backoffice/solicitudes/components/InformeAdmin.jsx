@@ -628,7 +628,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
                           <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
                             {r.master.universidad.nombre_completo}
                             {r.master.universidad.ciudad ? ` · ${r.master.universidad.ciudad}` : ""}
-                            {r.master.universidad.comunidad ? ` · ${r.master.universidad.comunidad}` : ""}
+                            {r.master.universidad.comunidad ? ` · ${r.master.universidad.comunidad?.nombre ?? r.master.universidad.comunidad}` : ""}
                           </p>
                         </div>
                         <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(r.score)}`}>
