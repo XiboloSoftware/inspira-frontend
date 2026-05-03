@@ -109,7 +109,14 @@ export default function SeccionIdiomas({ formData, setFormData }) {
             <button
               key={key}
               type="button"
-              onClick={() => set(key, !formData[key])}
+              onClick={() => {
+                if (!formData[key]) {
+                  set("idioma_master_es", false);
+                  set("idioma_master_bilingue", false);
+                  set("idioma_master_ingles", false);
+                  set(key, true);
+                }
+              }}
               className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-medium transition-all ${
                 formData[key]
                   ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
@@ -121,7 +128,6 @@ export default function SeccionIdiomas({ formData, setFormData }) {
             </button>
           ))}
         </div>
-        <p className="mt-2 text-[10px] text-neutral-400">Puedes seleccionar varios.</p>
       </div>
 
     </div>

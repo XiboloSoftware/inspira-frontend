@@ -823,14 +823,20 @@ export default function FormularioDatosAcademicos({
         <div className="space-y-6">
           <div>
             <FLabel>Idioma del máster que aceptas</FLabel>
-            <p className="text-xs text-neutral-400 mb-3">Puedes marcar varios.</p>
             <div className={`flex flex-col gap-2 ${has("idioma_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
               {[
                 { key: "idioma_master_es",       label: "Solo en español" },
                 { key: "idioma_master_bilingue",  label: "Bilingüe (español + inglés)" },
                 { key: "idioma_master_ingles",    label: "Totalmente en inglés" },
               ].map(({ key, label }) => (
-                <WBtn key={key} active={!!formData[key]} onClick={() => set(key, !formData[key])}>
+                <WBtn key={key} active={!!formData[key]} onClick={() => {
+                  if (!formData[key]) {
+                    set("idioma_master_es", false);
+                    set("idioma_master_bilingue", false);
+                    set("idioma_master_ingles", false);
+                    set(key, true);
+                  }
+                }}>
                   {label}
                 </WBtn>
               ))}
@@ -1169,11 +1175,14 @@ export default function FormularioDatosAcademicos({
             <div className="flex items-center">
               {STEPS.map((s, i) => (
                 <div key={i} className="flex items-center flex-1 last:flex-none">
-                  <button type="button" onClick={() => { if (i < step) setStep(i); }} title={s.title}
+                  <button type="button"
+                    onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
+                    title={s.title}
                     className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold transition-all ${
-                      i < step ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
+                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
                       : i === step ? "bg-[#023A4B] text-white shadow ring-2 ring-[#023A4B]/20"
-                      : "bg-neutral-100 text-neutral-400 cursor-default"
+                      : hasData    ? "bg-neutral-100 text-neutral-500 cursor-pointer hover:bg-neutral-200"
+                      :              "bg-neutral-100 text-neutral-400 cursor-default"
                     }`}>
                     {i < step ? "✓" : i + 1}
                   </button>
@@ -1303,12 +1312,13 @@ export default function FormularioDatosAcademicos({
               {STEPS.map((s, i) => (
                 <div key={i} className="flex items-center flex-1 last:flex-none">
                   <button type="button"
-                    onClick={() => { if (i < step) setStep(i); }}
+                    onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
                     title={s.title}
                     className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold transition-all ${
-                      i < step ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
+                      i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
                       : i === step ? "bg-[#023A4B] text-white ring-4 ring-[#023A4B]/15 shadow"
-                      : "bg-neutral-100 text-neutral-400 cursor-default"
+                      : hasData    ? "bg-neutral-100 text-neutral-500 cursor-pointer hover:bg-neutral-200"
+                      :              "bg-neutral-100 text-neutral-400 cursor-default"
                     }`}>
                     {i < step ? "✓" : i + 1}
                   </button>
