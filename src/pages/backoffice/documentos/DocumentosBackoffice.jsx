@@ -4,6 +4,7 @@ import { boGET } from "../../../services/backofficeApi";
 import { getUser, descargarZipCliente } from "./documentosUtils";
 import { TreeNode, SolicitudNode, DriveIcon } from "./DocumentosTree";
 import { API_URL } from "./documentosUtils";
+import AprobacionDocumentos from "./AprobacionDocumentos";
 
 function DriveToast({ state }) {
   const visible = state !== "hidden";
@@ -217,6 +218,7 @@ export default function DocumentosBackoffice() {
   const [expandedMap, setExpandedMap] = useState({});
   const [pagina, setPagina] = useState(0);
   const [filtroEstado, setFiltroEstado] = useState(null);
+  const [tabActivo, setTabActivo] = useState("arbol");
 
   const usuario = getUser();
   const isAdmin = usuario?.rol === "admin";
@@ -347,9 +349,46 @@ export default function DocumentosBackoffice() {
         </div>
       </div>
 
+      {/* ── Pestañas ─────────────────────────────────────────────── */}
+      <div className="shrink-0 flex gap-0.5 border-b border-neutral-200">
+        <button
+          onClick={() => setTabActivo("arbol")}
+          className={`flex items-center gap-1.5 text-sm px-4 py-2 font-medium border-b-2 transition-colors -mb-px ${
+            tabActivo === "arbol"
+              ? "border-primary text-primary"
+              : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+          }`}
+        >
+          📂 Árbol de Documentos
+        </button>
+        <button
+          onClick={() => setTabActivo("aprobacion")}
+          className={`flex items-center gap-1.5 text-sm px-4 py-2 font-medium border-b-2 transition-colors -mb-px ${
+            tabActivo === "aprobacion"
+              ? "border-primary text-primary"
+              : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+          }`}
+        >
+          ✔️ Aprobación
+          {!loading && estadoCounts.SUBIDO > 0 && (
+            <span className="ml-1 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">
+              {estadoCounts.SUBIDO}
+            </span>
+          )}
+        </button>
+      </div>
+
       {error && (
         <div className="shrink-0 p-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
+
+      {tabActivo === "aprobacion" && (
+        <div className="flex flex-1 min-h-0">
+          <AprobacionDocumentos clientes={clientes} internos={internos} loading={loading} />
+        </div>
+      )}
+
+      {tabActivo === "arbol" && <>
 
       {/* ── Stats: fila en móvil, sidebar en desktop ─────────────── */}
       {/* Móvil: fila horizontal scrollable de stats */}
@@ -557,6 +596,8 @@ export default function DocumentosBackoffice() {
           )}
         </div>
       </div>
+
+      </>}
     </div>
   );
 }
