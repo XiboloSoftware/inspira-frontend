@@ -1,5 +1,5 @@
 // src/pages/panel/components/mis-servicios/sections/EleccionMastersCliente.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SeccionPanel from "./SeccionPanel";
 
 // ── Tarjeta compacta de máster ────────────────────────────────────────────────
@@ -74,10 +74,18 @@ function MasterCard({ master, score, prioridad, selected, comentario, onToggle, 
 // compat y loadingCompat vienen del padre (DetalleSolicitud) — mismos datos que InformeBusqueda
 
 export default function EleccionMastersCliente({
-  elecciones, onGuardar, saving, idSolicitud, hasFormData, compat, loadingCompat,
+  elecciones, onGuardar, saving, idSolicitud, hasFormData, compat, loadingCompat, resetKey,
 }) {
   const [seleccion, setSeleccion]     = useState([]);
   const [comentarios, setComentarios] = useState({});
+  const isMount = useRef(true);
+
+  // Limpiar selección cada vez que se regenera el informe (resetKey sube solo al guardar form)
+  useEffect(() => {
+    if (isMount.current) { isMount.current = false; return; }
+    setSeleccion([]);
+    setComentarios({});
+  }, [resetKey]); // eslint-disable-line
 
   // Inicializar selección desde elecciones guardadas
   useEffect(() => {

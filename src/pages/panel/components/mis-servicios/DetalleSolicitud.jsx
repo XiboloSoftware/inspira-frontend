@@ -48,6 +48,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [loadingCompat, setLoadingCompat] = useState(false);
   // formGuardado: true solo cuando el servidor tiene datos completos (carga inicial o tras guardar)
   const [formGuardado, setFormGuardado] = useState(false);
+  // se incrementa cada vez que el usuario guarda el formulario → EleccionMasters limpia su selección
+  const [seleccionKey, setSeleccionKey] = useState(0);
 
   const idSolicitud = solicitudBase.id_solicitud;
 
@@ -138,8 +140,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
-      // Marcar como guardado y re-calcular compatibilidad con los datos nuevos
+      // Marcar como guardado, limpiar selección previa y re-calcular con datos nuevos
       setFormGuardado(true);
+      setSeleccionKey((k) => k + 1);
       cargarCompatibilidad();
     } catch {
       window.alert("Error al guardar.");
@@ -258,6 +261,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   hasFormData={formGuardado}
                   compat={compat}
                   loadingCompat={loadingCompat}
+                  resetKey={seleccionKey}
                 />
                 <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
               </>
