@@ -1,6 +1,5 @@
 // InformeBusqueda.jsx
-import { useEffect, useState } from "react";
-import { apiGET } from "../../../../../services/api";
+import { useState } from "react";
 import { formatearFecha } from "../utils";
 import SeccionPanel from "./SeccionPanel";
 
@@ -91,7 +90,6 @@ function ModalListadoCompleto({ resultados, total, onClose }) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
           <div>
             <p className="text-sm font-bold text-neutral-800">Todos los programas compatibles</p>
@@ -104,7 +102,6 @@ function ModalListadoCompleto({ resultados, total, onClose }) {
             ✕
           </button>
         </div>
-        {/* Lista */}
         <div className="overflow-y-auto px-5 divide-y divide-neutral-100">
           {resultados.map((r, i) => (
             <MasterRow key={r.master.id_master} posicion={i + 1} resultado={r} />
@@ -124,38 +121,32 @@ function ModalListadoCompleto({ resultados, total, onClose }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
+// compat y loadingCompat vienen del padre (DetalleSolicitud) — un solo fetch compartido
 
-export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
-  const [compat,       setCompat]  = useState(null);
-  const [loadingCompat, setLoading] = useState(false);
-  const [modalAbierto, setModal]   = useState(false);
+export default function InformeBusqueda({ idSolicitud, informe, hasFormData, compat, loadingCompat }) {
+  const [modalAbierto, setModal] = useState(false);
 
-  const disponible = !!informe?.informe_fecha_subida;
-
-  useEffect(() => {
-    if (!hasFormData) return;
-    setLoading(true);
-    apiGET(`/solicitudes/${idSolicitud}/compatibilidad`)
-      .then((r) => { if (r.ok) setCompat(r); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [idSolicitud, hasFormData]); // eslint-disable-line
-
-  const resultados = compat?.resultados || [];
-  const perfil     = compat?.perfil;
-
-  // Estado de la sección
+  const disponible    = !!informe?.informe_fecha_subida;
+  const resultados    = compat?.resultados || [];
+  const perfil        = compat?.perfil;
   const hayResultados = resultados.length > 0;
-  const estado = disponible || hayResultados ? "completado" : "pendiente";
+
+  const estado = disponible || hayResultados
+    ? "completado"
+    : loadingCompat
+      ? "cargando"
+      : "pendiente";
+
   const subtitulo = disponible
     ? `PDF disponible desde ${formatearFecha(informe.informe_fecha_subida)}`
     : hayResultados
       ? `${compat.total} programas compatibles encontrados`
-      : hasFormData
-        ? (loadingCompat ? "Calculando compatibilidad…" : "Procesando tu informe…")
-        : "Completa el formulario para ver tu informe personalizado";
+      : loadingCompat
+        ? "Calculando tu informe…"
+        : hasFormData
+          ? "Procesando tu informe…"
+          : "Completa el formulario para ver tu informe";
 
-  // Ver/descargar PDF manual
   async function manejarPDF(modo) {
     try {
       const token = localStorage.getItem("token");
@@ -189,8 +180,8 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
       estado={estado}
       sectionId="4"
     >
-      {/* ── Modo C: formulario incompleto ─────────────────────────────── */}
-      {!hasFormData && (
+      {/* ── Formulario incompleto ──────────────────────────────────────── */}
+      {!hasFormData && !loadingCompat && (
         <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
           <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 text-xl">
             🔍
@@ -204,16 +195,40 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
         </div>
       )}
 
-      {/* ── Cargando ──────────────────────────────────────────────────── */}
-      {hasFormData && loadingCompat && (
-        <div className="flex items-center gap-3 py-6 justify-center text-neutral-400">
-          <div className="w-5 h-5 border-2 border-[#023A4B] border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm">Calculando compatibilidad…</span>
+      {/* ── Tu informe está cargando ──────────────────────────────────── */}
+      {loadingCompat && (
+        <div className="flex flex-col items-center gap-4 py-10">
+          <div className="w-14 h-14 rounded-2xl bg-[#023A4B]/10 flex items-center justify-center">
+            <div className="w-7 h-7 border-[3px] border-[#023A4B] border-t-transparent rounded-full animate-spin" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-neutral-800">Tu informe está cargando</p>
+            <p className="text-xs text-neutral-500 mt-1.5 max-w-xs mx-auto">
+              Estamos analizando tu perfil académico y buscando los mejores másteres para ti.
+            </p>
+          </div>
         </div>
       )}
 
-      {/* ── Modo A + B: formulario completo ───────────────────────────── */}
-      {hasFormData && !loadingCompat && (
+      {/* ── Formulario guardado pero sin resultado aún (error de API) ─── */}
+      {hasFormData && !loadingCompat && !compat && !disponible && (
+        <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+          <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-neutral-700">En preparación</p>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Tu informe se generará automáticamente. Si no aparece, recarga la página.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Informe disponible (Modo A y/o B) ────────────────────────── */}
+      {!loadingCompat && (disponible || compat) && (
         <div className="space-y-4">
 
           {/* MODO A — PDF manual subido por asesor */}
@@ -254,19 +269,16 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
             </div>
           )}
 
-          {/* MODO B — Informe automático */}
+          {/* MODO B — Informe automático de compatibilidad */}
           {compat && (
             <div>
-              {/* Badge "Informe listo" */}
               <div className="flex items-center gap-3 flex-wrap mb-4">
                 <div className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-lg">
                   ✓ Informe listo · Generado el {new Date().toLocaleDateString("es-ES")}
                 </div>
               </div>
 
-              {/* Tarjeta principal */}
               <div className="border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
-                {/* Header oscuro */}
                 <div className="bg-[#023A4B] text-white px-5 py-4 flex items-center gap-3">
                   <span className="text-2xl shrink-0">🎓</span>
                   <div className="min-w-0">
@@ -283,7 +295,6 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
                   </div>
                 </div>
 
-                {/* Body */}
                 <div className="px-5 py-4">
                   <p className="text-sm text-neutral-600 mb-1">
                     Se encontraron{" "}
@@ -317,27 +328,9 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData }) {
               </div>
             </div>
           )}
-
-          {/* Sin resultados y formulario completo pero aún sin calcular */}
-          {!compat && !loadingCompat && (
-            <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-              <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-700">En preparación</p>
-                <p className="text-sm text-neutral-500 mt-0.5">
-                  Tu informe se generará automáticamente. Si no aparece, recarga la página.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Modal listado completo */}
       {modalAbierto && (
         <ModalListadoCompleto
           resultados={resultados}

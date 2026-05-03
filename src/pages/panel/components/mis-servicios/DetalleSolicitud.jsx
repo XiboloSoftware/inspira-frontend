@@ -13,6 +13,25 @@ import ProgramacionPostulacionesCliente from "./sections/ProgramacionPostulacion
 import PortalesYJustificantesCliente from "./sections/PortalesYJustificantesCliente";
 import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente";
 
+const CAMPOS_REQUERIDOS_FORMULARIO = [
+  "promedio_peru",
+  "ubicacion_grupo",
+  "otra_maestria_tiene",
+  "experiencia_anios",
+  "experiencia_vinculada",
+  "ingles_situacion",
+  "beca_desea",
+  "duracion_preferida",
+  "practicas_preferencia",
+  "presupuesto_hasta",
+];
+
+function formCompleto(datos) {
+  return CAMPOS_REQUERIDOS_FORMULARIO.every(
+    (campo) => datos?.[campo] != null && datos?.[campo] !== ""
+  );
+}
+
 export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [detalle, setDetalle] = useState(null);
   const [checklist, setChecklist] = useState([]);
@@ -24,15 +43,33 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [elecciones, setElecciones] = useState([]);
   const [savingElecciones, setSavingElecciones] = useState(false);
 
+  // Compatibilidad: levantada aquí para compartir entre InformeBusqueda y EleccionMasters
+  const [compat, setCompat] = useState(null);
+  const [loadingCompat, setLoadingCompat] = useState(false);
+  // formGuardado: true solo cuando el servidor tiene datos completos (carga inicial o tras guardar)
+  const [formGuardado, setFormGuardado] = useState(false);
+
   const idSolicitud = solicitudBase.id_solicitud;
 
   useEffect(() => {
     cargarTodo();
   }, [idSolicitud]); // eslint-disable-line
 
+  async function cargarCompatibilidad() {
+    setLoadingCompat(true);
+    setCompat(null);
+    try {
+      const r = await apiGET(`/solicitudes/${idSolicitud}/compatibilidad`);
+      if (r.ok) setCompat(r);
+    } catch { /* silencioso */ }
+    finally { setLoadingCompat(false); }
+  }
+
   async function cargarTodo() {
     setLoading(true);
     setError("");
+    setCompat(null);
+    setFormGuardado(false);
     try {
       const rDetalle = await apiGET(`/solicitudes/${idSolicitud}`);
       if (rDetalle.ok) setDetalle(rDetalle.solicitud);
@@ -46,7 +83,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       ]);
       const datosPerfil = rPerfil.ok ? (rPerfil.cliente?.datos_extra || {}) : {};
       const datosForm   = (rForm.ok && rForm.datos) ? rForm.datos : {};
-      // Pre-rellena campos vacíos del formulario con datos del perfil
       const merged = {
         carrera_titulo:     datosForm.carrera_titulo     || datosPerfil.carrera_titulo     || "",
         area_carrera:       datosForm.area_carrera       || datosPerfil.area_carrera       || "",
@@ -54,6 +90,12 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         ...datosForm,
       };
       setFormData(merged);
+
+      // Si el formulario ya estaba completo en el servidor, arrancar fetch de compatibilidad
+      if (formCompleto(merged)) {
+        setFormGuardado(true);
+        cargarCompatibilidad(); // fire & forget
+      }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
       if (rInst.ok) {
@@ -96,6 +138,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
+      // Marcar como guardado y re-calcular compatibilidad con los datos nuevos
+      setFormGuardado(true);
+      cargarCompatibilidad();
     } catch {
       window.alert("Error al guardar.");
     } finally {
@@ -123,18 +168,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     }
   }
 
-  const CAMPOS_REQUERIDOS_FORMULARIO = [
-    "promedio_peru",       // 3.1 perfil cuantitativo
-    "ubicacion_grupo",     // 3.1 tercio/quinto/décimo
-    "otra_maestria_tiene", // 3.1 otra maestría
-    "experiencia_anios",   // 3.2 años de experiencia
-    "experiencia_vinculada", // 3.2 vinculación
-    "ingles_situacion",    // 3.4 idiomas
-    "beca_desea",          // 3.5 becas
-    "duracion_preferida",  // 3.6 duración
-    "practicas_preferencia", // 3.6 prácticas
-    "presupuesto_hasta",   // 3.6 presupuesto
-  ];
+  // hasFormData: reactivo al input del usuario (para el indicador de progreso del formulario)
   const hasFormData = CAMPOS_REQUERIDOS_FORMULARIO.every(
     (campo) =>
       formData?.[campo] !== undefined &&
@@ -144,8 +178,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
 
-  // CCAAs del plan — leídas de detalle.tipo.ccaas (relación en BD)
-  // null = sin restricción (plan no tiene CCAAs configuradas = cliente ve todas)
   const planCCAAs = useMemo(() => {
     if (!detalle) return null;
     const ccaas = Array.isArray(detalle.tipo?.ccaas) ? detalle.tipo.ccaas : [];
@@ -157,10 +189,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   }, [detalle]);
 
   return (
-    // Ocupa toda la altura disponible, sin scroll externo
     <div className="flex flex-col h-full min-h-0">
 
-      {/* Botón volver — primario, compacto, no se estira */}
       <button
         onClick={onVolver}
         className="shrink-0 self-start inline-flex items-center gap-2.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm mb-3 group"
@@ -173,7 +203,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         Mis servicios
       </button>
 
-      {/* Encabezado */}
       <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
         {loading && (
           <div className="flex items-center gap-2 py-2 text-neutral-400">
@@ -192,7 +221,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
         )}
       </div>
 
-      {/* Lista de secciones */}
       {!loading && !error && detalle && (
         <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
             <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
@@ -215,7 +243,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 informe_nombre_original: detalle.informe_nombre_original,
                 informe_fecha_subida: detalle.informe_fecha_subida,
               }}
-              hasFormData={hasFormData}
+              hasFormData={formGuardado}
+              compat={compat}
+              loadingCompat={loadingCompat}
             />
 
             {!esVisado && (
@@ -225,7 +255,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   onGuardar={handleGuardarElecciones}
                   saving={savingElecciones}
                   idSolicitud={idSolicitud}
-                  hasFormData={hasFormData}
+                  hasFormData={formGuardado}
+                  compat={compat}
+                  loadingCompat={loadingCompat}
                 />
                 <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
               </>

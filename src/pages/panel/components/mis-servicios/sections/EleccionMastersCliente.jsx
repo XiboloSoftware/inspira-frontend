@@ -1,6 +1,5 @@
 // src/pages/panel/components/mis-servicios/sections/EleccionMastersCliente.jsx
 import { useEffect, useState } from "react";
-import { apiGET } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
 // ── Tarjeta compacta de máster ────────────────────────────────────────────────
@@ -23,21 +22,18 @@ function MasterCard({ master, score, prioridad, selected, comentario, onToggle, 
     }`}>
       <button type="button" onClick={onToggle}
         className="w-full text-left flex items-center gap-2.5 px-3 py-2.5">
-        {/* Círculo selección */}
         <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
           selected ? "border-[#023A4B] bg-[#023A4B]" : "border-neutral-300 bg-white"
         }`}>
           {selected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
         </div>
 
-        {/* Número de prioridad */}
         {selected && (
           <div className="shrink-0 w-5 h-5 rounded-full bg-[#023A4B] text-white text-[10px] font-black flex items-center justify-center">
             {prioridad}
           </div>
         )}
 
-        {/* Info máster */}
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-neutral-800 leading-tight">{master.nombre_limpio}</p>
           <p className="text-[11px] text-neutral-500 leading-tight truncate mt-0.5">
@@ -58,7 +54,6 @@ function MasterCard({ master, score, prioridad, selected, comentario, onToggle, 
         </div>
       </button>
 
-      {/* Comentario — solo cuando seleccionado */}
       {selected && onComentario && (
         <div className="px-3 pb-2.5 border-t border-neutral-100">
           <textarea
@@ -76,26 +71,15 @@ function MasterCard({ master, score, prioridad, selected, comentario, onToggle, 
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
+// compat y loadingCompat vienen del padre (DetalleSolicitud) — mismos datos que InformeBusqueda
 
 export default function EleccionMastersCliente({
-  elecciones, onGuardar, saving, idSolicitud, hasFormData,
+  elecciones, onGuardar, saving, idSolicitud, hasFormData, compat, loadingCompat,
 }) {
-  const [informe, setInforme]       = useState(null);
-  const [loadingInf, setLoadingInf] = useState(false);
-  const [seleccion, setSeleccion]   = useState([]); // [{ id_master, nombre_limpio, universidad, ciudad, score, prioridad, comentario }]
-  const [comentarios, setComentarios] = useState({}); // { id_master: "texto" }
+  const [seleccion, setSeleccion]     = useState([]);
+  const [comentarios, setComentarios] = useState({});
 
-  // Cargar informe de compatibilidad
-  useEffect(() => {
-    if (!idSolicitud || !hasFormData) return;
-    setLoadingInf(true);
-    apiGET(`/solicitudes/${idSolicitud}/compatibilidad`)
-      .then((r) => { if (r.ok) setInforme(r); })
-      .catch(() => {})
-      .finally(() => setLoadingInf(false));
-  }, [idSolicitud, hasFormData]);
-
-  // Inicializar selección desde elecciones guardadas (formato nuevo con id_master)
+  // Inicializar selección desde elecciones guardadas
   useEffect(() => {
     const saved = (Array.isArray(elecciones) ? elecciones : []).filter((e) => e.id_master);
     if (saved.length > 0) {
@@ -106,7 +90,7 @@ export default function EleccionMastersCliente({
     }
   }, []); // eslint-disable-line
 
-  const resultados  = informe?.resultados ?? [];
+  const resultados  = compat?.resultados ?? [];
   const selectedIds = new Set(seleccion.map((s) => s.id_master));
 
   function deseleccionar(id_master) {
@@ -156,10 +140,14 @@ export default function EleccionMastersCliente({
   const noSeleccionados = resultados.filter((r) => !selectedIds.has(r.master.id_master));
 
   const filled    = seleccion.length;
-  const estado    = filled > 0 ? "completado" : "pendiente";
+  const estado    = filled > 0 ? "completado" : loadingCompat ? "cargando" : "pendiente";
   const subtitulo = filled > 0
     ? `${filled} máster${filled > 1 ? "es" : ""} seleccionado${filled > 1 ? "s" : ""}`
-    : "Selecciona los másteres de tu informe por orden de prioridad.";
+    : loadingCompat
+      ? "Cargando másteres recomendados…"
+      : hasFormData
+        ? "Selecciona los másteres de tu informe por orden de prioridad."
+        : "Completa el formulario para ver los másteres recomendados.";
 
   return (
     <SeccionPanel
@@ -173,34 +161,36 @@ export default function EleccionMastersCliente({
     >
       <div className="flex flex-col flex-1 min-h-0">
 
-        {/* Área scrolleable */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-1.5">
 
-          {/* Cargando */}
-          {loadingInf && (
-            <div className="flex items-center gap-2 py-4 text-neutral-400">
-              <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="text-sm">Cargando informe…</span>
-            </div>
-          )}
-
-          {/* Sin formulario */}
-          {!hasFormData && !loadingInf && (
+          {/* Sin formulario guardado */}
+          {!hasFormData && !loadingCompat && (
             <div className="bg-neutral-50 rounded-xl p-4 text-sm text-neutral-500">
               Completa el formulario académico para ver los másteres recomendados aquí.
             </div>
           )}
 
+          {/* Cargando másteres */}
+          {loadingCompat && (
+            <div className="flex items-center gap-3 py-6 px-4 bg-neutral-50 rounded-xl">
+              <div className="w-10 h-10 rounded-xl bg-[#023A4B]/10 flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-neutral-800">Cargando másteres recomendados…</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Estamos preparando tu selección personalizada.</p>
+              </div>
+            </div>
+          )}
+
           {/* Informe disponible */}
-          {hasFormData && !loadingInf && informe && (
+          {hasFormData && !loadingCompat && compat && (
             <>
-              {/* Banner info */}
               <div className="flex items-start gap-2 bg-[#023A4B]/5 rounded-xl px-3 py-2.5 mb-2 text-xs text-neutral-600">
                 <span className="shrink-0 mt-0.5">ℹ️</span>
                 <span>Toca un programa para seleccionarlo. <strong>El orden importa</strong> — el primero es tu primera opción.</span>
               </div>
 
-              {/* Seleccionados */}
               {seleccion.length > 0 && (
                 <>
                   <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-1">
@@ -231,11 +221,10 @@ export default function EleccionMastersCliente({
                 </>
               )}
 
-              {/* No seleccionados */}
               {noSeleccionados.length > 0 && (
                 <>
                   <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-2">
-                    {seleccion.length > 0 ? "Otros del informe" : `Del informe · ${informe.total} programas`}
+                    {seleccion.length > 0 ? "Otros del informe" : `Del informe · ${compat.total} programas`}
                   </p>
                   {noSeleccionados.map((r) => (
                     <MasterCard
@@ -259,9 +248,15 @@ export default function EleccionMastersCliente({
               )}
             </>
           )}
+
+          {/* Formulario guardado pero sin compat (error de API) */}
+          {hasFormData && !loadingCompat && !compat && (
+            <div className="bg-neutral-50 rounded-xl p-4 text-sm text-neutral-500">
+              No se pudo cargar el informe. Recarga la página para intentarlo de nuevo.
+            </div>
+          )}
         </div>
 
-        {/* Pie fijo */}
         <div className="shrink-0 border-t border-neutral-100 bg-white px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <p className="text-xs text-neutral-500">
