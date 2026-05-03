@@ -1,6 +1,6 @@
 // SeccionComunidades.jsx — CRUD Comunidades Autónomas
 import { useMemo, useState } from "react";
-import { boPOST } from "../../../services/backofficeApi";
+import { boPOST, boDELETE } from "../../../services/backofficeApi";
 import { formatPrecio, activoBadge, MODAL_OVERLAY, MODAL_PANEL } from "./catalogoConstants";
 
 const FORM_INIT = {
@@ -128,6 +128,7 @@ function Modal({ item, onClose, onSaved }) {
 export default function SeccionComunidades({ comunidades, onReload }) {
   const [modal,    setModal]    = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [purging,  setPurging]  = useState(null);
   const [search,   setSearch]   = useState("");
   const [sortCol,  setSortCol]  = useState("nombre");
   const [sortDir,  setSortDir]  = useState("asc");
@@ -159,6 +160,16 @@ export default function SeccionComunidades({ comunidades, onReload }) {
     setToggling(c.id_comunidad);
     try { await boPOST(`/backoffice/catalogo/comunidades/${c.id_comunidad}/estado`, { activo: !c.activo }); onReload(); }
     finally { setToggling(null); }
+  }
+
+  async function purgarComunidad(c) {
+    if (!window.confirm(`¿Eliminar permanentemente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setPurging(c.id_comunidad);
+    try {
+      const data = await boDELETE(`/backoffice/catalogo/comunidades/${c.id_comunidad}`);
+      if (!data.ok) { alert(data.msg || "Error al eliminar"); return; }
+      onReload();
+    } finally { setPurging(null); }
   }
 
   return (
@@ -219,6 +230,19 @@ export default function SeccionComunidades({ comunidades, onReload }) {
                         className="text-xs text-neutral-500 hover:text-neutral-800 disabled:opacity-40">
                         {c.activo ? "Desactivar" : "Activar"}
                       </button>
+                      {!c.activo && (
+                        <button
+                          disabled={purging === c.id_comunidad}
+                          onClick={() => purgarComunidad(c)}
+                          className="inline-flex items-center justify-center w-6 h-6 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 transition disabled:opacity-40"
+                          title="Purgar (eliminar permanentemente)">
+                          {purging === c.id_comunidad ? "…" : (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
