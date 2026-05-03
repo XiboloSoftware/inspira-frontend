@@ -21,11 +21,10 @@ const NAV_SECTIONS = [
   {
     label: "Operación",
     items: [
-      { label: "Catálogo Másteres",   href: "/backoffice/catalogo-masters" },
-      { label: "Documentos",          href: "/backoffice/documentos" },
-      { label: "Checklist Servicios", href: "/backoffice/checklist-servicios" },
-      { label: "Instructivos",        href: "/backoffice/instructivos" },
-      { label: "Panel Asesoras",      href: "/backoffice/panel-asesoras" },
+      { label: "Catálogo Másteres",      href: "/backoffice/catalogo-masters" },
+      { label: "Documentos",             href: "/backoffice/documentos" },
+      { label: "Checklist / Instructivos", href: "/backoffice/checklist-servicios", alsoActive: ["/backoffice/instructivos"] },
+      { label: "Panel Asesoras",         href: "/backoffice/panel-asesoras" },
     ],
   },
   {
@@ -33,8 +32,7 @@ const NAV_SECTIONS = [
     items: [
       { label: "Planes",            href: "/backoffice/planes" },
       { label: "Precios/Servicios", href: "/backoffice/precios" },
-      { label: "Correos",           href: "/backoffice/correos" },
-      { label: "Media",             href: "/backoffice/media" },
+      { label: "Correos / Media",   href: "/backoffice/correos", alsoActive: ["/backoffice/media"] },
       { label: "Settings",          href: "/backoffice/settings" },
     ],
   },
@@ -154,7 +152,10 @@ export default function Sidebar({ path, open, onClose, pinned, onTogglePin, user
               </p>
               <div className="space-y-0.5">
                 {section.items.map((it) => {
-                  const active = path === it.href || path.startsWith(it.href + "/");
+                  const active =
+                    path === it.href ||
+                    path.startsWith(it.href + "/") ||
+                    (it.alsoActive || []).some((p) => path === p || path.startsWith(p + "/"));
                   return (
                     <a
                       key={it.href}

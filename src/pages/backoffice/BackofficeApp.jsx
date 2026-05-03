@@ -145,12 +145,15 @@ export default function BackofficeApp() {
               />
             )}
 
-            {path === "/backoffice/checklist-servicios" && (
-              <ChecklistServicios />
-            )}
-
-            {path === "/backoffice/instructivos" && (
-              <InstructivosServicios />
+            {(path === "/backoffice/checklist-servicios" || path === "/backoffice/instructivos") && (
+              <TabView
+                key="checklist-instructivos"
+                initialTab={path === "/backoffice/instructivos" ? 1 : 0}
+                tabs={[
+                  { label: "Checklist Servicios", content: <ChecklistServicios /> },
+                  { label: "Instructivos",         content: <InstructivosServicios /> },
+                ]}
+              />
             )}
 
             {path === "/backoffice/documentos" && <DocumentosBackoffice />}
@@ -167,8 +170,16 @@ export default function BackofficeApp() {
 
             {path === "/backoffice/panel-asesoras" && <PanelAsesoras />}
 
-            {path === "/backoffice/correos" && <EmailTemplates />}
-            {path === "/backoffice/media" && <MediaPanel />}
+            {(path === "/backoffice/correos" || path === "/backoffice/media") && (
+              <TabView
+                key="correos-media"
+                initialTab={path === "/backoffice/media" ? 1 : 0}
+                tabs={[
+                  { label: "Correos", content: <EmailTemplates /> },
+                  { label: "Media",   content: <MediaPanel /> },
+                ]}
+              />
+            )}
 
             {path === "/backoffice/settings" && (
               <UsuariosSettings user={user} />
@@ -177,6 +188,33 @@ export default function BackofficeApp() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+function TabView({ tabs, initialTab = 0 }) {
+  const [active, setActive] = useState(initialTab);
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex border-b border-neutral-200 px-6 pt-4 gap-1 shrink-0">
+        {tabs.map((t, i) => (
+          <button
+            key={t.label}
+            onClick={() => setActive(i)}
+            className={[
+              "px-4 py-2 text-sm font-medium rounded-t-lg transition-colors",
+              active === i
+                ? "bg-primary text-white"
+                : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100",
+            ].join(" ")}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {tabs[active].content}
+      </div>
+    </div>
   );
 }
 
