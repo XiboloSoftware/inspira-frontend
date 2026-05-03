@@ -325,8 +325,8 @@ export default function InformeAdmin({ detalle, recargar }) {
   const isCurado    = !!detalle.informe_compat_curado;
 
   const paramRows = [
-    ["Rama del máster",    datos.area_interes_master],
-    ["Sub-área",           datos.sub_area_interes || compat?.perfil?.area],
+    ["Rama del máster",    compat?.perfil?.rama_label    || datos.area_interes_master],
+    ["Sub-área",           compat?.perfil?.sub_area_label || null],
     ["Área de carrera",    datos.area_carrera],
     ["Promedio",           datos.promedio_peru ? `${datos.promedio_peru} / ${datos.promedio_escala || 10}` : null],
     ["Posición académica", datos.ubicacion_grupo],
