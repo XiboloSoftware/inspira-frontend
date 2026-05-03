@@ -1,5 +1,9 @@
 // src/pages/panel/components/mis-servicios/sections/SeccionPanel.jsx
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
+
+// Cuando este contexto es true, los SeccionPanel se abren automáticamente
+// y no permiten colapsar (para el panel de detalle de dos columnas)
+export const SeccionSiempreAbiertoCtx = createContext(false);
 
 const ESTADO_CFG = {
   pendiente:  { label: "Pendiente",  bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
@@ -15,27 +19,33 @@ export default function SeccionPanel({
   estado,
   children,
   defaultOpen = false,
-  sectionId,        // reservado, ya no controla visibilidad global
+  sectionId,
   contentClassName,
-  grow,             // reservado, ya no se usa
-  // modo controlado opcional
+  grow,
   open: openProp,
   onToggle: onToggleProp,
 }) {
-  const [openInternal, setOpenInternal] = useState(defaultOpen);
+  const siempreAbierto = useContext(SeccionSiempreAbiertoCtx);
+  const [openInternal, setOpenInternal] = useState(defaultOpen || siempreAbierto);
 
-  const open   = openProp !== undefined ? openProp : openInternal;
-  const toggle = openProp !== undefined ? onToggleProp : () => setOpenInternal((v) => !v);
+  const open   = siempreAbierto ? true : (openProp !== undefined ? openProp : openInternal);
+  const toggle = siempreAbierto ? () => {} : (openProp !== undefined ? onToggleProp : () => setOpenInternal((v) => !v));
 
   const cfg = estado ? ESTADO_CFG[estado] : null;
 
+  // En modo siempreAbierto: header es un div no interactivo
+  const Header = siempreAbierto ? "div" : "button";
+  const headerProps = siempreAbierto
+    ? {}
+    : { type: "button", onClick: toggle };
+
   return (
     <section className="border border-neutral-200 rounded-2xl bg-white shadow-sm overflow-hidden">
-      {/* Header clickable */}
-      <button
-        type="button"
-        onClick={toggle}
-        className="shrink-0 w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-neutral-50/60 transition-colors"
+      <Header
+        {...headerProps}
+        className={`shrink-0 w-full text-left px-5 py-4 flex items-center justify-between gap-4 ${
+          !siempreAbierto ? "hover:bg-neutral-50/60 transition-colors" : ""
+        }`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-6 h-6 rounded-lg bg-[#046C8C] flex items-center justify-center shrink-0">
@@ -56,23 +66,28 @@ export default function SeccionPanel({
               {cfg.label}
             </span>
           )}
-          {open ? (
-            <svg className="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
+          {/* Solo mostrar chevron en modo acordeón (no siempreAbierto) */}
+          {!siempreAbierto && (
+            open ? (
+              <svg className="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            )
           )}
         </div>
-      </button>
+      </Header>
 
       {open && (
         <div className={`border-t border-neutral-100 ${
-          contentClassName !== undefined
-            ? contentClassName
-            : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]"
+          siempreAbierto
+            ? "px-5 py-4"
+            : (contentClassName !== undefined
+                ? contentClassName
+                : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]")
         }`}>
           {children}
         </div>

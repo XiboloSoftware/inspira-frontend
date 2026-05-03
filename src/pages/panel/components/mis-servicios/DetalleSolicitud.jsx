@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-import EncabezadoSolicitud from "./sections/EncabezadoSolicitud";
+import { SeccionSiempreAbiertoCtx } from "./sections/SeccionPanel";
 import ChecklistDocumentos from "./sections/ChecklistDocumentos";
 import InstructivosPlantillas from "./sections/InstructivosPlantillas";
 import FormularioDatosAcademicos from "./sections/FormularioDatosAcademicos";
@@ -13,17 +13,12 @@ import ProgramacionPostulacionesCliente from "./sections/ProgramacionPostulacion
 import PortalesYJustificantesCliente from "./sections/PortalesYJustificantesCliente";
 import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente";
 
+// ── Constantes ────────────────────────────────────────────────────────────────
+
 const CAMPOS_REQUERIDOS_FORMULARIO = [
-  "promedio_peru",
-  "ubicacion_grupo",
-  "otra_maestria_tiene",
-  "experiencia_anios",
-  "experiencia_vinculada",
-  "ingles_situacion",
-  "beca_desea",
-  "duracion_preferida",
-  "practicas_preferencia",
-  "presupuesto_hasta",
+  "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
+  "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
+  "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
 ];
 
 function formCompleto(datos) {
@@ -32,32 +27,77 @@ function formCompleto(datos) {
   );
 }
 
-export default function DetalleSolicitud({ solicitudBase, onVolver }) {
-  const [detalle, setDetalle] = useState(null);
-  const [checklist, setChecklist] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [instructivos, setInstructivos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savingForm, setSavingForm] = useState(false);
-  const [error, setError] = useState("");
-  const [elecciones, setElecciones] = useState([]);
-  const [savingElecciones, setSavingElecciones] = useState(false);
+const DOT_COLORS = {
+  completado: "bg-emerald-500",
+  pendiente:  "bg-amber-400",
+  cargando:   "bg-blue-400 animate-pulse",
+  observado:  "bg-red-400",
+};
 
-  // Compatibilidad: levantada aquí para compartir entre InformeBusqueda y EleccionMasters
-  const [compat, setCompat] = useState(null);
-  const [loadingCompat, setLoadingCompat] = useState(false);
-  // formGuardado: true solo cuando el servidor tiene datos completos (carga inicial o tras guardar)
-  const [formGuardado, setFormGuardado] = useState(false);
-  // se incrementa cada vez que el usuario guarda el formulario → EleccionMasters limpia su selección
-  const [seleccionKey, setSeleccionKey] = useState(0);
-  // se incrementa cada vez que el usuario guarda su elección → Postulaciones re-fetcha del backend
-  const [postulacionesKey, setPostulacionesKey] = useState(0);
+// ── NavItem — botón de la barra lateral ──────────────────────────────────────
+
+function NavItem({ num, titulo, subtitulo, estado, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-center gap-2.5 ${
+        active
+          ? "bg-[#023A4B] shadow-sm"
+          : "hover:bg-neutral-100"
+      }`}
+    >
+      <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black transition-colors ${
+        active
+          ? "bg-white/20 text-white"
+          : "bg-[#046C8C]/10 text-[#046C8C]"
+      }`}>
+        {num}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-semibold leading-tight truncate ${active ? "text-white" : "text-neutral-800"}`}>
+          {titulo}
+        </p>
+        {subtitulo && (
+          <p className={`text-[10px] mt-0.5 truncate ${active ? "text-white/60" : "text-neutral-400"}`}>
+            {subtitulo}
+          </p>
+        )}
+      </div>
+      {estado && (
+        <span className={`shrink-0 w-2 h-2 rounded-full ${
+          active ? "bg-white/40" : (DOT_COLORS[estado] || "bg-neutral-300")
+        }`} />
+      )}
+    </button>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+export default function DetalleSolicitud({ solicitudBase, onVolver }) {
+  const [detalle,           setDetalle]           = useState(null);
+  const [checklist,         setChecklist]         = useState([]);
+  const [formData,          setFormData]          = useState({});
+  const [instructivos,      setInstructivos]      = useState([]);
+  const [loading,           setLoading]           = useState(true);
+  const [savingForm,        setSavingForm]        = useState(false);
+  const [error,             setError]             = useState("");
+  const [elecciones,        setElecciones]        = useState([]);
+  const [savingElecciones,  setSavingElecciones]  = useState(false);
+
+  const [compat,            setCompat]            = useState(null);
+  const [loadingCompat,     setLoadingCompat]     = useState(false);
+  const [formGuardado,      setFormGuardado]      = useState(false);
+  const [seleccionKey,      setSeleccionKey]      = useState(0);
+  const [postulacionesKey,  setPostulacionesKey]  = useState(0);
+
+  // Sección activa del panel lateral
+  const [activeSection, setActiveSection] = useState("docs");
 
   const idSolicitud = solicitudBase.id_solicitud;
 
-  useEffect(() => {
-    cargarTodo();
-  }, [idSolicitud]); // eslint-disable-line
+  useEffect(() => { cargarTodo(); }, [idSolicitud]); // eslint-disable-line
 
   async function cargarCompatibilidad() {
     setLoadingCompat(true);
@@ -95,10 +135,9 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       };
       setFormData(merged);
 
-      // Si el formulario ya estaba completo en el servidor, arrancar fetch de compatibilidad
       if (formCompleto(merged)) {
         setFormGuardado(true);
-        cargarCompatibilidad(); // fire & forget
+        cargarCompatibilidad();
       }
 
       const rInst = await apiGET(`/solicitudes/${idSolicitud}/instructivos`);
@@ -142,7 +181,6 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
-      // Limpiar elecciones y postulaciones en backend (nuevo informe = selección desde cero)
       const base5 = Array.from({ length: 5 }, (_, idx) => ({ prioridad: idx + 1, programa: "", comentario: "" }));
       Promise.all([
         apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: [] }).catch(() => {}),
@@ -160,9 +198,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   }
 
   async function guardarFormularioSilencioso() {
-    try {
-      await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
-    } catch { /* silencioso */ }
+    try { await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData); }
+    catch { /* silencioso */ }
   }
 
   async function handleGuardarElecciones(data) {
@@ -180,12 +217,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     }
   }
 
-  // hasFormData: reactivo al input del usuario (para el indicador de progreso del formulario)
   const hasFormData = CAMPOS_REQUERIDOS_FORMULARIO.every(
-    (campo) =>
-      formData?.[campo] !== undefined &&
-      formData?.[campo] !== null &&
-      formData?.[campo] !== ""
+    (campo) => formData?.[campo] !== undefined && formData?.[campo] !== null && formData?.[campo] !== ""
   );
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
@@ -200,68 +233,198 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     };
   }, [detalle]);
 
+  // ── Datos para la barra lateral ──────────────────────────────────────────────
+
+  const docsListas = checklist.filter((it) =>
+    ["aprobado", "no_aplica"].includes((it.estado_item || "").toLowerCase())
+  ).length;
+
+  const eleccionesGuardadas = elecciones.filter((e) => e.id_master).length;
+
+  const navSections = [
+    {
+      id:       "docs",
+      num:      1,
+      titulo:   "Documentos",
+      subtitulo: checklist.length ? `${docsListas} de ${checklist.length} listos` : null,
+      estado:   checklist.length ? (docsListas === checklist.length ? "completado" : "pendiente") : null,
+      show:     true,
+    },
+    {
+      id:       "inst",
+      num:      2,
+      titulo:   "Instructivos",
+      subtitulo: null,
+      estado:   null,
+      show:     true,
+    },
+    {
+      id:       "form",
+      num:      3,
+      titulo:   "Formulario",
+      subtitulo: formGuardado ? "Datos guardados" : "Pendiente",
+      estado:   formGuardado ? "completado" : "pendiente",
+      show:     true,
+    },
+    {
+      id:       "informe",
+      num:      4,
+      titulo:   "Informe másteres",
+      subtitulo: compat ? `${compat.total} programas` : detalle?.informe_fecha_subida ? "PDF disponible" : loadingCompat ? "Calculando…" : "Pendiente",
+      estado:   (compat || detalle?.informe_fecha_subida) ? "completado" : loadingCompat ? "cargando" : formGuardado ? "pendiente" : null,
+      show:     !esVisado,
+    },
+    {
+      id:       "eleccion",
+      num:      5,
+      titulo:   "Elección másteres",
+      subtitulo: eleccionesGuardadas > 0 ? `${eleccionesGuardadas} seleccionados` : "Pendiente",
+      estado:   eleccionesGuardadas > 0 ? "completado" : formGuardado ? "pendiente" : null,
+      show:     !esVisado,
+    },
+    {
+      id:       "post",
+      num:      6,
+      titulo:   "Postulaciones",
+      subtitulo: null,
+      estado:   null,
+      show:     !esVisado,
+    },
+    {
+      id:       "portales",
+      num:      7,
+      titulo:   "Portales y claves",
+      subtitulo: null,
+      estado:   null,
+      show:     true,
+    },
+    {
+      id:       "cierre",
+      num:      8,
+      titulo:   "Cierre",
+      subtitulo: null,
+      estado:   null,
+      show:     !esVisado,
+    },
+  ].filter((s) => s.show);
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
     <div className="flex flex-col h-full min-h-0">
 
-      <button
-        onClick={onVolver}
-        className="shrink-0 self-start inline-flex items-center gap-2.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-[#023A4B] text-white text-sm font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm mb-3 group"
-      >
-        <span className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-          <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+      {/* Fila superior: botón volver + encabezado compacto */}
+      <div className="shrink-0 flex items-center gap-3 mb-3">
+        <button
+          onClick={onVolver}
+          className="shrink-0 inline-flex items-center gap-2 min-h-[40px] px-3.5 py-2 rounded-xl bg-[#023A4B] text-white text-xs font-semibold hover:bg-[#035670] active:scale-95 transition-all shadow-sm group"
+        >
+          <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
-        </span>
-        Mis servicios
-      </button>
+          Mis servicios
+        </button>
 
-      <div className="shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-5 py-4 mb-3">
         {loading && (
-          <div className="flex items-center gap-2 py-2 text-neutral-400">
-            <div className="w-5 h-5 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
+          <div className="flex items-center gap-2 text-neutral-400">
+            <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">Cargando…</span>
           </div>
         )}
         {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
-            <span className="text-red-500">⚠</span>
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            <span className="text-red-500 text-sm">⚠</span>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
+
         {!loading && !error && detalle && (
-          <EncabezadoSolicitud detalle={detalle} solicitudBase={solicitudBase} progresoChecklist={progresoChecklist} />
+          <div className="flex-1 min-w-0 bg-white border border-neutral-200 rounded-2xl shadow-sm px-4 py-2.5 flex items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold text-[#046C8C] uppercase tracking-widest leading-none">
+                Solicitud #{detalle.id_solicitud}
+              </p>
+              <p className="text-sm font-bold text-neutral-900 leading-snug truncate mt-0.5">
+                {detalle.tipo?.nombre || "—"}
+              </p>
+            </div>
+            <div className="shrink-0 hidden sm:block w-32">
+              <div className="flex justify-between text-[10px] mb-1">
+                <span className="text-neutral-500 font-medium">Progreso</span>
+                <span className="font-bold text-neutral-800">{progresoChecklist}%</span>
+              </div>
+              <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 bg-[#F49E4B]"
+                  style={{ width: `${progresoChecklist}%` }}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
+      {/* Panel de dos columnas */}
       {!loading && !error && detalle && (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-4 pr-1">
-            <ChecklistDocumentos checklist={checklist} cargarTodo={cargarTodo} idSolicitud={idSolicitud} />
+        <div className="flex-1 min-h-0 flex gap-3">
 
-            <InstructivosPlantillas instructivos={instructivos} />
+          {/* ── Panel izquierdo: navegación ── */}
+          <div className="w-52 shrink-0 bg-white border border-neutral-200 rounded-2xl shadow-sm p-2 flex flex-col gap-0.5 overflow-y-auto">
+            {navSections.map((s) => (
+              <NavItem
+                key={s.id}
+                num={s.num}
+                titulo={s.titulo}
+                subtitulo={s.subtitulo}
+                estado={s.estado}
+                active={activeSection === s.id}
+                onClick={() => setActiveSection(s.id)}
+              />
+            ))}
+          </div>
 
-            <FormularioDatosAcademicos
-              formData={formData}
-              setFormData={setFormData}
-              handleSubmitFormulario={handleSubmitFormulario}
-              onGuardarProgreso={guardarFormularioSilencioso}
-              savingForm={savingForm}
-              hasData={hasFormData}
-              planCCAAs={planCCAAs}
-            />
+          {/* ── Panel derecho: contenido de la sección activa ── */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <SeccionSiempreAbiertoCtx.Provider value={true}>
 
-            <InformeBusqueda
-              idSolicitud={idSolicitud}
-              informe={{
-                informe_nombre_original: detalle.informe_nombre_original,
-                informe_fecha_subida: detalle.informe_fecha_subida,
-              }}
-              hasFormData={formGuardado}
-              compat={compat}
-              loadingCompat={loadingCompat}
-            />
+              {activeSection === "docs" && (
+                <ChecklistDocumentos
+                  checklist={checklist}
+                  cargarTodo={cargarTodo}
+                  idSolicitud={idSolicitud}
+                />
+              )}
 
-            {!esVisado && (
-              <>
+              {activeSection === "inst" && (
+                <InstructivosPlantillas instructivos={instructivos} />
+              )}
+
+              {activeSection === "form" && (
+                <FormularioDatosAcademicos
+                  formData={formData}
+                  setFormData={setFormData}
+                  handleSubmitFormulario={handleSubmitFormulario}
+                  onGuardarProgreso={guardarFormularioSilencioso}
+                  savingForm={savingForm}
+                  hasData={hasFormData}
+                  planCCAAs={planCCAAs}
+                />
+              )}
+
+              {activeSection === "informe" && !esVisado && (
+                <InformeBusqueda
+                  idSolicitud={idSolicitud}
+                  informe={{
+                    informe_nombre_original: detalle.informe_nombre_original,
+                    informe_fecha_subida:    detalle.informe_fecha_subida,
+                  }}
+                  hasFormData={formGuardado}
+                  compat={compat}
+                  loadingCompat={loadingCompat}
+                />
+              )}
+
+              {activeSection === "eleccion" && !esVisado && (
                 <EleccionMastersCliente
                   elecciones={elecciones}
                   onGuardar={handleGuardarElecciones}
@@ -272,13 +435,26 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   loadingCompat={loadingCompat}
                   resetKey={seleccionKey}
                 />
-                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} resetKey={seleccionKey} reloadKey={postulacionesKey} />
-              </>
-            )}
+              )}
 
-            <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+              {activeSection === "post" && !esVisado && (
+                <ProgramacionPostulacionesCliente
+                  idSolicitud={idSolicitud}
+                  resetKey={seleccionKey}
+                  reloadKey={postulacionesKey}
+                />
+              )}
 
-            {!esVisado && <CierreServicioMasterCliente idSolicitud={idSolicitud} />}
+              {activeSection === "portales" && (
+                <PortalesYJustificantesCliente idSolicitud={idSolicitud} />
+              )}
+
+              {activeSection === "cierre" && !esVisado && (
+                <CierreServicioMasterCliente idSolicitud={idSolicitud} />
+              )}
+
+            </SeccionSiempreAbiertoCtx.Provider>
+          </div>
         </div>
       )}
     </div>
