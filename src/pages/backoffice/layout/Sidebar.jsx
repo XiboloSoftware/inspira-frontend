@@ -31,6 +31,7 @@ const NAV_SECTIONS = [
   {
     label: "Configuración",
     items: [
+      { label: "Planes",            href: "/backoffice/planes" },
       { label: "Precios/Servicios", href: "/backoffice/precios" },
       { label: "Correos",           href: "/backoffice/correos" },
       { label: "Media",             href: "/backoffice/media" },

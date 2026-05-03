@@ -19,6 +19,7 @@ import EmailTemplates from "./correos/EmailTemplates";
 import MediaPanel from "./media/MediaPanel";
 import PresupuestosPortal from "./presupuestos/PresupuestosPortal";
 import CatalogoMasters from "./catalogo/CatalogoMasters";
+import PlanesAdmin from "./planes/PlanesAdmin";
 
 export default function BackofficeApp() {
   const [path, setPath] = useState(window.location.pathname);
@@ -162,6 +163,7 @@ export default function BackofficeApp() {
             {path === "/backoffice/calculadora" && <LeadsCalculadora user={user} />}
 
             {path === "/backoffice/catalogo-masters" && <CatalogoMasters />}
+            {path === "/backoffice/planes" && <PlanesAdmin />}
 
             {path === "/backoffice/panel-asesoras" && <PanelAsesoras />}
 
