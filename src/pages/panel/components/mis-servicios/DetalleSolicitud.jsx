@@ -50,6 +50,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const [formGuardado, setFormGuardado] = useState(false);
   // se incrementa cada vez que el usuario guarda el formulario → EleccionMasters limpia su selección
   const [seleccionKey, setSeleccionKey] = useState(0);
+  // se incrementa cada vez que el usuario guarda su elección → Postulaciones re-fetcha del backend
+  const [postulacionesKey, setPostulacionesKey] = useState(0);
 
   const idSolicitud = solicitudBase.id_solicitud;
 
@@ -170,6 +172,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: payload });
       if (!r.ok) { window.alert("No se pudo guardar la elección de másteres."); return; }
       window.alert("Elección de másteres guardada.");
+      setPostulacionesKey((k) => k + 1);
     } catch {
       window.alert("Error al guardar elección de másteres.");
     } finally {
@@ -269,7 +272,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   loadingCompat={loadingCompat}
                   resetKey={seleccionKey}
                 />
-                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} resetKey={seleccionKey} />
+                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} resetKey={seleccionKey} reloadKey={postulacionesKey} />
               </>
             )}
 

@@ -414,12 +414,13 @@ function MasterPostCard({ post, onUpdate, onSave }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey }) {
+export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey, reloadKey }) {
   const [posts, setPosts]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const isMount = useRef(true);
 
+  // Carga inicial
   useEffect(() => {
     setLoading(true);
     apiGET(`/solicitudes/${idSolicitud}/postulaciones`)
@@ -428,7 +429,17 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
       .finally(() => setLoading(false));
   }, [idSolicitud]);
 
-  // Cuando se regenera el informe (nuevo formulario guardado), limpiar postulaciones localmente
+  // Re-fetch cuando el usuario guarda su elección de másteres (paso 5)
+  useEffect(() => {
+    if (!reloadKey) return;
+    setLoading(true);
+    apiGET(`/solicitudes/${idSolicitud}/postulaciones`)
+      .then((r) => { if (r.ok) setPosts(r.postulaciones || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [reloadKey]); // eslint-disable-line
+
+  // Cuando se regenera el informe (formulario re-guardado), limpiar postulaciones localmente
   useEffect(() => {
     if (isMount.current) { isMount.current = false; return; }
     setPosts([]);
