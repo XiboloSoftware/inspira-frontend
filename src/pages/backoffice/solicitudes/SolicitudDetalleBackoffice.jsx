@@ -1,5 +1,6 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
 import { useMemo, useRef, useState } from "react";
+import { boPATCH } from "../../../services/backofficeApi";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
@@ -188,9 +189,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     setEleccionEnPicker(false);
   }
 
-  function handleInformeRegenerado() {
+  async function handleInformeRegenerado() {
     setEleccionResetKey((k) => k + 1);
     setEleccionEnPicker(true);
+    try {
+      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/eleccion-plan`, { eleccion_masters: [] });
+      if (r.ok) setDetalle((prev) => ({ ...prev, eleccion_masters: [] }));
+    } catch { /* silencioso */ }
   }
 
   const pct = useMemo(() => {
