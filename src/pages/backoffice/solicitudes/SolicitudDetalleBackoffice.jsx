@@ -178,11 +178,16 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     return { bloques: lista, isVisado: visado };
   }, [detalle, checklistStats]);
 
-  const [progRefreshKey, setProgRefreshKey] = useState(0);
+  const [progRefreshKey,   setProgRefreshKey]   = useState(0);
+  const [eleccionResetKey, setEleccionResetKey] = useState(0);
 
   function handleEleccionesActualizadas(nuevasElecciones) {
     setDetalle((prev) => ({ ...prev, eleccion_masters: nuevasElecciones }));
     setProgRefreshKey((k) => k + 1);
+  }
+
+  function handleInformeRegenerado() {
+    setEleccionResetKey((k) => k + 1);
   }
 
   const pct = useMemo(() => {
@@ -406,7 +411,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 {expanded.has("informe") && (
                   <CBox>
                     <div className="px-5 pt-4">
-                      <InformeAdmin detalle={detalle} recargar={cargar} />
+                      <InformeAdmin detalle={detalle} recargar={cargar} onRegenerado={handleInformeRegenerado} />
                     </div>
                   </CBox>
                 )}
@@ -427,6 +432,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                         elecciones={detalle.eleccion_masters}
                         idSolicitud={detalle.id_solicitud}
                         onEleccionesActualizadas={handleEleccionesActualizadas}
+                        resetKey={eleccionResetKey}
                       />
                     </div>
                   </CBox>

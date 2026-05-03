@@ -64,7 +64,7 @@ function MasterPickCard({ r, selected, prioridad, onToggle }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function EleccionMastersAdmin({ elecciones, idSolicitud, onEleccionesActualizadas }) {
+export default function EleccionMastersAdmin({ elecciones, idSolicitud, onEleccionesActualizadas, resetKey }) {
   const [filas, setFilas]           = useState(() => normalizar(elecciones));
   const [guardando, setGuardando]   = useState(false);
   const [nota, setNota]             = useState(() => extraerNota(elecciones));
@@ -86,6 +86,14 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
     if (!Array.isArray(raw) || raw.length === 0) return "";
     return raw[0]?._nota_asesor ?? "";
   }
+
+  // Auto-reset a modo picker cuando el informe se regenera
+  useEffect(() => {
+    if (!resetKey) return;
+    setSelAdmin([]);
+    setInforme(null);
+    setModoSeleccion(true);
+  }, [resetKey]); // eslint-disable-line
 
   // Cargar informe cuando entramos en modo picker
   useEffect(() => {
@@ -118,7 +126,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
           score:         r.score,
           prioridad:     prev.length + 1,
           comentario:    "",
-          plan_incluido: true,
+          plan_incluido: null,
         },
       ]);
     }

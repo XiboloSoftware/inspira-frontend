@@ -143,7 +143,7 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function InformeAdmin({ detalle, recargar }) {
+export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   const [subiendoInforme, setSubiendoInforme] = useState(false);
   const [compat, setCompat]         = useState(null);
   const [loadingCompat, setLoading] = useState(true);
@@ -208,6 +208,7 @@ export default function InformeAdmin({ detalle, recargar }) {
     setCompat(null);
     setEditMode(false);
     await cargarCompatibilidad();
+    onRegenerado?.();
   }
 
   function entrarEdicion() {
