@@ -18,7 +18,7 @@ import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente"
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
   "experiencia_anios", "ingles_situacion",
-  "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
+  "beca_desea", "duracion_preferida", "practicas_preferencia",
 ];
 
 function formCompleto(datos) {

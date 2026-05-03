@@ -389,6 +389,13 @@ export default function FormularioDatosAcademicos({
   // Resetear errores al cambiar de paso
   useEffect(() => { setShowErrors(false); }, [step]);
 
+  // Inicializar presupuesto_hasta si el usuario llega al paso sin haberlo tocado
+  useEffect(() => {
+    if (step === 7 && !formData.presupuesto_hasta) {
+      setFormData((p) => ({ ...p, presupuesto_hasta: "3000" }));
+    }
+  }, [step]);
+
 
   function set(key, val) { setFormData((p) => ({ ...p, [key]: val })); }
 
