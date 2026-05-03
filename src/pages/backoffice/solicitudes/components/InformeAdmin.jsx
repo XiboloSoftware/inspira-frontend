@@ -5,23 +5,22 @@ import { API_URL, formatearFecha } from "../utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function normalizar(str = "") {
-  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 function scoreColor(s) {
+  if (s == null) return "text-neutral-400";
   if (s >= 80) return "text-emerald-600";
   if (s >= 60) return "text-amber-600";
   return "text-red-500";
 }
 
 function scoreStroke(s) {
+  if (s == null) return "#e5e7eb";
   if (s >= 80) return "#10b981";
   if (s >= 60) return "#f59e0b";
   return "#ef4444";
 }
 
 function scoreChip(s) {
+  if (s == null) return "bg-neutral-100 text-neutral-500 border-neutral-200";
   if (s >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
   if (s >= 60) return "bg-amber-50 text-amber-700 border-amber-200";
   return "bg-red-50 text-red-600 border-red-200";
@@ -30,7 +29,8 @@ function scoreChip(s) {
 function durLabel(anios) {
   if (anios === 1) return "1 año";
   if (anios === 1.5) return "18 meses";
-  return `${anios} años`;
+  if (anios) return `${anios} años`;
+  return null;
 }
 
 // ── Score ring SVG ─────────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ function durLabel(anios) {
 function ScoreRing({ score }) {
   const r = 16;
   const circ = 2 * Math.PI * r; // ≈ 100.53
+  const pct = score != null ? score : 0;
   return (
     <div className="relative w-10 h-10 shrink-0">
       <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
@@ -46,12 +47,14 @@ function ScoreRing({ score }) {
           cx="20" cy="20" r={r} fill="none"
           stroke={scoreStroke(score)}
           strokeWidth="3.5"
-          strokeDasharray={`${(score / 100) * circ} ${circ}`}
+          strokeDasharray={`${(pct / 100) * circ} ${circ}`}
           strokeLinecap="round"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`text-[10px] font-black leading-none ${scoreColor(score)}`}>{score}</span>
+        <span className={`text-[10px] font-black leading-none ${scoreColor(score)}`}>
+          {score != null ? score : "—"}
+        </span>
       </div>
     </div>
   );
@@ -61,7 +64,7 @@ function ScoreRing({ score }) {
 
 function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEliminar, esFirst, esLast }) {
   const { master, score } = resultado;
-  const dur = master.duracion_anios ? durLabel(master.duracion_anios) : null;
+  const dur = durLabel(master.duracion_anios);
   const precio = master.precio_total_estimado
     ? `€${Math.round(master.precio_total_estimado).toLocaleString("es-ES")}`
     : null;
@@ -117,7 +120,7 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
             <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-md">{dur}</span>
           )}
           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(score)}`}>
-            {score}% match
+            {score != null ? `${score}% match` : "Sin score"}
           </span>
         </div>
       </div>
@@ -149,9 +152,48 @@ export default function InformeAdmin({ detalle, recargar }) {
   const [searchQ, setSearchQ]       = useState("");
   const [guardando, setGuardando]   = useState(false);
   const [showParams, setShowParams] = useState(false);
-  const searchRef = useRef(null);
+
+  // Búsqueda libre contra el catálogo completo
+  const [searchResults, setSearchResults]     = useState([]);
+  const [searchingMasters, setSearchingMasters] = useState(false);
+
+  const searchRef  = useRef(null);
+  const debounceRef = useRef(null);
 
   useEffect(() => { cargarCompatibilidad(); }, [detalle.id_solicitud]); // eslint-disable-line
+
+  // Búsqueda con debounce contra /backoffice/catalogo/masters
+  useEffect(() => {
+    if (!editMode) return;
+    clearTimeout(debounceRef.current);
+
+    if (searchQ.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchingMasters(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const r = await boGET(
+          `/backoffice/catalogo/masters?search=${encodeURIComponent(searchQ)}&limit=10&activo=true`
+        );
+        if (r.ok) {
+          const todosCompat = compat?.resultados ?? [];
+          const resultados = (r.masters || [])
+            .filter((m) => !listaEdit.some((e) => e.master.id_master === m.id_master))
+            .map((m) => {
+              const compat = todosCompat.find((c) => c.master.id_master === m.id_master);
+              return { master: m, score: compat?.score ?? null };
+            });
+          setSearchResults(resultados);
+        }
+      } catch { /* silencioso */ }
+      finally { setSearchingMasters(false); }
+    }, 300);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQ, editMode]); // eslint-disable-line
 
   async function cargarCompatibilidad() {
     setLoading(true);
@@ -173,6 +215,7 @@ export default function InformeAdmin({ detalle, recargar }) {
     setListaEdit(base.map((r) => ({ ...r })));
     setEditMode(true);
     setSearchQ("");
+    setSearchResults([]);
   }
 
   function moverArriba(idx) {
@@ -197,6 +240,7 @@ export default function InformeAdmin({ detalle, recargar }) {
     if (listaEdit.some((e) => e.master.id_master === r.master.id_master)) return;
     setListaEdit((prev) => [...prev, r]);
     setSearchQ("");
+    setSearchResults([]);
     searchRef.current?.focus();
   }
 
@@ -277,15 +321,6 @@ export default function InformeAdmin({ detalle, recargar }) {
 
   const listaVista  = detalle.informe_compat_curado ?? compat?.resultados?.slice(0, 20) ?? [];
   const isCurado    = !!detalle.informe_compat_curado;
-  const todosCompat = compat?.resultados ?? [];
-  const sugerencias = searchQ.length >= 2
-    ? todosCompat
-        .filter((r) =>
-          normalizar(r.master.nombre_limpio).includes(normalizar(searchQ)) &&
-          !listaEdit.some((e) => e.master.id_master === r.master.id_master)
-        )
-        .slice(0, 8)
-    : [];
 
   const paramRows = [
     ["Rama del máster",    datos.area_interes_master],
@@ -304,6 +339,8 @@ export default function InformeAdmin({ detalle, recargar }) {
     ["Presupuesto",        datos.presupuesto_hasta ? `€${Number(datos.presupuesto_hasta).toLocaleString("es-ES")}` : null],
     ["CCAA preferidas",    compat?.perfil?.ccaa?.join(", ")],
   ];
+
+  const showDropdown = searchQ.length >= 2;
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -437,7 +474,7 @@ export default function InformeAdmin({ detalle, recargar }) {
               </>
             ) : (
               <>
-                <button onClick={() => setEditMode(false)}
+                <button onClick={() => { setEditMode(false); setSearchQ(""); setSearchResults([]); }}
                   className="text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200">
                   Cancelar
                 </button>
@@ -537,23 +574,29 @@ export default function InformeAdmin({ detalle, recargar }) {
         {!loadingCompat && editMode && (
           <div className="space-y-3">
 
-            {/* Buscador */}
+            {/* Buscador libre */}
             <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                {searchingMasters ? (
+                  <svg className="w-3.5 h-3.5 text-[#1D6A4A] animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                )}
               </div>
               <input
                 ref={searchRef}
                 type="text"
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Buscar máster para añadir…"
+                placeholder="Buscar cualquier máster del catálogo…"
                 className="w-full text-xs pl-8 pr-8 py-2.5 border border-neutral-200 rounded-xl outline-none focus:border-[#1D6A4A] focus:ring-2 focus:ring-[#1D6A4A]/10 bg-white transition-all duration-200"
               />
               {searchQ && (
-                <button onClick={() => setSearchQ("")}
+                <button onClick={() => { setSearchQ(""); setSearchResults([]); }}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-neutral-200 hover:bg-neutral-300 flex items-center justify-center transition-colors duration-150">
                   <svg className="w-2.5 h-2.5 text-neutral-500" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -561,15 +604,16 @@ export default function InformeAdmin({ detalle, recargar }) {
                 </button>
               )}
 
-              {/* Dropdown sugerencias */}
-              {sugerencias.length > 0 && (
+              {/* Dropdown resultados */}
+              {showDropdown && !searchingMasters && searchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-neutral-200 rounded-xl shadow-xl z-20 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50">
+                  <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50 flex items-center justify-between">
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">
-                      {sugerencias.length} resultado{sugerencias.length !== 1 ? "s" : ""}
+                      {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""}
                     </p>
+                    <p className="text-[10px] text-neutral-400">Catálogo completo</p>
                   </div>
-                  {sugerencias.map((r) => (
+                  {searchResults.map((r) => (
                     <button key={r.master.id_master} type="button" onClick={() => añadirItem(r)}
                       className="w-full text-left px-3 py-2.5 hover:bg-[#E8F5EE] transition-colors duration-150 border-b border-neutral-50 last:border-0 group">
                       <div className="flex items-center gap-2.5">
@@ -579,10 +623,11 @@ export default function InformeAdmin({ detalle, recargar }) {
                           </p>
                           <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
                             {r.master.universidad.nombre_completo}
+                            {r.master.universidad.ciudad ? ` · ${r.master.universidad.ciudad}` : ""}
                           </p>
                         </div>
                         <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(r.score)}`}>
-                          {r.score}%
+                          {r.score != null ? `${r.score}%` : "—"}
                         </span>
                         <div className="w-5 h-5 rounded-full bg-[#1D6A4A] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -596,7 +641,7 @@ export default function InformeAdmin({ detalle, recargar }) {
               )}
 
               {/* Sin resultados */}
-              {searchQ.length >= 2 && sugerencias.length === 0 && (
+              {showDropdown && !searchingMasters && searchResults.length === 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-neutral-200 rounded-xl shadow-lg z-20 px-4 py-4 text-center">
                   <p className="text-xs text-neutral-400">
                     Sin resultados para <span className="font-semibold text-neutral-600">"{searchQ}"</span>
