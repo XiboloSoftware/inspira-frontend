@@ -160,86 +160,115 @@ function TabFechas({ post, onChange, onSave }) {
 // ── TabPortal ─────────────────────────────────────────────────────────────────
 
 function TabPortal({ post, onChange, onSave, showPw, togglePw }) {
+  const portalesCliente = Array.isArray(post.portales_cliente) ? post.portales_cliente : [];
+
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
-      <div className="space-y-2.5">
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">URL del portal</label>
-          <div className="flex gap-1.5">
-            <input type="url" value={post.portal_url}
-              onChange={(e) => onChange("portal_url", e.target.value)}
-              onBlur={(e) => onSave("portal_url", e.target.value)}
-              placeholder="https://..."
-              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
-            />
-            {post.portal_url && (
-              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_url)}
-                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">📋</button>
-            )}
+    <div className="space-y-4">
+      {/* Portal del asesor — campos que el cliente ve como solo lectura */}
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-2">
+          Portal del asesor <span className="text-neutral-300 font-normal normal-case tracking-normal">(visible para el cliente)</span>
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="space-y-2.5">
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">URL del portal</label>
+              <div className="flex gap-1.5">
+                <input type="url" value={post.portal_url}
+                  onChange={(e) => onChange("portal_url", e.target.value)}
+                  onBlur={(e) => onSave("portal_url", e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
+                />
+                {post.portal_url && (
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_url)}
+                    className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">📋</button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Estado del portal</label>
+              <div className="flex gap-1.5">
+                {PORTAL_ESTADOS.map((e) => (
+                  <button key={e} type="button" onClick={() => onSave("portal_estado", e)}
+                    className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg border transition ${
+                      post.portal_estado === e ? "bg-[#1A3557] border-[#1A3557] text-white" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                    }`}>
+                    {e === "abierto" ? "✓ Abierto" : e === "cerrado" ? "Cerrado" : "Mant."}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">N.º expediente</label>
+              <input type="text" value={post.expediente}
+                onChange={(e) => onChange("expediente", e.target.value)}
+                onBlur={(e) => onSave("expediente", e.target.value)}
+                placeholder="Ej: UA-2026-89432"
+                className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
+              />
+            </div>
+          </div>
+          <div className="space-y-2.5">
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Usuario</label>
+              <input type="text" value={post.portal_usuario}
+                onChange={(e) => onChange("portal_usuario", e.target.value)}
+                onBlur={(e) => onSave("portal_usuario", e.target.value)}
+                placeholder="email@ejemplo.com"
+                className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Contraseña</label>
+              <div className="flex gap-1.5">
+                <input type={showPw ? "text" : "password"} value={post.portal_password}
+                  onChange={(e) => onChange("portal_password", e.target.value)}
+                  onBlur={(e) => onSave("portal_password", e.target.value)}
+                  placeholder="Contraseña del portal"
+                  className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
+                />
+                <button type="button" onClick={togglePw}
+                  className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
+                  {showPw ? "🙈" : "👁"}
+                </button>
+                {post.portal_password && (
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_password)}
+                    className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">📋</button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Notas de acceso</label>
+              <input type="text" value={post.portal_notas}
+                onChange={(e) => onChange("portal_notas", e.target.value)}
+                onBlur={(e) => onSave("portal_notas", e.target.value)}
+                placeholder="Ej: verificar email con código SMS"
+                className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
+              />
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Portales del cliente — solo lectura */}
+      {portalesCliente.length > 0 && (
         <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Estado del portal</label>
-          <div className="flex gap-1.5">
-            {PORTAL_ESTADOS.map((e) => (
-              <button key={e} type="button" onClick={() => onSave("portal_estado", e)}
-                className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg border transition ${
-                  post.portal_estado === e ? "bg-[#1A3557] border-[#1A3557] text-white" : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-                }`}>
-                {e === "abierto" ? "✓ Abierto" : e === "cerrado" ? "Cerrado" : "Mant."}
-              </button>
+          <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-2">
+            Portales añadidos por el cliente
+          </p>
+          <div className="space-y-2">
+            {portalesCliente.map((p, idx) => (
+              <div key={idx} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 space-y-1">
+                <p className="text-xs font-semibold text-neutral-700">{p.label || p.url || `Portal ${idx + 1}`}</p>
+                {p.url && <p className="text-[10px] text-neutral-500 font-mono break-all">{p.url}</p>}
+                {p.usuario && <p className="text-[10px] text-neutral-500">Usuario: <span className="font-mono">{p.usuario}</span></p>}
+                {p.notas && <p className="text-[10px] text-neutral-400 italic">{p.notas}</p>}
+              </div>
             ))}
           </div>
         </div>
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">N.º expediente</label>
-          <input type="text" value={post.expediente}
-            onChange={(e) => onChange("expediente", e.target.value)}
-            onBlur={(e) => onSave("expediente", e.target.value)}
-            placeholder="Ej: UA-2026-89432"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
-          />
-        </div>
-      </div>
-      <div className="space-y-2.5">
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Usuario</label>
-          <input type="text" value={post.portal_usuario}
-            onChange={(e) => onChange("portal_usuario", e.target.value)}
-            onBlur={(e) => onSave("portal_usuario", e.target.value)}
-            placeholder="email@ejemplo.com"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
-          />
-        </div>
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Contraseña</label>
-          <div className="flex gap-1.5">
-            <input type={showPw ? "text" : "password"} value={post.portal_password}
-              onChange={(e) => onChange("portal_password", e.target.value)}
-              onBlur={(e) => onSave("portal_password", e.target.value)}
-              placeholder="Contraseña del portal"
-              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
-            />
-            <button type="button" onClick={togglePw}
-              className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
-              {showPw ? "🙈" : "👁"}
-            </button>
-            {post.portal_password && (
-              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_password)}
-                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">📋</button>
-            )}
-          </div>
-        </div>
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Notas de acceso</label>
-          <input type="text" value={post.portal_notas}
-            onChange={(e) => onChange("portal_notas", e.target.value)}
-            onBlur={(e) => onSave("portal_notas", e.target.value)}
-            placeholder="Ej: verificar email con código SMS"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#1A3557]"
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
