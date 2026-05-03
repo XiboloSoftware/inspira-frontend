@@ -380,7 +380,13 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 {expanded.has("formulario") && (
                   <CBox>
                     <div className="p-5">
-                      <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+                      <FormularioDatosAcademicosAdmin
+                        datos={detalle.datos_formulario}
+                        idSolicitud={detalle.id_solicitud}
+                        onActualizado={(nuevosDatos) =>
+                          setDetalle((prev) => ({ ...prev, datos_formulario: nuevosDatos }))
+                        }
+                      />
                     </div>
                   </CBox>
                 )}
