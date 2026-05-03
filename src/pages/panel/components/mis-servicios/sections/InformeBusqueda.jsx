@@ -131,6 +131,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
   const [modalAbierto, setModal] = useState(false);
 
   const disponible    = !!informe?.informe_fecha_subida;
+  const enCreacion    = compat?.estado === "en_creacion";
   const resultados    = compat?.resultados || [];
   const perfil        = compat?.perfil;
   const curado        = !!compat?.curado;
@@ -148,11 +149,13 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
       ? curado
         ? `${compat.total} programa${compat.total !== 1 ? "s" : ""} seleccionado${compat.total !== 1 ? "s" : ""} por tu asesor`
         : `${compat.total} programas compatibles encontrados`
-      : loadingCompat
-        ? "Calculando tu informe…"
-        : hasFormData
-          ? "Procesando tu informe…"
-          : "Completa el formulario para ver tu informe";
+      : enCreacion
+        ? "Tu asesor está preparando tu informe personalizado"
+        : loadingCompat
+          ? "Calculando tu informe…"
+          : hasFormData
+            ? "Procesando tu informe…"
+            : "Completa el formulario para ver tu informe";
 
   async function manejarPDF(modo) {
     try {
@@ -217,6 +220,22 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         </div>
       )}
 
+      {/* ── Informe en creación (asesor trabajando) ───────────────────────── */}
+      {hasFormData && !loadingCompat && enCreacion && !disponible && (
+        <div className="flex items-start gap-4 bg-[#1A3557]/5 border border-[#1A3557]/15 rounded-xl p-5">
+          <div className="w-10 h-10 rounded-xl bg-[#1A3557]/10 flex items-center justify-center shrink-0 text-xl">
+            ⏳
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-[#1A3557]">Informe en preparación</p>
+            <p className="text-sm text-neutral-500 mt-1 leading-relaxed">
+              Nuestro equipo está analizando tu perfil y seleccionando los mejores másteres para ti.
+              Te notificaremos por email cuando esté listo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Formulario guardado pero sin resultado aún ────────────────────── */}
       {hasFormData && !loadingCompat && !compat && !disponible && (
         <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
@@ -235,7 +254,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
       )}
 
       {/* ── Informe disponible ─────────────────────────────────────────────── */}
-      {!loadingCompat && (disponible || compat) && (
+      {!loadingCompat && !enCreacion && (disponible || compat) && (
         <div className="space-y-4">
 
           {/* MODO A — PDF manual */}

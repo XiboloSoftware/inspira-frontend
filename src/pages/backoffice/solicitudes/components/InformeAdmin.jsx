@@ -63,7 +63,7 @@ function ScoreRing({ score }) {
 
 // ── Master row ─────────────────────────────────────────────────────────────────
 
-function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEliminar, esFirst, esLast }) {
+function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEliminar, onScoreChange, esFirst, esLast }) {
   const { master, score } = resultado;
   const dur = durLabel(master.duracion_anios);
   const precio = master.precio_total_estimado
@@ -121,14 +121,34 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
           {dur && (
             <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-md">{dur}</span>
           )}
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(score)}`}>
-            {score != null ? `${score}% match` : "Sin score"}
-          </span>
+          {!editMode && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(score)}`}>
+              {score != null ? `${score}% match` : "Sin score"}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Score ring */}
-      <ScoreRing score={score} />
+      {/* Score: ring en vista, input editable en edición */}
+      {editMode ? (
+        <div className="shrink-0 flex flex-col items-center gap-0.5 w-14">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={score ?? ""}
+            placeholder="—"
+            onChange={(e) => {
+              const v = e.target.value === "" ? null : Math.min(100, Math.max(0, Number(e.target.value)));
+              onScoreChange?.(v);
+            }}
+            className="w-full text-center text-[12px] font-bold border border-neutral-200 rounded-lg px-1 py-1 outline-none focus:border-[#1D6A4A] focus:ring-1 focus:ring-[#1D6A4A]/20 bg-white transition-all"
+          />
+          <span className="text-[9px] text-neutral-400">match %</span>
+        </div>
+      ) : (
+        <ScoreRing score={score} />
+      )}
 
       {/* Eliminar */}
       {editMode && (
@@ -153,6 +173,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   const [listaEdit, setListaEdit]   = useState([]);
   const [searchQ, setSearchQ]       = useState("");
   const [guardando, setGuardando]   = useState(false);
+  const [publicando, setPublicando] = useState(false);
   const [showParams, setShowParams] = useState(false);
 
   // Búsqueda libre contra el catálogo completo
@@ -245,6 +266,21 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
     setSearchQ("");
     setSearchResults([]);
     searchRef.current?.focus();
+  }
+
+  function cambiarScore(idx, valor) {
+    setListaEdit((prev) => prev.map((item, i) => i === idx ? { ...item, score: valor } : item));
+  }
+
+  async function publicarInforme() {
+    setPublicando(true);
+    try {
+      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/publicar-informe`, {});
+      if (!r.ok) throw new Error(r.msg || "Error al publicar");
+      await recargar();
+      dialog.toast("Informe publicado · Cliente notificado por email", "success");
+    } catch (e) { dialog.toast(e.message || "Error al publicar", "error"); }
+    finally { setPublicando(false); }
   }
 
   async function guardarCurado() {
@@ -389,9 +425,14 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
               <span className="text-white/50 text-[10px]">En informe</span>
               <span className="text-white font-bold text-[11px]">{listaVista.length}</span>
             </div>
-            {isCurado && (
+            {isCurado && !detalle.informe_publicado && (
               <div className="flex items-center gap-1.5 bg-[#F5C842]/20 border border-[#F5C842]/30 rounded-lg px-2.5 py-1.5">
-                <span className="text-[#F5C842] text-[10px] font-semibold">✏️ Lista curada</span>
+                <span className="text-[#F5C842] text-[10px] font-semibold">✏️ Lista curada · Sin publicar</span>
+              </div>
+            )}
+            {detalle.informe_publicado && (
+              <div className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-400/30 rounded-lg px-2.5 py-1.5">
+                <span className="text-emerald-300 text-[10px] font-semibold">✓ Publicado al cliente</span>
               </div>
             )}
           </div>
@@ -474,6 +515,21 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Modificar lista
+                  </button>
+                )}
+                {isCurado && (
+                  <button onClick={publicarInforme} disabled={publicando}
+                    className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-200 disabled:opacity-50 font-semibold">
+                    {publicando ? (
+                      <svg className="w-3 h-3 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
+                    {detalle.informe_publicado ? "Volver a publicar" : "Publicar al cliente"}
                   </button>
                 )}
               </>
@@ -676,6 +732,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
                       onArriba={() => moverArriba(i)}
                       onAbajo={() => moverAbajo(i)}
                       onEliminar={() => eliminarItem(i)}
+                      onScoreChange={(v) => cambiarScore(i, v)}
                     />
                   ))}
                 </div>
