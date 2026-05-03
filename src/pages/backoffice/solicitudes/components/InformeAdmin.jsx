@@ -275,6 +275,9 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   async function publicarInforme() {
     setPublicando(true);
     try {
+      if (listaEdit.length) {
+        await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: listaEdit });
+      }
       const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/publicar-informe`, {});
       if (!r.ok) throw new Error(r.msg || "Error al publicar");
       await recargar();
