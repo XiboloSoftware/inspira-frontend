@@ -23,9 +23,9 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
     return raw[0]?._nota_asesor ?? "";
   }
 
-  async function togglePlan(idx) {
+  async function setPlan(idx, valor) {
     const nuevas = filas.map((f, i) =>
-      i === idx ? { ...f, plan_incluido: !f.plan_incluido } : f
+      i === idx ? { ...f, plan_incluido: valor } : f
     );
     setFilas(nuevas);
     await guardar(nuevas, nota);
@@ -120,11 +120,11 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
             {/* Info */}
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-[#1A3557] leading-snug truncate">
-                {fila.programa || "(Sin título)"}
+                {fila.nombre_limpio || fila.programa || "(Sin título)"}
               </p>
-              {(fila.comentario || fila.universidad || fila.precio) && (
+              {(fila.universidad || fila.ciudad || fila.score || fila.comentario) && (
                 <p className="text-[11px] text-neutral-500 truncate">
-                  {[fila.universidad, fila.precio ? `${fila.precio} €/año` : null, fila.comentario]
+                  {[fila.universidad, fila.ciudad, fila.score ? `${fila.score}% match` : null, fila.comentario]
                     .filter(Boolean).join(" · ")}
                 </p>
               )}
@@ -135,7 +135,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
               <span className="text-[10px] text-neutral-500 hidden sm:block">Plan:</span>
               <button
                 type="button"
-                onClick={() => togglePlan(idx)}
+                onClick={() => setPlan(idx, true)}
                 disabled={guardando}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border-[1.5px] transition-all
                   ${fila.plan_incluido
@@ -146,7 +146,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
               </button>
               <button
                 type="button"
-                onClick={() => togglePlan(idx)}
+                onClick={() => setPlan(idx, false)}
                 disabled={guardando}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border-[1.5px] transition-all
                   ${!fila.plan_incluido
