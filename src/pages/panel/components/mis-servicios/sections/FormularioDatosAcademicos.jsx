@@ -452,6 +452,11 @@ export default function FormularioDatosAcademicos({
     e.preventDefault();
     const missing = validateStep(step, formData, planCCAAs);
     if (missing.length > 0) { setShowErrors(true); return; }
+    if (step < STEPS.length - 1) {
+      setShowErrors(false);
+      setStep((p) => Math.min(STEPS.length - 1, p + 1));
+      return;
+    }
     await handleSubmitFormulario(e);
     setEditando(false);
     setStep(0);
