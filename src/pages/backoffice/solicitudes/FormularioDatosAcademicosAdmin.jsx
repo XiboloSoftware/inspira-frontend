@@ -1,7 +1,7 @@
 // src/pages/backoffice/solicitudes/FormularioDatosAcademicosAdmin.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FIELD_CONFIG, SECTIONS_ORDER } from "./formularioDatosConfig";
-import { boPATCH } from "../../../services/backofficeApi";
+import { boGET, boPATCH } from "../../../services/backofficeApi";
 
 // ── Configuración visual por sección ─────────────────────────────────────────
 const SECTION_CFG = {
@@ -204,9 +204,25 @@ function EditModal({ datos, idSolicitud, onClose, onSaved }) {
   const [draft, setDraft] = useState(() => normalizeDraft(datos));
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [ramas, setRamas] = useState([]);
+  const [subramas, setSubramas] = useState([]);
+
+  useEffect(() => {
+    boGET("/backoffice/catalogo/ramas").then(r => { if (r.ok) setRamas(r.ramas.filter(x => x.activo)); });
+  }, []);
+
+  useEffect(() => {
+    if (!draft.area_interes_master) { setSubramas([]); return; }
+    boGET(`/backoffice/catalogo/subareas?rama=${draft.area_interes_master}`)
+      .then(r => { if (r.ok) setSubramas(r.subareas.filter(s => s.activo)); });
+  }, [draft.area_interes_master]);
 
   function set(key, val) {
     setDraft(prev => ({ ...prev, [key]: val }));
+  }
+
+  function handleRamaChange(val) {
+    setDraft(prev => ({ ...prev, area_interes_master: val, sub_area_interes: "" }));
   }
 
   function toggleCCaa(c) {
@@ -437,8 +453,19 @@ function EditModal({ datos, idSolicitud, onClose, onSaved }) {
           {/* ── Preferencias del máster ── */}
           <EditSection title="Preferencias del máster" icon="🎯" color="orange">
             <FField label="Rama del máster">
-              <input className={inputCls} value={draft.area_interes_master || ""} onChange={e => set("area_interes_master", e.target.value)} />
+              <select className={selectCls} value={draft.area_interes_master || ""} onChange={e => handleRamaChange(e.target.value)}>
+                <option value="">—</option>
+                {ramas.map(r => <option key={r.valor} value={r.valor}>{r.etiqueta}</option>)}
+              </select>
             </FField>
+            {draft.area_interes_master && (
+              <FField label="Sub-área de interés">
+                <select className={selectCls} value={draft.sub_area_interes || ""} onChange={e => set("sub_area_interes", e.target.value)}>
+                  <option value="">— Sin especificar —</option>
+                  {subramas.map(s => <option key={s.valor} value={s.valor}>{s.etiqueta}</option>)}
+                </select>
+              </FField>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <FField label="Duración">
                 <select className={selectCls} value={draft.duracion_preferida || ""} onChange={e => set("duracion_preferida", e.target.value)}>

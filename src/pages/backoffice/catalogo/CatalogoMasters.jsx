@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { boGET } from "../../../services/backofficeApi";
 import SeccionRamas         from "./SeccionRamas";
+import SeccionSubRamas      from "./SeccionSubRamas";
 import SeccionComunidades   from "./SeccionComunidades";
 import SeccionUniversidades from "./SeccionUniversidades";
 import SeccionMasters       from "./SeccionMasters";
@@ -10,6 +11,7 @@ import SeccionCriterios     from "./SeccionCriterios";
 const TABS = [
   { key: "masters",       label: "Másteres" },
   { key: "ramas",         label: "Ramas" },
+  { key: "subramas",      label: "Subramas" },
   { key: "comunidades",   label: "Comunidades Autónomas" },
   { key: "universidades", label: "Universidades" },
   { key: "criterios",     label: "Criterios" },
@@ -18,6 +20,7 @@ const TABS = [
 export default function CatalogoMasters() {
   const [tab,           setTab]           = useState("masters");
   const [ramas,         setRamas]         = useState([]);
+  const [subramas,      setSubramas]      = useState([]);
   const [comunidades,   setComunidades]   = useState([]);
   const [universidades, setUniversidades] = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -27,14 +30,16 @@ export default function CatalogoMasters() {
     setLoading(true);
     setError(null);
     try {
-      const [rRamas, rCom, rUni] = await Promise.all([
+      const [rRamas, rCom, rUni, rSub] = await Promise.all([
         boGET("/backoffice/catalogo/ramas"),
         boGET("/backoffice/catalogo/comunidades"),
         boGET("/backoffice/catalogo/universidades"),
+        boGET("/backoffice/catalogo/subareas"),
       ]);
       if (rRamas.ok) setRamas(rRamas.ramas);
       if (rCom.ok)   setComunidades(rCom.comunidades);
       if (rUni.ok)   setUniversidades(rUni.universidades);
+      if (rSub.ok)   setSubramas(rSub.subareas);
     } catch (e) {
       setError("Error cargando datos del catálogo");
     } finally {
@@ -46,6 +51,7 @@ export default function CatalogoMasters() {
 
   const counts = {
     ramas:         ramas.length,
+    subramas:      subramas.length,
     comunidades:   comunidades.length,
     universidades: universidades.length,
     masters:       null,
@@ -99,8 +105,9 @@ export default function CatalogoMasters() {
         )}
         {!loading && !error && (
           <>
-            {tab === "ramas"         && <SeccionRamas         ramas={ramas}                   onReload={loadAll} />}
-            {tab === "comunidades"   && <SeccionComunidades   comunidades={comunidades}        onReload={loadAll} />}
+            {tab === "ramas"         && <SeccionRamas         ramas={ramas}                              onReload={loadAll} />}
+            {tab === "subramas"      && <SeccionSubRamas      subramas={subramas} ramas={ramas}       onReload={loadAll} />}
+            {tab === "comunidades"   && <SeccionComunidades   comunidades={comunidades}                onReload={loadAll} />}
             {tab === "universidades" && <SeccionUniversidades universidades={universidades} comunidades={comunidades} onReload={loadAll} />}
             {tab === "masters"       && <SeccionMasters    universidades={universidades} comunidades={comunidades} ramas={ramas} />}
             {tab === "criterios"     && <SeccionCriterios  universidades={universidades} />}

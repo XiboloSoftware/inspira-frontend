@@ -63,6 +63,7 @@ export const FIELD_CONFIG = {
 
   // ── Preferencias del máster ──────────────────────────────────────────
   area_interes_master:         { label: "Rama del máster",              section: "Preferencias del máster" },
+  sub_area_interes:            { label: "Sub-área de interés",          section: "Preferencias del máster" },
   duracion_preferida:          { label: "Duración",                     section: "Preferencias del máster",
                                  format: (v) => DURACION[v] || v },
   practicas_preferencia:       { label: "Prácticas",                    section: "Preferencias del máster",
