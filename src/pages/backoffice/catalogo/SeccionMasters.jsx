@@ -628,7 +628,7 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
             <tr>
               <th className="text-left px-3 py-2.5">Universidad</th>
               <Th col="nombre_limpio"         label="Máster"      {...thProps} />
-              <Th col="rama"                  label="Rama"        {...thProps} />
+              <Th col="rama"                  label="Sub-área / Rama" {...thProps} />
               <Th col="modalidad"             label="Mod."        {...thProps} center />
               <Th col="ects"                  label="ECTS"        {...thProps} center />
               <Th col="precio_total_estimado" label="Precio est." {...thProps} right />
@@ -669,11 +669,18 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
                       <p className="text-[11px] text-neutral-400 truncate mt-0.5">{m.titulo_acceso}</p>
                     )}
                   </td>
-                  {/* Rama */}
+                  {/* Sub-área + Rama */}
                   <td className="px-3 py-2.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${ramaCls}`}>
-                      {ramaLabel(m.rama)}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {m.sub_area?.etiqueta && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border bg-neutral-50 text-neutral-600 border-neutral-300 w-fit">
+                          {m.sub_area.etiqueta}
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit ${ramaCls}`}>
+                        {ramaLabel(m.rama)}
+                      </span>
+                    </div>
                   </td>
                   {/* Modalidad */}
                   <td className="px-3 py-2.5 text-center text-[11px] text-neutral-600 whitespace-nowrap">{modLabel(m.modalidad)}</td>
