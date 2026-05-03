@@ -1,5 +1,5 @@
 // src/pages/panel/components/mis-servicios/sections/ProgramacionPostulacionesCliente.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiGET, apiPOST } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
@@ -414,10 +414,11 @@ function MasterPostCard({ post, onUpdate, onSave }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
+export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey }) {
   const [posts, setPosts]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
+  const isMount = useRef(true);
 
   useEffect(() => {
     setLoading(true);
@@ -426,6 +427,12 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [idSolicitud]);
+
+  // Cuando se regenera el informe (nuevo formulario guardado), limpiar postulaciones localmente
+  useEffect(() => {
+    if (isMount.current) { isMount.current = false; return; }
+    setPosts([]);
+  }, [resetKey]); // eslint-disable-line
 
   async function guardar(nextPosts) {
     setSaving(true);

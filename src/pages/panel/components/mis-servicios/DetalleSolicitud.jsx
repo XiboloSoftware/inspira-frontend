@@ -140,7 +140,13 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
       if (!r.ok) { window.alert("No se pudo guardar."); return; }
       window.alert("Datos guardados.");
-      // Marcar como guardado, limpiar selección previa y re-calcular con datos nuevos
+      // Limpiar elecciones y postulaciones en backend (nuevo informe = selección desde cero)
+      const base5 = Array.from({ length: 5 }, (_, idx) => ({ prioridad: idx + 1, programa: "", comentario: "" }));
+      Promise.all([
+        apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: [] }).catch(() => {}),
+        apiPOST(`/solicitudes/${idSolicitud}/postulaciones`, { postulaciones: [] }).catch(() => {}),
+      ]);
+      setElecciones(base5);
       setFormGuardado(true);
       setSeleccionKey((k) => k + 1);
       cargarCompatibilidad();
@@ -263,7 +269,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   loadingCompat={loadingCompat}
                   resetKey={seleccionKey}
                 />
-                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
+                <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} resetKey={seleccionKey} />
               </>
             )}
 
