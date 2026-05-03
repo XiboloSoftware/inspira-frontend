@@ -1,5 +1,5 @@
 // src/pages/backoffice/solicitudes/SolicitudDetalleBackoffice.jsx
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import FormularioDatosAcademicosAdmin from "./FormularioDatosAcademicosAdmin";
 import EleccionMastersAdmin from "./EleccionMastersAdmin";
 import ProgramacionPostulacionesAdmin from "./ProgramacionPostulacionesAdmin";
@@ -44,7 +44,7 @@ const CAMPOS_REQUERIDOS_FORMULARIO = [
   "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
 ];
 
-function BlqHead({ numero, titulo, estado }) {
+function BlqHead({ numero, titulo, estado, open, onToggle }) {
   const badge = {
     completado: "bg-[#1D6A4A] text-white",
     observado:  "bg-[#DC2626] text-white",
@@ -65,15 +65,25 @@ function BlqHead({ numero, titulo, estado }) {
   };
   const e = estado || "inactivo";
   return (
-    <div className="flex items-center gap-2.5 mb-[13px] flex-wrap">
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex items-center gap-2.5 mb-[13px] flex-wrap w-full text-left group"
+    >
       <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center text-[13px] font-extrabold font-mono shrink-0 ${badge[e] || badge.inactivo}`}>
         {numero}
       </div>
-      <h3 className="font-serif text-[16px] text-[#1A3557] flex-1">{titulo}</h3>
+      <h3 className="font-serif text-[16px] text-[#1A3557] flex-1 group-hover:text-[#023A4B] transition-colors">{titulo}</h3>
       <span className={`text-[10.5px] font-semibold px-[11px] py-1 rounded-full ${chip[e] || chip.inactivo}`}>
         {chipLabel[e] || "—"}
       </span>
-    </div>
+      <svg
+        className={`w-4 h-4 text-neutral-400 transition-transform duration-200 shrink-0 ${open ? "rotate-0" : "-rotate-90"}`}
+        fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
   );
 }
 
@@ -94,9 +104,27 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     loading, error, cargar,
   } = useSolicitudDetalle(idSolicitud);
 
+  const ALL_IDS = ["cliente","checklist","formulario","informe","eleccion","programacion","portales","cierre","instructivo"];
+  const [expanded, setExpanded] = useState(new Set(ALL_IDS));
+
+  function toggleBloque(id) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   function irABloque(id) {
-    const el = document.getElementById(`bloque-${id}`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Expand if collapsed before scrolling
+    setExpanded((prev) => {
+      if (prev.has(id)) return prev;
+      return new Set([...prev, id]);
+    });
+    setTimeout(() => {
+      const el = document.getElementById(`bloque-${id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   const checklistStats = useMemo(() => {
@@ -273,131 +301,161 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         <div className="p-[22px] pb-20">
 
           {/* B1 — Encabezado del cliente */}
-          <div id="bloque-cliente" className="mb-8 scroll-mt-4">
-            <BlqHead numero="1" titulo="Encabezado del cliente" estado={calcClienteEstado(detalle)} />
-            <CBox>
-              <EncabezadoClienteAdmin
-                detalle={detalle}
-                onClienteActualizado={(clienteActualizado) =>
-                  setDetalle((prev) => ({ ...prev, cliente: clienteActualizado }))
-                }
-              />
-            </CBox>
+          <div id="bloque-cliente" className="mb-6 scroll-mt-4">
+            <BlqHead numero="1" titulo="Encabezado del cliente" estado={calcClienteEstado(detalle)}
+              open={expanded.has("cliente")} onToggle={() => toggleBloque("cliente")} />
+            {expanded.has("cliente") && (
+              <CBox>
+                <EncabezadoClienteAdmin
+                  detalle={detalle}
+                  onClienteActualizado={(clienteActualizado) =>
+                    setDetalle((prev) => ({ ...prev, cliente: clienteActualizado }))
+                  }
+                />
+              </CBox>
+            )}
           </div>
 
           {/* B2 — Documentos requeridos */}
-          <div id="bloque-checklist" className="mb-8 scroll-mt-4">
-            <BlqHead numero="2" titulo="Documentos requeridos" estado={checklistStats.estado} />
-            <CBox>
-              <div className="p-5">
-                <ChecklistSolicitudAdmin
-                  detalle={detalle}
-                  checklistPorEtapa={checklistPorEtapa}
-                  setChecklist={setChecklist}
-                  recargar={cargar}
-                />
-              </div>
-            </CBox>
+          <div id="bloque-checklist" className="mb-6 scroll-mt-4">
+            <BlqHead numero="2" titulo="Documentos requeridos" estado={checklistStats.estado}
+              open={expanded.has("checklist")} onToggle={() => toggleBloque("checklist")} />
+            {expanded.has("checklist") && (
+              <CBox>
+                <div className="p-5">
+                  <ChecklistSolicitudAdmin
+                    detalle={detalle}
+                    checklistPorEtapa={checklistPorEtapa}
+                    setChecklist={setChecklist}
+                    recargar={cargar}
+                  />
+                </div>
+              </CBox>
+            )}
           </div>
 
           {isVisado ? (
             <>
-              <div id="bloque-instructivo" className="mb-8 scroll-mt-4">
-                <BlqHead numero="3" titulo="Instructivo y plantillas" estado="inactivo" />
-                <CBox>
-                  <div className="px-5 py-4">
-                    <p className="text-sm text-neutral-500">
-                      Este contenido se configura por servicio en <b>Instructivos</b>.
-                    </p>
-                  </div>
-                </CBox>
+              <div id="bloque-instructivo" className="mb-6 scroll-mt-4">
+                <BlqHead numero="3" titulo="Instructivo y plantillas" estado="inactivo"
+                  open={expanded.has("instructivo")} onToggle={() => toggleBloque("instructivo")} />
+                {expanded.has("instructivo") && (
+                  <CBox>
+                    <div className="px-5 py-4">
+                      <p className="text-sm text-neutral-500">
+                        Este contenido se configura por servicio en <b>Instructivos</b>.
+                      </p>
+                    </div>
+                  </CBox>
+                )}
               </div>
 
-              <div id="bloque-portales" className="mb-8 scroll-mt-4">
-                <BlqHead numero="4" titulo="Portales, claves y justificantes" estado="pendiente" />
-                <CBox>
-                  <div className="p-5">
-                    <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-                  </div>
-                </CBox>
+              <div id="bloque-portales" className="mb-6 scroll-mt-4">
+                <BlqHead numero="4" titulo="Portales, claves y justificantes" estado="pendiente"
+                  open={expanded.has("portales")} onToggle={() => toggleBloque("portales")} />
+                {expanded.has("portales") && (
+                  <CBox>
+                    <div className="p-5">
+                      <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+                    </div>
+                  </CBox>
+                )}
               </div>
             </>
           ) : (
             <>
               {/* B3 — Formulario académico */}
-              <div id="bloque-formulario" className="mb-8 scroll-mt-4">
+              <div id="bloque-formulario" className="mb-6 scroll-mt-4">
                 <BlqHead
                   numero="3"
                   titulo="Formulario de datos académicos"
                   estado={tieneFormulario ? "completado" : "pendiente"}
+                  open={expanded.has("formulario")} onToggle={() => toggleBloque("formulario")}
                 />
-                <CBox>
-                  <div className="p-5">
-                    <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
-                  </div>
-                </CBox>
+                {expanded.has("formulario") && (
+                  <CBox>
+                    <div className="p-5">
+                      <FormularioDatosAcademicosAdmin datos={detalle.datos_formulario} />
+                    </div>
+                  </CBox>
+                )}
               </div>
 
               {/* B4 — Informe de búsqueda */}
-              <div id="bloque-informe" className="mb-8 scroll-mt-4">
+              <div id="bloque-informe" className="mb-6 scroll-mt-4">
                 <BlqHead
                   numero="4"
                   titulo="Informe de búsqueda de másteres"
                   estado={detalle.informe_fecha_subida ? "completado" : "pendiente"}
+                  open={expanded.has("informe")} onToggle={() => toggleBloque("informe")}
                 />
-                <CBox>
-                  <div className="px-5 pt-4">
-                    <InformeAdmin detalle={detalle} recargar={cargar} />
-                  </div>
-                </CBox>
+                {expanded.has("informe") && (
+                  <CBox>
+                    <div className="px-5 pt-4">
+                      <InformeAdmin detalle={detalle} recargar={cargar} />
+                    </div>
+                  </CBox>
+                )}
               </div>
 
               {/* B5 — Elección de másteres */}
-              <div id="bloque-eleccion" className="mb-8 scroll-mt-4">
+              <div id="bloque-eleccion" className="mb-6 scroll-mt-4">
                 <BlqHead
                   numero="5"
                   titulo="Elección de másteres (cliente)"
                   estado={tieneEleccion ? "completado" : "pendiente"}
+                  open={expanded.has("eleccion")} onToggle={() => toggleBloque("eleccion")}
                 />
-                <CBox>
-                  <div className="p-5">
-                    <EleccionMastersAdmin
-                      elecciones={detalle.eleccion_masters}
-                      idSolicitud={detalle.id_solicitud}
-                      onEleccionesActualizadas={handleEleccionesActualizadas}
-                    />
-                  </div>
-                </CBox>
+                {expanded.has("eleccion") && (
+                  <CBox>
+                    <div className="p-5">
+                      <EleccionMastersAdmin
+                        elecciones={detalle.eleccion_masters}
+                        idSolicitud={detalle.id_solicitud}
+                        onEleccionesActualizadas={handleEleccionesActualizadas}
+                      />
+                    </div>
+                  </CBox>
+                )}
               </div>
 
               {/* B6 — Programación de postulaciones */}
-              <div id="bloque-programacion" className="mb-8 scroll-mt-4">
-                <BlqHead numero="6" titulo="Programación de postulaciones" estado="pendiente" />
-                <CBox>
-                  <div className="p-5">
-                    <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
-                  </div>
-                </CBox>
+              <div id="bloque-programacion" className="mb-6 scroll-mt-4">
+                <BlqHead numero="6" titulo="Programación de postulaciones" estado="pendiente"
+                  open={expanded.has("programacion")} onToggle={() => toggleBloque("programacion")} />
+                {expanded.has("programacion") && (
+                  <CBox>
+                    <div className="p-5">
+                      <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+                    </div>
+                  </CBox>
+                )}
               </div>
 
               {/* B7 — Portales y justificantes */}
-              <div id="bloque-portales" className="mb-8 scroll-mt-4">
-                <BlqHead numero="7" titulo="Portales, claves y justificantes" estado="pendiente" />
-                <CBox>
-                  <div className="p-5">
-                    <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
-                  </div>
-                </CBox>
+              <div id="bloque-portales" className="mb-6 scroll-mt-4">
+                <BlqHead numero="7" titulo="Portales, claves y justificantes" estado="pendiente"
+                  open={expanded.has("portales")} onToggle={() => toggleBloque("portales")} />
+                {expanded.has("portales") && (
+                  <CBox>
+                    <div className="p-5">
+                      <PortalesYJustificantesAdmin idSolicitud={detalle.id_solicitud} />
+                    </div>
+                  </CBox>
+                )}
               </div>
 
               {/* B8 — Cierre de servicio */}
-              <div id="bloque-cierre" className="mb-8 scroll-mt-4">
-                <BlqHead numero="8" titulo="Cierre de servicio y derivación" estado="pendiente" />
-                <CBox>
-                  <div className="px-5 pt-4">
-                    <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
-                  </div>
-                </CBox>
+              <div id="bloque-cierre" className="mb-6 scroll-mt-4">
+                <BlqHead numero="8" titulo="Cierre de servicio y derivación" estado="pendiente"
+                  open={expanded.has("cierre")} onToggle={() => toggleBloque("cierre")} />
+                {expanded.has("cierre") && (
+                  <CBox>
+                    <div className="px-5 pt-4">
+                      <CierreServicioMasterAdmin idSolicitud={detalle.id_solicitud} />
+                    </div>
+                  </CBox>
+                )}
               </div>
             </>
           )}
