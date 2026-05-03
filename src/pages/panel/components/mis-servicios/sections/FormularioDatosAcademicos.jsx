@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { apiGET } from "../../../../../services/api";
-import SeccionPanel from "./SeccionPanel";
+import SeccionPanel, { SeccionSiempreAbiertoCtx } from "./SeccionPanel";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -241,6 +241,57 @@ function ErrBox({ show, children }) {
   );
 }
 
+// ── ResumenDatos ──────────────────────────────────────────────────────────────
+
+const EXP_LABELS = {
+  sin: "Sin experiencia", "1-2": "1–2 años", "2-3": "2–3 años",
+  "3-5": "3–5 años", "5-10": "5–10 años", "10+": "Más de 10 años",
+};
+const ING_LABELS = {
+  intl: "Cert. internacional", uni: "Cert. universitaria",
+  instituto: "Instituto (sin cert.)", sabe_sin_cert: "Inglés sin certificar", no: "Sin inglés",
+};
+
+function ResumenDatos({ formData, onEditar }) {
+  const comunidades = Array.isArray(formData.comunidades_preferidas) ? formData.comunidades_preferidas : [];
+  const comunidadesText = comunidades.length > 0
+    ? comunidades.slice(0, 2).join(", ") + (comunidades.length > 2 ? ` +${comunidades.length - 2} más` : "")
+    : null;
+
+  const campos = [
+    { label: "Carrera",         value: formData.carrera_titulo },
+    { label: "Área",            value: formData.area_carrera },
+    { label: "Universidad",     value: formData.universidad_origen },
+    { label: "Promedio",        value: formData.promedio_peru ? `${formData.promedio_peru} / ${formData.promedio_escala || 20}` : null },
+    { label: "Experiencia",     value: EXP_LABELS[formData.experiencia_anios] || formData.experiencia_anios },
+    { label: "Inglés",          value: ING_LABELS[formData.ingles_situacion] || formData.ingles_situacion },
+    { label: "Presupuesto",     value: formData.presupuesto_hasta ? `${Number(formData.presupuesto_hasta).toLocaleString("es-ES")} €/año` : null },
+    { label: "Comunidades",     value: comunidadesText },
+    { label: "Inicio previsto", value: formData.inicio_previsto?.replace(/_/g, " ") },
+    { label: "Becas",           value: formData.beca_desea === "si" ? "Sí" : formData.beca_desea === "no" ? "No" : null },
+  ].filter((c) => c.value);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        {campos.map(({ label, value }) => (
+          <div key={label} className="bg-neutral-50 rounded-xl px-3 py-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-0.5">{label}</p>
+            <p className="text-xs font-semibold text-neutral-800 leading-snug truncate" title={value}>{value}</p>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onEditar}
+        className="w-full py-2.5 text-sm font-semibold text-[#023A4B] border border-[#023A4B]/30 rounded-xl hover:bg-[#023A4B]/5 transition active:scale-[0.99]"
+      >
+        ✏ Modificar datos
+      </button>
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function FormularioDatosAcademicos({
@@ -255,6 +306,9 @@ export default function FormularioDatosAcademicos({
   const [todasComunidades, setTodasComunidades] = useState(TODAS_COMUNIDADES_FALLBACK);
   const [xWarning, setXWarning]       = useState(false);
   const [savingX, setSavingX]         = useState(false);
+
+  const siempreAbierto = useContext(SeccionSiempreAbiertoCtx);
+  const [editando, setEditando]       = useState(false);
 
   useEffect(() => {
     apiGET("/api/catalogo/ramas").then((r) => {
@@ -355,6 +409,15 @@ export default function FormularioDatosAcademicos({
     if (missing.length > 0) { setShowErrors(true); return; }
     await handleSubmitFormulario(e);
     setModalOpen(false);
+  }
+
+  async function handleSaveInline(e) {
+    e.preventDefault();
+    const missing = validateStep(step, formData, planCCAAs);
+    if (missing.length > 0) { setShowErrors(true); return; }
+    await handleSubmitFormulario(e);
+    setEditando(false);
+    setStep(0);
   }
 
   // Computed
@@ -1035,7 +1098,107 @@ export default function FormularioDatosAcademicos({
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const estado    = hasData ? "completado" : "pendiente";
+  const estado = hasData ? "completado" : "pendiente";
+
+  // ── Modo inline (panel de dos columnas) ──────────────────────────────────────
+  if (siempreAbierto) {
+    const subtitulo = hasData && !editando
+      ? "Datos guardados"
+      : hasData
+        ? `Paso ${step + 1} / ${STEPS.length} — ${STEPS[step].title}`
+        : "Completa este formulario para personalizar tu informe.";
+
+    return (
+      <SeccionPanel numero="3" titulo="Formulario de datos académicos" subtitulo={subtitulo} estado={estado}>
+        {hasData && !editando ? (
+          <ResumenDatos formData={formData} onEditar={() => { setEditando(true); setStep(0); }} />
+        ) : (
+          <form onSubmit={handleSaveInline} className="flex flex-col gap-4">
+            {/* Barra de progreso */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-xs font-semibold text-[#023A4B]">
+                  {STEPS[step].icon} {STEPS[step].title}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-mono">{step + 1} / {STEPS.length}</span>
+              </div>
+              <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#023A4B] rounded-full transition-all duration-300"
+                  style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Círculos de navegación */}
+            <div className="flex items-center">
+              {STEPS.map((s, i) => (
+                <div key={i} className="flex items-center flex-1 last:flex-none">
+                  <button type="button" onClick={() => { if (i < step) setStep(i); }} title={s.title}
+                    className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold transition-all ${
+                      i < step ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
+                      : i === step ? "bg-[#023A4B] text-white shadow ring-2 ring-[#023A4B]/20"
+                      : "bg-neutral-100 text-neutral-400 cursor-default"
+                    }`}>
+                    {i < step ? "✓" : i + 1}
+                  </button>
+                  {i < STEPS.length - 1 && (
+                    <div className={`flex-1 h-px mx-0.5 ${i < step ? "bg-emerald-400" : "bg-neutral-200"}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Contenido del paso */}
+            <div className="bg-white rounded-xl border border-neutral-100 shadow-sm">
+              <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent rounded-t-xl flex items-center gap-2">
+                <span className="text-base shrink-0">{STEPS[step].icon}</span>
+                <h3 className="text-sm font-bold text-[#023A4B]">{STEPS[step].title}</h3>
+              </div>
+              <div ref={scrollAreaRef} className="px-4 py-4">
+                {renderStep()}
+              </div>
+            </div>
+
+            {showErrors && validateStep(step, formData, planCCAAs).length > 0 && (
+              <ErrBox show>Completa todos los campos requeridos antes de continuar.</ErrBox>
+            )}
+
+            {/* Navegación */}
+            <div className="flex items-center justify-between gap-3 pb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (step === 0 && hasData) { setEditando(false); }
+                  else { setStep((p) => Math.max(0, p - 1)); }
+                }}
+                disabled={step === 0 && !hasData}
+                className="px-4 py-2 text-sm font-medium border border-neutral-200 rounded-xl hover:bg-neutral-50 transition disabled:opacity-30 active:scale-95"
+              >
+                {step === 0 && hasData ? "Cancelar" : "← Anterior"}
+              </button>
+
+              {!isLast ? (
+                <button type="button" onClick={handleNext}
+                  className="px-6 py-2 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] transition active:scale-95">
+                  Continuar →
+                </button>
+              ) : (
+                <button type="submit" disabled={savingForm}
+                  className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95">
+                  {savingForm
+                    ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
+                    : "✓ Guardar formulario"
+                  }
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+      </SeccionPanel>
+    );
+  }
+
+  // ── Modo modal (acordeón clásico) ─────────────────────────────────────────────
+
   const subtitulo = hasData
     ? "Ya tienes datos guardados. Haz clic para revisar o modificar."
     : "Completa este formulario para personalizar tu informe de búsqueda.";
