@@ -143,6 +143,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     return { estado: hayObservados ? "observado" : aprobados === total ? "completado" : "pendiente" };
   }, [checklistPorEtapa]);
 
+  const [progRefreshKey,   setProgRefreshKey]   = useState(0);
+  const [eleccionResetKey, setEleccionResetKey] = useState(0);
+  const [eleccionEnPicker, setEleccionEnPicker] = useState(false);
+
   const { bloques, isVisado } = useMemo(() => {
     if (!detalle) return { bloques: [], isVisado: false };
     const tituloLower = String(detalle.titulo || "").toLowerCase().trim();
@@ -169,25 +173,24 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           { id: "cliente",      numero: "1", label: "Encabezado cliente",      estado: clienteEstado },
           { id: "checklist",    numero: "2", label: "Documentos",              estado: checklistStats.estado },
           { id: "formulario",   numero: "3", label: "Formulario académico",    estado: tieneForm ? "completado" : "pendiente" },
-          { id: "informe",      numero: "4", label: "Informe IA másteres",     estado: detalle.informe_fecha_subida ? "completado" : "pendiente" },
-          { id: "eleccion",     numero: "5", label: "Elección del cliente",    estado: hayEleccion ? "completado" : "pendiente" },
+          { id: "informe",      numero: "4", label: "Informe IA másteres",     estado: (detalle.informe_fecha_subida || tieneForm) ? "completado" : "pendiente" },
+          { id: "eleccion",     numero: "5", label: "Elección del cliente",    estado: (hayEleccion && !eleccionEnPicker) ? "completado" : "pendiente" },
           { id: "programacion", numero: "6", label: "Postulaciones · Portales", estado: "pendiente" },
           { id: "portales",     numero: "7", label: "Portales y justificantes", estado: "pendiente" },
           { id: "cierre",       numero: "8", label: "Cierre y derivación",     estado: "pendiente" },
         ];
     return { bloques: lista, isVisado: visado };
-  }, [detalle, checklistStats]);
-
-  const [progRefreshKey,   setProgRefreshKey]   = useState(0);
-  const [eleccionResetKey, setEleccionResetKey] = useState(0);
+  }, [detalle, checklistStats, eleccionEnPicker]); // eslint-disable-line
 
   function handleEleccionesActualizadas(nuevasElecciones) {
     setDetalle((prev) => ({ ...prev, eleccion_masters: nuevasElecciones }));
     setProgRefreshKey((k) => k + 1);
+    setEleccionEnPicker(false);
   }
 
   function handleInformeRegenerado() {
     setEleccionResetKey((k) => k + 1);
+    setEleccionEnPicker(true);
   }
 
   const pct = useMemo(() => {
@@ -422,7 +425,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 <BlqHead
                   numero="5"
                   titulo="Elección de másteres (cliente)"
-                  estado={tieneEleccion ? "completado" : "pendiente"}
+                  estado={(tieneEleccion && !eleccionEnPicker) ? "completado" : "pendiente"}
                   open={expanded.has("eleccion")} onToggle={() => toggleBloque("eleccion")}
                 />
                 {expanded.has("eleccion") && (
