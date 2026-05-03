@@ -209,6 +209,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: payload });
       if (!r.ok) { window.alert("No se pudo guardar la elección de másteres."); return; }
       window.alert("Elección de másteres guardada.");
+      setElecciones(payload);
       setPostulacionesKey((k) => k + 1);
     } catch {
       window.alert("Error al guardar elección de másteres.");

@@ -84,7 +84,9 @@ export default function SeccionPanel({
       {open && (
         <div className={`border-t border-neutral-100 ${
           siempreAbierto
-            ? "flex-1 min-h-0 overflow-y-auto flex flex-col px-5 py-4"
+            ? (contentClassName !== undefined
+                ? contentClassName
+                : "flex-1 min-h-0 overflow-y-auto flex flex-col px-5 py-4")
             : (contentClassName !== undefined
                 ? contentClassName
                 : "px-5 py-4 overflow-y-auto max-h-[calc(100vh-200px)]")

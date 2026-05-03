@@ -78,25 +78,31 @@ export default function EleccionMastersCliente({
 }) {
   const [seleccion, setSeleccion]     = useState([]);
   const [comentarios, setComentarios] = useState({});
-  const isMount = useRef(true);
+  const isMount     = useRef(true);
+  const initialized = useRef(false);
 
   // Limpiar selección cada vez que se regenera el informe (resetKey sube solo al guardar form)
   useEffect(() => {
     if (isMount.current) { isMount.current = false; return; }
+    initialized.current = false;
     setSeleccion([]);
     setComentarios({});
   }, [resetKey]); // eslint-disable-line
 
-  // Inicializar selección desde elecciones guardadas
+  // Inicializar selección desde elecciones guardadas.
+  // Se reactiva cuando el padre actualiza elecciones (ej. tras guardar),
+  // pero solo inicializa una vez hasta el próximo reset.
   useEffect(() => {
+    if (initialized.current) return;
     const saved = (Array.isArray(elecciones) ? elecciones : []).filter((e) => e.id_master);
     if (saved.length > 0) {
+      initialized.current = true;
       setSeleccion(saved.map((e) => ({ ...e })));
       const coms = {};
       saved.forEach((e) => { if (e.comentario) coms[e.id_master] = e.comentario; });
       setComentarios(coms);
     }
-  }, []); // eslint-disable-line
+  }, [elecciones]); // eslint-disable-line
 
   const resultados  = compat?.resultados ?? [];
   const selectedIds = new Set(seleccion.map((s) => s.id_master));
