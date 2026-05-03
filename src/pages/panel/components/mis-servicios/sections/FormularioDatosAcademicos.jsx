@@ -248,12 +248,16 @@ export default function FormularioDatosAcademicos({
   const [step, setStep]               = useState(0);
   const [showErrors, setShowErrors]   = useState(false);
   const [ramas, setRamas]             = useState([]);
+  const [subareas, setSubareas]       = useState([]);
   const [xWarning, setXWarning]       = useState(false);
   const [savingX, setSavingX]         = useState(false);
 
   useEffect(() => {
     apiGET("/api/catalogo/ramas").then((r) => {
       if (r.ok && Array.isArray(r.ramas)) setRamas(r.ramas);
+    }).catch(() => {});
+    apiGET("/api/catalogo/subareas").then((r) => {
+      if (r.ok && Array.isArray(r.subareas)) setSubareas(r.subareas);
     }).catch(() => {});
   }, []);
 
@@ -758,37 +762,74 @@ export default function FormularioDatosAcademicos({
         </div>
       );
 
-      // ── PASO 7: Rama de conocimiento ────────────────────────────────────
-      case 6: return (
-        <div>
-          <FLabel>¿A qué rama pertenece el máster que te interesa?</FLabel>
-          <p className="text-xs text-neutral-400 mb-3">
-            Puede ser diferente a tu carrera de origen.
-          </p>
-          {ramas.length === 0 ? (
-            <p className="text-xs text-neutral-400 py-4 text-center">Cargando opciones…</p>
-          ) : (
-            <div className={`grid grid-cols-2 gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-              {ramas.map((r) => {
-                const active = formData.area_interes_master === r.valor;
-                return (
-                  <button key={r.valor} type="button"
-                    onClick={() => set("area_interes_master", active ? "" : r.valor)}
-                    className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] text-left ${
-                      active
-                        ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
-                        : "border-neutral-200 bg-white hover:border-[#023A4B] hover:text-[#023A4B] text-neutral-700"
-                    }`}>
-                    <span className="leading-snug">{r.etiqueta}</span>
-                    {active && <span className="shrink-0 text-white/80 text-xs">✓</span>}
-                  </button>
-                );
-              })}
+      // ── PASO 7: Rama de conocimiento + sub-área ─────────────────────────
+      case 6: {
+        const subAreasFiltradas = subareas.filter(
+          (sa) => sa.rama === formData.area_interes_master
+        );
+        return (
+          <div className="space-y-5">
+            <div>
+              <FLabel>¿A qué rama pertenece el máster que te interesa?</FLabel>
+              <p className="text-xs text-neutral-400 mb-3">
+                Puede ser diferente a tu carrera de origen.
+              </p>
+              {ramas.length === 0 ? (
+                <p className="text-xs text-neutral-400 py-4 text-center">Cargando opciones…</p>
+              ) : (
+                <div className={`grid grid-cols-2 gap-2 ${has("area_interes_master") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+                  {ramas.map((r) => {
+                    const active = formData.area_interes_master === r.valor;
+                    return (
+                      <button key={r.valor} type="button"
+                        onClick={() => {
+                          const newVal = active ? "" : r.valor;
+                          set("area_interes_master", newVal);
+                          set("sub_area_interes", "");
+                        }}
+                        className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] text-left ${
+                          active
+                            ? "bg-[#023A4B] text-white border-[#023A4B] shadow-sm"
+                            : "border-neutral-200 bg-white hover:border-[#023A4B] hover:text-[#023A4B] text-neutral-700"
+                        }`}>
+                        <span className="leading-snug">{r.etiqueta}</span>
+                        {active && <span className="shrink-0 text-white/80 text-xs">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <EMsg show={has("area_interes_master")} msg="Selecciona la rama de tu interés" />
             </div>
-          )}
-          <EMsg show={has("area_interes_master")} msg="Selecciona la rama de tu interés" />
-        </div>
-      );
+
+            {formData.area_interes_master && subAreasFiltradas.length > 0 && (
+              <div>
+                <FLabel>¿Tienes alguna especialidad en mente? <span className="font-normal text-neutral-400">(opcional)</span></FLabel>
+                <p className="text-xs text-neutral-400 mb-3">
+                  Si aún no lo sabes, puedes dejarlo en blanco.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {subAreasFiltradas.map((sa) => {
+                    const active = formData.sub_area_interes === sa.valor;
+                    return (
+                      <button key={sa.valor} type="button"
+                        onClick={() => set("sub_area_interes", active ? "" : sa.valor)}
+                        className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] text-left ${
+                          active
+                            ? "bg-[#023A4B]/10 text-[#023A4B] border-[#023A4B] shadow-sm"
+                            : "border-neutral-200 bg-white hover:border-[#023A4B]/50 hover:text-[#023A4B] text-neutral-600"
+                        }`}>
+                        <span className="leading-snug">{sa.etiqueta}</span>
+                        {active && <span className="shrink-0 text-[#023A4B] text-xs">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
 
       // ── PASO 8: Duración, prácticas y presupuesto ───────────────────────
       case 7: return (

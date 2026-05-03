@@ -130,11 +130,16 @@ function ModalVerMaster({ item, onClose, onEditar }) {
             ))}
           </div>
 
-          {/* Rama + tags */}
+          {/* Rama + sub-área + tags */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${ramaCls}`}>
               {ramaLabel(m.rama)}
             </span>
+            {m.sub_area?.etiqueta && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border bg-neutral-50 text-neutral-600 border-neutral-300">
+                {m.sub_area.etiqueta}
+              </span>
+            )}
             {m.es_habilitante      && <Chip label="Habilitante"      color="amber" />}
             {m.es_interuniversitario && <Chip label="Interuniversitario" color="blue" />}
             {m.es_dual             && <Chip label="Dual (empresa)"   color="blue" />}
