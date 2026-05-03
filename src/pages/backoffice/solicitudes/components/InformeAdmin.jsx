@@ -247,21 +247,23 @@ export default function InformeAdmin({ detalle, recargar }) {
   async function guardarCurado() {
     setGuardando(true);
     try {
-      await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, {
+      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, {
         lista: listaEdit,
       });
+      if (!r.ok) throw new Error(r.msg || "Error al guardar");
       await recargar();
       setEditMode(false);
-    } catch { alert("Error al guardar"); }
+    } catch (e) { alert(e.message || "Error al guardar"); }
     finally { setGuardando(false); }
   }
 
   async function restaurarAuto() {
     setGuardando(true);
     try {
-      await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
+      const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
+      if (!r.ok) throw new Error(r.msg || "Error al restaurar");
       await recargar();
-    } catch { alert("Error al restaurar"); }
+    } catch (e) { alert(e.message || "Error al restaurar"); }
     finally { setGuardando(false); }
   }
 

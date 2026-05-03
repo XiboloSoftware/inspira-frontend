@@ -31,6 +31,7 @@ export function useSolicitudDetalle(idSolicitud) {
         solicitud = {
           ...solicitud,
           asesores: rBackoffice.solicitud.asesores || solicitud.asesores,
+          informe_compat_curado: rBackoffice.solicitud.informe_compat_curado ?? null,
         };
       }
 
