@@ -425,7 +425,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
               <span className="text-white/50 text-[10px]">En informe</span>
               <span className="text-white font-bold text-[11px]">{listaVista.length}</span>
             </div>
-            {isCurado && !detalle.informe_publicado && (
+            {listaVista.length > 0 && !detalle.informe_publicado && (
               <div className="flex items-center gap-1.5 bg-[#F5C842]/20 border border-[#F5C842]/30 rounded-lg px-2.5 py-1.5">
                 <span className="text-[#F5C842] text-[10px] font-semibold">✏️ Lista curada · Sin publicar</span>
               </div>
@@ -517,7 +517,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
                     Modificar lista
                   </button>
                 )}
-                {isCurado && (
+                {listaVista.length > 0 && (
                   <button onClick={publicarInforme} disabled={publicando}
                     className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-200 disabled:opacity-50 font-semibold">
                     {publicando ? (
