@@ -1,186 +1,503 @@
 // src/pages/panel/components/mis-servicios/sections/ProgramacionPostulacionesCliente.jsx
-import { useEffect, useMemo, useState } from "react";
-import { apiGET } from "../../../../../services/api";
+import { useEffect, useState } from "react";
+import { apiGET, apiPOST } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
-function formatDate(d) {
-  if (!d) return "—";
-  const date = new Date(d);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function diasHasta(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return null;
+  return Math.ceil((d.getTime() - Date.now()) / 86400000);
 }
 
-const ESTADO_TAREA_CFG = {
-  pendiente:  { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
-  completado: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  en_proceso: { bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-200",     dot: "bg-sky-500"     },
-};
-function getTareaCfg(estado) {
-  return ESTADO_TAREA_CFG[(estado || "pendiente").toLowerCase().replace(" ", "_")] || ESTADO_TAREA_CFG.pendiente;
+function fmtFecha(str) {
+  if (!str) return "—";
+  const d = new Date(str);
+  if (!isNaN(d.getTime()) && /\d{4}-\d{2}/.test(str))
+    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+  return str;
 }
 
-const TIMELINE_VACIO = [
-  { label: "Confirmación de másteres por asesor",  fecha: "Pendiente tu elección" },
-  { label: "Apertura de portales de admisión",     fecha: "A definir según máster" },
-  { label: "Envío de documentación",               fecha: "A definir según portal" },
-  { label: "Resolución de admisión",               fecha: "Estimado: 4-6 semanas tras cierre" },
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const P_COLORS = ["#1A3557", "#1D6A4A", "#f59e0b", "#9ca3af", "#d1d5db"];
+
+const ESTADOS_OPT = [
+  { val: "pendiente", label: "⏳ Pendiente" },
+  { val: "proceso",   label: "⚡ En proceso" },
+  { val: "postulado", label: "📤 Postulado" },
+  { val: "admitido",  label: "✅ Admitido" },
+  { val: "denegado",  label: "❌ Denegado" },
+  { val: "lista",     label: "⏳ Lista espera" },
 ];
 
-function StatCard({ label, value, colorClass }) {
-  return (
-    <div className={`text-center p-4 rounded-xl ${colorClass}`}>
-      <p className="text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-3xl font-black mt-1">{value}</p>
-    </div>
-  );
-}
+const PORTAL_ESTADOS = ["abierto", "cerrado", "mantenimiento"];
 
-function TimelineVacio() {
+const TABS = [
+  { id: "fec", label: "📅 Fechas" },
+  { id: "por", label: "🔗 Portal y claves" },
+  { id: "doc", label: "📁 Justificantes" },
+  { id: "seg", label: "📝 Seguimiento" },
+];
+
+const DOC_SIGUIENTE = { falta: "pendiente", pendiente: "ok", ok: "falta" };
+const DOC_LABEL     = { falta: "Falta", pendiente: "En revisión", ok: "Subido" };
+const DOC_CLS       = {
+  falta:    "bg-red-50 text-red-600 border-red-200",
+  pendiente:"bg-amber-50 text-amber-600 border-amber-200",
+  ok:       "bg-emerald-50 text-emerald-600 border-emerald-200",
+};
+
+// ── KanbanMini ────────────────────────────────────────────────────────────────
+
+function KanbanMini({ posts }) {
+  const n = (e) => posts.filter((p) => p.estado === e).length;
   return (
-    <div className="relative pl-5 mt-2">
-      <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-neutral-200" />
-      {TIMELINE_VACIO.map((item, idx) => (
-        <div key={idx} className="relative mb-4">
-          <div className="absolute -left-4 top-1 w-3 h-3 rounded-full border-2 border-neutral-300 bg-white" />
-          <p className="text-sm font-semibold text-neutral-700">{item.label}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">{item.fecha}</p>
+    <div className="grid grid-cols-4 gap-2">
+      {[
+        { key: "pendiente", label: "Pendiente", cls: "text-neutral-400",  bg: "bg-neutral-50 border-neutral-100" },
+        { key: "proceso",   label: "En proceso", cls: "text-[#023A4B]",   bg: "bg-[#023A4B]/5 border-[#023A4B]/15" },
+        { key: "postulado", label: "Postulado",  cls: "text-amber-500",   bg: "bg-amber-50 border-amber-100" },
+        { key: "admitido",  label: "Admitido",   cls: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
+      ].map(({ key, label, cls, bg }) => (
+        <div key={key} className={`rounded-xl border text-center py-2.5 ${bg}`}>
+          <p className={`text-[9px] font-bold uppercase tracking-widest font-mono ${cls}`}>{label}</p>
+          <p className={`font-serif text-xl font-black mt-0.5 ${cls}`}>{n(key)}</p>
         </div>
       ))}
     </div>
   );
 }
 
+// ── AlertaBanner ──────────────────────────────────────────────────────────────
+
+function AlertaBanner({ posts }) {
+  const urgentes = posts
+    .map((p) => ({ ...p, dias: diasHasta(p.fecha_cierre) }))
+    .filter((p) => p.dias !== null && p.dias > 0 && p.dias <= 20)
+    .sort((a, b) => a.dias - b.dias);
+  if (!urgentes.length) return null;
+  const u = urgentes[0];
+  return (
+    <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
+      <span className="shrink-0 mt-0.5">🚨</span>
+      <span>
+        <strong>Cierre urgente:</strong> {u.nombre_limpio} cierra el{" "}
+        <strong>{fmtFecha(u.fecha_cierre)} — en {u.dias} día{u.dias !== 1 ? "s" : ""}</strong>.
+        Verificar documentos y portal.
+      </span>
+    </div>
+  );
+}
+
+// ── TabFechas ─────────────────────────────────────────────────────────────────
+
+function FechaBox({ label, valor, field, onChange, onSave }) {
+  const dias = field === "fecha_cierre" ? diasHasta(valor) : null;
+  const urgente = dias !== null && dias > 0 && dias <= 7;
+  const pronto  = dias !== null && dias > 7  && dias <= 30;
+  return (
+    <div className={`rounded-xl border p-3 text-center ${
+      urgente ? "border-red-200 bg-red-50"
+      : pronto  ? "border-amber-200 bg-amber-50"
+      : valor   ? "border-emerald-200 bg-emerald-50"
+      : "border-neutral-200 bg-white"
+    }`}>
+      {urgente && <div className="w-2 h-2 rounded-full bg-red-500 mx-auto mb-1 animate-pulse" />}
+      <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-1">{label}</p>
+      <input
+        type="text"
+        value={valor}
+        onChange={(e) => onChange(field, e.target.value)}
+        onBlur={(e) => onSave(field, e.target.value)}
+        placeholder="AAAA-MM-DD"
+        className="w-full text-center text-xs font-semibold bg-transparent outline-none placeholder:text-neutral-300 text-neutral-700"
+      />
+      {dias !== null && dias > 0 && (
+        <p className={`text-[10px] mt-1 font-mono font-bold ${urgente ? "text-red-600" : pronto ? "text-amber-600" : "text-neutral-400"}`}>
+          {urgente ? `⚠ ${dias} días` : `~${dias} días`}
+        </p>
+      )}
+      {valor && dias !== null && dias <= 0 && (
+        <p className="text-[10px] mt-1 text-emerald-600 font-semibold">✓ Pasada</p>
+      )}
+    </div>
+  );
+}
+
+function TabFechas({ post, onChange, onSave }) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <FechaBox label="Apertura"    valor={post.fecha_apertura}   field="fecha_apertura"   onChange={onChange} onSave={onSave} />
+        <FechaBox label="Cierre"      valor={post.fecha_cierre}     field="fecha_cierre"     onChange={onChange} onSave={onSave} />
+        <FechaBox label="Resultados"  valor={post.fecha_resultados} field="fecha_resultados" onChange={onChange} onSave={onSave} />
+      </div>
+
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-2">
+          Alertas automáticas programadas
+        </p>
+        <div className="space-y-1.5">
+          {(post.alertas || []).map((al, idx) => (
+            <div key={al.tipo} className="flex items-center gap-3 bg-neutral-50 rounded-lg px-3 py-2">
+              <span className="text-sm">{idx === 0 ? "🚨" : idx === 1 ? "⚠️" : "🔴"}</span>
+              <p className="flex-1 min-w-0 text-xs font-medium text-neutral-700">{al.label}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = post.alertas.map((a, i) => i === idx ? { ...a, activo: !a.activo } : a);
+                  onSave("alertas", next);
+                }}
+                className={`w-9 h-5 rounded-full relative shrink-0 transition-colors ${al.activo ? "bg-[#023A4B]" : "bg-neutral-200"}`}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${al.activo ? "left-[calc(100%-18px)]" : "left-0.5"}`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TabPortal ─────────────────────────────────────────────────────────────────
+
+function TabPortal({ post, onChange, onSave, showPw, togglePw }) {
+  return (
+    <div className="grid sm:grid-cols-2 gap-3">
+      {/* Columna izquierda */}
+      <div className="space-y-2.5">
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">URL del portal</label>
+          <div className="flex gap-1.5">
+            <input
+              type="url"
+              value={post.portal_url}
+              onChange={(e) => onChange("portal_url", e.target.value)}
+              onBlur={(e) => onSave("portal_url", e.target.value)}
+              placeholder="https://..."
+              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+            />
+            {post.portal_url && (
+              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_url)}
+                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
+                📋
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Estado del portal</label>
+          <div className="flex gap-1.5">
+            {PORTAL_ESTADOS.map((e) => (
+              <button key={e} type="button"
+                onClick={() => onSave("portal_estado", e)}
+                className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg border transition ${
+                  post.portal_estado === e
+                    ? "bg-[#023A4B] border-[#023A4B] text-white"
+                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                }`}>
+                {e === "abierto" ? "✓ Abierto" : e === "cerrado" ? "Cerrado" : "Mant."}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">N.º expediente</label>
+          <input type="text" value={post.expediente}
+            onChange={(e) => onChange("expediente", e.target.value)}
+            onBlur={(e) => onSave("expediente", e.target.value)}
+            placeholder="Ej: UA-2026-89432"
+            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+          />
+        </div>
+      </div>
+
+      {/* Columna derecha */}
+      <div className="space-y-2.5">
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Usuario</label>
+          <input type="text" value={post.portal_usuario}
+            onChange={(e) => onChange("portal_usuario", e.target.value)}
+            onBlur={(e) => onSave("portal_usuario", e.target.value)}
+            placeholder="email@ejemplo.com"
+            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Contraseña</label>
+          <div className="flex gap-1.5">
+            <input type={showPw ? "text" : "password"} value={post.portal_password}
+              onChange={(e) => onChange("portal_password", e.target.value)}
+              onBlur={(e) => onSave("portal_password", e.target.value)}
+              placeholder="Contraseña del portal"
+              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+            />
+            <button type="button" onClick={togglePw}
+              className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
+              {showPw ? "🙈" : "👁"}
+            </button>
+            {post.portal_password && (
+              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_password)}
+                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
+                📋
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Notas de acceso</label>
+          <input type="text" value={post.portal_notas}
+            onChange={(e) => onChange("portal_notas", e.target.value)}
+            onBlur={(e) => onSave("portal_notas", e.target.value)}
+            placeholder="Ej: verificar email con código SMS"
+            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TabDocs ───────────────────────────────────────────────────────────────────
+
+function TabDocs({ post, onSave }) {
+  const [nueva, setNueva] = useState("");
+
+  function toggle(idx) {
+    const docs = (post.documentos || []).map((d, i) =>
+      i === idx ? { ...d, estado: DOC_SIGUIENTE[d.estado] ?? "falta" } : d
+    );
+    onSave("documentos", docs);
+  }
+
+  function remove(idx) {
+    const docs = (post.documentos || []).filter((_, i) => i !== idx);
+    onSave("documentos", docs);
+  }
+
+  function add() {
+    const nombre = nueva.trim();
+    if (!nombre) return;
+    const docs = [...(post.documentos || []), { nombre, estado: "falta" }];
+    onSave("documentos", docs);
+    setNueva("");
+  }
+
+  return (
+    <div className="space-y-2">
+      {(post.documentos || []).length === 0 && (
+        <p className="text-xs text-neutral-400 italic text-center py-2">Sin documentos aún.</p>
+      )}
+      {(post.documentos || []).map((doc, idx) => (
+        <div key={idx} className="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2">
+          <span className="text-sm shrink-0">📄</span>
+          <span className="flex-1 min-w-0 text-xs text-neutral-700 truncate">{doc.nombre}</span>
+          <button type="button" onClick={() => toggle(idx)}
+            className={`shrink-0 text-[10px] font-bold border rounded-full px-2 py-0.5 transition ${DOC_CLS[doc.estado] ?? ""}`}>
+            {DOC_LABEL[doc.estado] ?? doc.estado}
+          </button>
+          <button type="button" onClick={() => remove(idx)}
+            className="shrink-0 text-neutral-300 hover:text-red-400 text-xs leading-none">✕</button>
+        </div>
+      ))}
+
+      <div className="flex gap-1.5 pt-1">
+        <input type="text" value={nueva}
+          onChange={(e) => setNueva(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="Añadir documento…"
+          className="flex-1 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+        />
+        <button type="button" onClick={add}
+          className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition">
+          + Añadir
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── TabSeguimiento ────────────────────────────────────────────────────────────
+
+function TabSeguimiento({ post, onChange, onSave }) {
+  return (
+    <textarea
+      rows={4}
+      value={post.seguimiento}
+      onChange={(e) => onChange("seguimiento", e.target.value)}
+      onBlur={(e) => onSave("seguimiento", e.target.value)}
+      placeholder="Notas de seguimiento: llamadas, compromisos, pendientes del portal…"
+      className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#023A4B] resize-none leading-relaxed placeholder:text-neutral-300"
+    />
+  );
+}
+
+// ── MasterPostCard ────────────────────────────────────────────────────────────
+
+function MasterPostCard({ post, onUpdate, onSave }) {
+  const [tab, setTab]     = useState("fec");
+  const [showPw, setShowPw] = useState(false);
+
+  const idx   = Math.max(0, (post.prioridad || 1) - 1);
+  const color = P_COLORS[idx] ?? "#9ca3af";
+  const dias  = diasHasta(post.fecha_cierre);
+  const urgente = dias !== null && dias > 0 && dias <= 20;
+
+  const subtitle = [
+    post.ciudad,
+    post.precio ? `${Math.round(post.precio).toLocaleString("es-ES")} €/año` : null,
+    post.fecha_cierre ? `Cierre: ${fmtFecha(post.fecha_cierre)}${urgente ? " 🔴" : ""}` : null,
+  ].filter(Boolean).join(" · ");
+
+  const onChange = (field, value) => onUpdate(post.id_master, field, value);
+  const onSaveF  = (field, value) => onSave(post.id_master, field, value);
+
+  return (
+    <div className="border border-neutral-200 rounded-xl overflow-hidden bg-white">
+      {/* Cabecera */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-neutral-50 border-b border-neutral-100">
+        <div
+          style={{ background: color }}
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-black text-white font-mono"
+        >
+          P{post.prioridad || idx + 1}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-neutral-900 leading-tight truncate">
+            {post.nombre_limpio || "(Sin nombre)"}
+          </p>
+          {subtitle && <p className="text-[11px] text-neutral-500 truncate mt-0.5">{subtitle}</p>}
+        </div>
+        <select
+          value={post.estado}
+          onChange={(e) => onSaveF("estado", e.target.value)}
+          className="shrink-0 text-[11px] font-semibold border border-neutral-200 rounded-lg px-2 py-1.5 bg-white outline-none focus:border-[#023A4B] cursor-pointer"
+        >
+          {ESTADOS_OPT.map((o) => (
+            <option key={o.val} value={o.val}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-neutral-100 overflow-x-auto">
+        {TABS.map((t) => (
+          <button key={t.id} type="button" onClick={() => setTab(t.id)}
+            className={`shrink-0 px-3.5 py-2 text-[11px] font-semibold border-b-2 transition-colors whitespace-nowrap ${
+              tab === t.id
+                ? "border-[#023A4B] text-[#023A4B]"
+                : "border-transparent text-neutral-400 hover:text-neutral-600"
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Contenido */}
+      <div className="px-4 py-3">
+        {tab === "fec" && <TabFechas     post={post} onChange={onChange} onSave={onSaveF} />}
+        {tab === "por" && <TabPortal     post={post} onChange={onChange} onSave={onSaveF} showPw={showPw} togglePw={() => setShowPw((v) => !v)} />}
+        {tab === "doc" && <TabDocs       post={post} onSave={onSaveF} />}
+        {tab === "seg" && <TabSeguimiento post={post} onChange={onChange} onSave={onSaveF} />}
+      </div>
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 export default function ProgramacionPostulacionesCliente({ idSolicitud }) {
-  const [masters, setMasters] = useState([]);
+  const [posts, setPosts]     = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [saving, setSaving]   = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError("");
-      try {
-        const r = await apiGET(`/programacion/panel/solicitudes/${idSolicitud}`);
-        if (!r.ok) { if (!cancelled) setError(r.message || r.msg || "No se pudo cargar la programación."); return; }
-        if (!cancelled) setMasters(r.masters || []);
-      } catch { if (!cancelled) setError("No se pudo cargar la programación."); }
-      finally { if (!cancelled) setLoading(false); }
-    }
-    load();
-    return () => { cancelled = true; };
+    setLoading(true);
+    apiGET(`/solicitudes/${idSolicitud}/postulaciones`)
+      .then((r) => { if (r.ok) setPosts(r.postulaciones || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [idSolicitud]);
 
-  const stats = useMemo(() => {
-    const allTareas = masters.flatMap((m) => m.tareas || []);
-    return {
-      pendiente:  allTareas.filter((t) => (t.estado_tarea || "pendiente").toLowerCase() === "pendiente").length,
-      en_proceso: allTareas.filter((t) => (t.estado_tarea || "").toLowerCase() === "en_proceso").length,
-      completado: allTareas.filter((t) => (t.estado_tarea || "").toLowerCase() === "completado").length,
-    };
-  }, [masters]);
+  async function guardar(nextPosts) {
+    setSaving(true);
+    try {
+      await apiPOST(`/solicitudes/${idSolicitud}/postulaciones`, { postulaciones: nextPosts });
+    } catch { /* silencioso */ }
+    finally { setSaving(false); }
+  }
 
+  // Actualiza campo en local state solamente
+  function handleUpdate(id_master, field, value) {
+    setPosts((prev) => prev.map((p) => p.id_master === id_master ? { ...p, [field]: value } : p));
+  }
+
+  // Actualiza campo en local state Y guarda en backend
+  function handleSave(id_master, field, value) {
+    let next;
+    setPosts((prev) => {
+      next = prev.map((p) => p.id_master === id_master ? { ...p, [field]: value } : p);
+      return next;
+    });
+    if (next) guardar(next);
+  }
+
+  const nActivos = posts.filter((p) => ["proceso", "postulado"].includes(p.estado)).length;
+  const estado   = posts.some((p) => p.estado === "admitido")                        ? "completado"
+                 : posts.some((p) => ["proceso", "postulado"].includes(p.estado))    ? "progreso"
+                 : "pendiente";
   const subtitulo = loading
     ? "Cargando…"
-    : masters.length > 0
-    ? `${masters.length} máster${masters.length > 1 ? "es" : ""} con programación`
-    : "Las tareas y fechas clave para cada máster elegido.";
+    : posts.length > 0
+      ? `${posts.length} máster${posts.length !== 1 ? "es" : ""} · ${nActivos} activo${nActivos !== 1 ? "s" : ""}`
+      : "Completa tu elección de másteres para activar esta sección.";
 
   return (
     <SeccionPanel
       numero="6"
-      titulo="Programación de postulaciones"
+      titulo="Postulaciones · Portales · Seguimiento"
       subtitulo={subtitulo}
+      estado={estado}
       sectionId="6"
     >
       {loading && (
-        <div className="flex items-center gap-2 text-neutral-400 py-2">
-          <div className="w-4 h-4 border-2 border-neutral-300 border-t-[#046C8C] rounded-full animate-spin" />
-          <span className="text-sm">Cargando…</span>
+        <div className="flex items-center gap-2 py-3 text-neutral-400 text-sm">
+          <div className="w-4 h-4 border-2 border-[#023A4B]/30 border-t-[#023A4B] rounded-full animate-spin" />
+          Cargando…
         </div>
       )}
 
-      {error && !loading && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <span className="text-red-500">⚠</span>
-          <p className="text-sm text-red-700">{error}</p>
+      {!loading && posts.length === 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <span className="text-lg shrink-0">⚠️</span>
+          <p className="text-sm text-amber-800">
+            Esta sección se activa automáticamente cuando seleccionas tus másteres en el paso 5.
+          </p>
         </div>
       )}
 
-      {!loading && !error && masters.length === 0 && (
-        <div className="space-y-4">
-          {/* Aviso de sección bloqueada */}
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <span className="text-lg shrink-0">⚠️</span>
-            <p className="text-sm text-amber-800">
-              Esta sección se desbloqueará una vez tu asesor confirme tu elección de másteres.
-            </p>
-          </div>
-
-          {/* Stats en cero */}
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Pendiente"  value="0" colorClass="border border-neutral-200 text-neutral-400" />
-            <StatCard label="En proceso" value="0" colorClass="bg-sky-50 text-sky-600" />
-            <StatCard label="Admitido"   value="0" colorClass="bg-emerald-50 text-emerald-700" />
-          </div>
-
-          {/* Timeline vacío */}
-          <TimelineVacio />
-        </div>
-      )}
-
-      {!loading && !error && masters.length > 0 && (
-        <div className="space-y-4">
-          {/* Stats derivadas de las tareas */}
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard
-              label="Pendiente"
-              value={stats.pendiente}
-              colorClass="border border-neutral-200 text-neutral-400"
+      {!loading && posts.length > 0 && (
+        <div className="space-y-3">
+          {saving && (
+            <p className="text-[10px] text-neutral-400 font-mono text-right">Guardando…</p>
+          )}
+          <KanbanMini posts={posts} />
+          <AlertaBanner posts={posts} />
+          {posts.map((post) => (
+            <MasterPostCard
+              key={post.id_master}
+              post={post}
+              onUpdate={handleUpdate}
+              onSave={handleSave}
             />
-            <StatCard
-              label="En proceso"
-              value={stats.en_proceso}
-              colorClass="bg-sky-50 text-sky-600"
-            />
-            <StatCard
-              label="Completado"
-              value={stats.completado}
-              colorClass="bg-emerald-50 text-emerald-700"
-            />
-          </div>
-
-          {/* Lista de másteres con sus tareas */}
-          {masters.map((m) => (
-            <div key={m.master_prioridad ?? m.master_label} className="border border-neutral-200 rounded-xl overflow-hidden">
-              <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-100">
-                <p className="text-sm font-semibold text-neutral-900">{m.master_label || "Máster sin nombre"}</p>
-                {m.master_prioridad != null && (
-                  <p className="text-xs text-neutral-500 mt-0.5">Prioridad {m.master_prioridad}</p>
-                )}
-              </div>
-              {(!m.tareas || m.tareas.length === 0) ? (
-                <p className="px-4 py-3 text-sm text-neutral-400">Sin tareas configuradas aún.</p>
-              ) : (
-                <div className="divide-y divide-neutral-100">
-                  {m.tareas.map((t) => {
-                    const cfg = getTareaCfg(t.estado_tarea);
-                    return (
-                      <div key={t.id_programacion} className="px-4 py-3 flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-neutral-800 font-medium">{t.tarea}</p>
-                          <p className="text-xs text-neutral-400 mt-0.5">Límite: {formatDate(t.fecha_limite)}</p>
-                        </div>
-                        <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          {(t.estado_tarea || "Pendiente").replace("_", " ").replace(/^\w/, c => c.toUpperCase())}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
           ))}
         </div>
       )}
