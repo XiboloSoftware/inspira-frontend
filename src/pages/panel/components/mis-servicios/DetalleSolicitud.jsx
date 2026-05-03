@@ -109,10 +109,11 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     } catch { /* silencioso */ }
   }
 
-  async function handleGuardarElecciones() {
+  async function handleGuardarElecciones(data) {
     setSavingElecciones(true);
     try {
-      const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones });
+      const payload = data ?? elecciones;
+      const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: payload });
       if (!r.ok) { window.alert("No se pudo guardar la elección de másteres."); return; }
       window.alert("Elección de másteres guardada.");
     } catch {
@@ -208,9 +209,10 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               <>
                 <EleccionMastersCliente
                   elecciones={elecciones}
-                  setElecciones={setElecciones}
                   onGuardar={handleGuardarElecciones}
                   saving={savingElecciones}
+                  idSolicitud={idSolicitud}
+                  hasFormData={hasFormData}
                 />
                 <ProgramacionPostulacionesCliente idSolicitud={idSolicitud} />
               </>

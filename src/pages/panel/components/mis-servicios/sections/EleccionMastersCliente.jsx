@@ -1,33 +1,158 @@
 // src/pages/panel/components/mis-servicios/sections/EleccionMastersCliente.jsx
+import { useEffect, useState } from "react";
+import { apiGET } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
-export default function EleccionMastersCliente({ elecciones, setElecciones, onGuardar, saving }) {
-  const lista = Array.isArray(elecciones) ? elecciones : [];
+// ── Tarjeta compacta de máster ────────────────────────────────────────────────
 
-  const handleChange = (index, field, value) => {
-    setElecciones(lista.map((el, i) => i === index ? { ...el, [field]: value } : el));
-  };
+function MasterCard({ master, score, prioridad, selected, comentario, onToggle, onComentario }) {
+  const dur =
+    master.duracion_anios === 1    ? "1 año"
+    : master.duracion_anios === 1.5 ? "18 meses"
+    : master.duracion_anios         ? `${master.duracion_anios} años`
+    : null;
+  const precio = master.precio_total_estimado
+    ? `€${Math.round(master.precio_total_estimado).toLocaleString("es-ES")}`
+    : null;
 
-  const handleAdd = () => {
-    setElecciones([...lista, { prioridad: lista.length + 1, programa: "", comentario: "" }]);
-  };
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-all ${
+      selected
+        ? "border-[#023A4B] bg-[#023A4B]/[0.03]"
+        : "border-neutral-200 bg-white hover:border-neutral-300"
+    }`}>
+      <button type="button" onClick={onToggle}
+        className="w-full text-left flex items-center gap-2.5 px-3 py-2.5">
+        {/* Círculo selección */}
+        <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+          selected ? "border-[#023A4B] bg-[#023A4B]" : "border-neutral-300 bg-white"
+        }`}>
+          {selected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+        </div>
 
-  const handleRemove = (index) => {
-    if (index !== lista.length - 1 || lista.length <= 1) return;
-    setElecciones(lista.slice(0, -1));
-  };
+        {/* Número de prioridad */}
+        {selected && (
+          <div className="shrink-0 w-5 h-5 rounded-full bg-[#023A4B] text-white text-[10px] font-black flex items-center justify-center">
+            {prioridad}
+          </div>
+        )}
 
-  const handleSubmit = (e) => {
+        {/* Info máster */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-neutral-800 leading-tight">{master.nombre_limpio}</p>
+          <p className="text-[11px] text-neutral-500 leading-tight truncate mt-0.5">
+            {master.universidad.nombre_completo}
+            {master.universidad.ciudad ? ` · ${master.universidad.ciudad}` : ""}
+          </p>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {precio && <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{precio}</span>}
+            {dur    && <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{dur}</span>}
+            {score  && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                score >= 80 ? "bg-emerald-50 text-emerald-700"
+                : score >= 60 ? "bg-amber-50 text-amber-700"
+                : "bg-red-50 text-red-600"
+              }`}>{score}% match</span>
+            )}
+          </div>
+        </div>
+      </button>
+
+      {/* Comentario — solo cuando seleccionado */}
+      {selected && onComentario && (
+        <div className="px-3 pb-2.5 border-t border-neutral-100">
+          <textarea
+            rows={1}
+            value={comentario}
+            onChange={(e) => onComentario(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Comentario opcional…"
+            className="w-full mt-2 text-xs border border-neutral-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#023A4B] resize-none bg-white text-neutral-700 placeholder-neutral-400"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+export default function EleccionMastersCliente({
+  elecciones, onGuardar, saving, idSolicitud, hasFormData,
+}) {
+  const [informe, setInforme]       = useState(null);
+  const [loadingInf, setLoadingInf] = useState(false);
+  const [seleccion, setSeleccion]   = useState([]); // [{ id_master, nombre_limpio, universidad, ciudad, score, prioridad, comentario }]
+  const [comentarios, setComentarios] = useState({}); // { id_master: "texto" }
+
+  // Cargar informe de compatibilidad
+  useEffect(() => {
+    if (!idSolicitud || !hasFormData) return;
+    setLoadingInf(true);
+    apiGET(`/solicitudes/${idSolicitud}/compatibilidad`)
+      .then((r) => { if (r.ok) setInforme(r); })
+      .catch(() => {})
+      .finally(() => setLoadingInf(false));
+  }, [idSolicitud, hasFormData]);
+
+  // Inicializar selección desde elecciones guardadas (formato nuevo con id_master)
+  useEffect(() => {
+    const saved = (Array.isArray(elecciones) ? elecciones : []).filter((e) => e.id_master);
+    if (saved.length > 0) {
+      setSeleccion(saved.map((e) => ({ ...e })));
+      const coms = {};
+      saved.forEach((e) => { if (e.comentario) coms[e.id_master] = e.comentario; });
+      setComentarios(coms);
+    }
+  }, []); // eslint-disable-line
+
+  const resultados  = informe?.resultados ?? [];
+  const selectedIds = new Set(seleccion.map((s) => s.id_master));
+
+  function toggleMaster(r) {
+    const id = r.master.id_master;
+    if (selectedIds.has(id)) {
+      // Deseleccionar y renumerar
+      setSeleccion((prev) =>
+        prev.filter((s) => s.id_master !== id).map((s, i) => ({ ...s, prioridad: i + 1 }))
+      );
+    } else {
+      // Seleccionar
+      setSeleccion((prev) => [
+        ...prev,
+        {
+          id_master:    id,
+          nombre_limpio: r.master.nombre_limpio,
+          universidad:  r.master.universidad.nombre_completo,
+          ciudad:       r.master.universidad.ciudad,
+          score:        r.score,
+          prioridad:    prev.length + 1,
+          comentario:   comentarios[id] || "",
+        },
+      ]);
+    }
+  }
+
+  function setComentario(id_master, texto) {
+    setComentarios((prev) => ({ ...prev, [id_master]: texto }));
+    setSeleccion((prev) =>
+      prev.map((s) => s.id_master === id_master ? { ...s, comentario: texto } : s)
+    );
+  }
+
+  function handleGuardar(e) {
     e.preventDefault();
-    onGuardar && onGuardar();
-  };
+    const data = seleccion.map((s) => ({ ...s, comentario: comentarios[s.id_master] || "" }));
+    onGuardar && onGuardar(data);
+  }
 
-  const filled = lista.filter((e) => e.programa?.trim()).length;
-  const tieneDatos = filled > 0;
-  const estado = tieneDatos ? "completado" : "pendiente";
-  const subtitulo = tieneDatos
+  const noSeleccionados = resultados.filter((r) => !selectedIds.has(r.master.id_master));
+
+  const filled    = seleccion.length;
+  const estado    = filled > 0 ? "completado" : "pendiente";
+  const subtitulo = filled > 0
     ? `${filled} máster${filled > 1 ? "es" : ""} seleccionado${filled > 1 ? "s" : ""}`
-    : "Indica a qué másteres te gustaría postular, por orden de prioridad.";
+    : "Selecciona los másteres de tu informe por orden de prioridad.";
 
   return (
     <SeccionPanel
@@ -39,77 +164,107 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
       grow
       contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col flex-1 min-h-0">
 
-        {/* Lista scrolleable */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
-          {lista.map((row, index) => (
-            <div key={row.prioridad ?? index} className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-[#023A4B] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm font-semibold text-neutral-800">Prioridad {index + 1}</p>
-                </div>
-                {lista.length > 1 && index === lista.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(index)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-white hover:bg-red-50 transition"
-                  >
-                    Quitar
-                  </button>
-                )}
-              </div>
+        {/* Área scrolleable */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-1.5">
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                    Universidad y máster
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#023A4B]/30 focus:border-[#023A4B] bg-white"
-                    placeholder="Ej: Universidad X — Máster en Y"
-                    value={row.programa || ""}
-                    onChange={(e) => handleChange(index, "programa", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-600 mb-1">
-                    Comentario <span className="font-normal text-neutral-400">(opcional)</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#023A4B]/30 focus:border-[#023A4B] bg-white"
-                    placeholder="Motivo por el que te interesa este programa, dudas, etc."
-                    value={row.comentario || ""}
-                    onChange={(e) => handleChange(index, "comentario", e.target.value)}
-                  />
-                </div>
-              </div>
+          {/* Cargando */}
+          {loadingInf && (
+            <div className="flex items-center gap-2 py-4 text-neutral-400">
+              <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-sm">Cargando informe…</span>
             </div>
-          ))}
+          )}
+
+          {/* Sin formulario */}
+          {!hasFormData && !loadingInf && (
+            <div className="bg-neutral-50 rounded-xl p-4 text-sm text-neutral-500">
+              Completa el formulario académico para ver los másteres recomendados aquí.
+            </div>
+          )}
+
+          {/* Informe disponible */}
+          {hasFormData && !loadingInf && informe && (
+            <>
+              {/* Banner info */}
+              <div className="flex items-start gap-2 bg-[#023A4B]/5 rounded-xl px-3 py-2.5 mb-2 text-xs text-neutral-600">
+                <span className="shrink-0 mt-0.5">ℹ️</span>
+                <span>Toca un programa para seleccionarlo. <strong>El orden importa</strong> — el primero es tu primera opción.</span>
+              </div>
+
+              {/* Seleccionados */}
+              {seleccion.length > 0 && (
+                <>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-1">
+                    Seleccionados · {seleccion.length}
+                  </p>
+                  {seleccion.map((s) => {
+                    const r = resultados.find((r) => r.master.id_master === s.id_master);
+                    const masterData = r?.master ?? {
+                      id_master: s.id_master,
+                      nombre_limpio: s.nombre_limpio,
+                      universidad: { nombre_completo: s.universidad, ciudad: s.ciudad },
+                      precio_total_estimado: null,
+                      duracion_anios: null,
+                    };
+                    return (
+                      <MasterCard
+                        key={s.id_master}
+                        master={masterData}
+                        score={s.score}
+                        prioridad={s.prioridad}
+                        selected={true}
+                        comentario={comentarios[s.id_master] || ""}
+                        onToggle={() => r && toggleMaster(r)}
+                        onComentario={(txt) => setComentario(s.id_master, txt)}
+                      />
+                    );
+                  })}
+                </>
+              )}
+
+              {/* No seleccionados */}
+              {noSeleccionados.length > 0 && (
+                <>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-2">
+                    {seleccion.length > 0 ? "Otros del informe" : `Del informe · ${informe.total} programas`}
+                  </p>
+                  {noSeleccionados.map((r) => (
+                    <MasterCard
+                      key={r.master.id_master}
+                      master={r.master}
+                      score={r.score}
+                      prioridad={null}
+                      selected={false}
+                      comentario=""
+                      onToggle={() => toggleMaster(r)}
+                      onComentario={null}
+                    />
+                  ))}
+                </>
+              )}
+
+              {resultados.length === 0 && (
+                <p className="text-sm text-neutral-400 italic py-6 text-center">
+                  El informe no tiene programas compatibles aún.
+                </p>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Pie fijo — siempre visible */}
-        <div className="shrink-0 border-t border-neutral-100 bg-white px-5 py-3 flex items-center justify-between gap-3">
+        {/* Pie fijo */}
+        <div className="shrink-0 border-t border-neutral-100 bg-white px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-neutral-500">
+            {filled > 0
+              ? `${filled} seleccionado${filled > 1 ? "s" : ""}`
+              : "Ninguno seleccionado"}
+          </p>
           <button
-            type="button"
-            onClick={handleAdd}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border-2 border-neutral-300 text-neutral-700 bg-white hover:border-neutral-400 hover:bg-neutral-50 transition"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Añadir máster
-          </button>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95"
+            onClick={handleGuardar}
+            disabled={saving || filled === 0}
+            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-40 transition active:scale-95"
           >
             {saving ? (
               <>
@@ -126,7 +281,7 @@ export default function EleccionMastersCliente({ elecciones, setElecciones, onGu
             )}
           </button>
         </div>
-      </form>
+      </div>
     </SeccionPanel>
   );
 }
