@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { boPOST } from "../../../services/backofficeApi";
 import { navigate } from "../../../services/navigate";
+import { dialog } from "../../../services/dialogService";
 
 export default function BackofficeLogin({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function BackofficeLogin({ onLogin }) {
     setLoading(false);
 
     if (!r.ok) {
-      alert(r.msg || "Credenciales inválidas");
+      dialog.toast(r.msg || "Credenciales inválidas", "error");
       return;
     }
 

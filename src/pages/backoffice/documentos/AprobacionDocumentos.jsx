@@ -1,6 +1,7 @@
 // Pestaña de aprobación: lista plana de documentos con filtros por estado y orden por fecha
 import { useState } from "react";
 import { boPATCH } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import DocViewer from "./DocViewer";
 import { DriveIcon } from "./DocumentosTree";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento } from "./documentosUtils";
@@ -31,7 +32,7 @@ function AprobacionRow({ entrada, onCambioEstado }) {
   async function cambiarRevision(nuevoEstado) {
     let comentario = "";
     if (nuevoEstado === "OBSERVADO") {
-      comentario = window.prompt("Comentario para el cliente (por qué se rechaza el documento):", "");
+      comentario = await dialog.prompt("Comentario para el cliente (por qué se rechaza el documento):", "");
       if (comentario === null) return false;
     }
     setProcesando(true);
@@ -41,14 +42,14 @@ function AprobacionRow({ entrada, onCambioEstado }) {
         comentario_revision: comentario || null,
       });
       if (!r.ok) {
-        window.alert(r.message || r.msg || "No se pudo actualizar");
+        dialog.toast(r.message || r.msg || "No se pudo actualizar", "error");
         setProcesando(false);
         return false;
       }
       setEstadoLocal(nuevoEstado);
       onCambioEstado?.(doc.id_documento, nuevoEstado);
     } catch {
-      window.alert("Error al actualizar el documento.");
+      dialog.toast("Error al actualizar el documento.", "error");
       setProcesando(false);
       return false;
     }
@@ -66,9 +67,9 @@ function AprobacionRow({ entrada, onCambioEstado }) {
       });
       const data = await r.json();
       if (data.ok && data.url) window.open(data.url, "_blank");
-      else alert(data.msg || "No disponible en Drive aún.");
+      else dialog.toast(data.msg || "No disponible en Drive aún.", "info");
     } catch {
-      alert("Error al obtener URL de Drive");
+      dialog.toast("Error al obtener URL de Drive", "error");
     }
     setLoadingDrive(false);
   }

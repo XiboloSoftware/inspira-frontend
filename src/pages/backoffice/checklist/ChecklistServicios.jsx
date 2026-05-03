@@ -1,6 +1,7 @@
 // src/pages/backoffice/checklist/ChecklistServicios.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST, boPUT, boDELETE } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import ChecklistItemsList from "./components/ChecklistItemsList";
 import ChecklistItemForm from "./components/ChecklistItemForm";
 
@@ -45,7 +46,7 @@ export default function ChecklistServicios() {
     setSavingItem(true);
     try {
       const r = await boPOST(`/backoffice/checklist/servicios/${selectedServicio}/items`, nuevoItem);
-      if (!r.ok) { alert(r.msg || "No se pudo crear el ítem"); return; }
+      if (!r.ok) { dialog.toast(r.msg || "No se pudo crear el ítem", "error"); return; }
       setNuevoItem(ITEM_INICIAL);
       await cargarChecklist(selectedServicio);
     } finally {
@@ -55,14 +56,14 @@ export default function ChecklistServicios() {
 
   async function actualizarItem(id_item, cambios) {
     const r = await boPUT(`/backoffice/checklist/items/${id_item}`, cambios);
-    if (!r.ok) { alert(r.msg || "No se pudo actualizar el ítem"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo actualizar el ítem", "error"); return; }
     if (selectedServicio) await cargarChecklist(selectedServicio);
   }
 
   async function eliminarItem(id_item) {
-    if (!window.confirm("¿Eliminar este ítem de checklist?")) return;
+    if (!await dialog.confirm("¿Eliminar este ítem de checklist?")) return;
     const r = await boDELETE(`/backoffice/checklist/items/${id_item}`);
-    if (!r.ok) { alert(r.msg || "No se pudo eliminar el ítem"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo eliminar el ítem", "error"); return; }
     if (selectedServicio) await cargarChecklist(selectedServicio);
   }
 

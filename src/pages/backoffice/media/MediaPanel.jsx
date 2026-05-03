@@ -1,6 +1,7 @@
 // src/pages/backoffice/media/MediaPanel.jsx
 import { useEffect, useRef, useState } from "react";
 import { boGET, boDELETE } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.inspira-legal.cloud";
 
@@ -125,7 +126,7 @@ export default function MediaPanel() {
   }
 
   async function eliminar(a) {
-    if (!confirm(`¿Eliminar la imagen "${a.nombre}"?`)) return;
+    if (!await dialog.confirm(`¿Eliminar la imagen "${a.nombre}"?`)) return;
     const r = await boDELETE(`/backoffice/media/${a.id_asset}`);
     if (!r.ok) { setToast({ tipo: "error", msg: r.msg }); return; }
     setAssets((prev) => prev.filter((x) => x.id_asset !== a.id_asset));

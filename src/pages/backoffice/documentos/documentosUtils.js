@@ -1,4 +1,5 @@
 // Utilidades compartidas para la sección de Documentos
+import { dialog } from "../../../services/dialogService";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function getUser() {
@@ -43,7 +44,7 @@ export async function descargarDocumento(doc) {
       `${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo descargar el archivo"); return; }
+    if (!r.ok) { dialog.toast("No se pudo descargar el archivo", "error"); return; }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -52,7 +53,7 @@ export async function descargarDocumento(doc) {
     a.click();
     URL.revokeObjectURL(url);
   } catch {
-    alert("Error al descargar el archivo");
+    dialog.toast("Error al descargar el archivo", "error");
   }
 }
 
@@ -63,11 +64,11 @@ export async function abrirInforme(informe) {
       `${API_URL}/api/admin/solicitudes/${informe.id_solicitud}/informe`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo abrir el informe"); return; }
+    if (!r.ok) { dialog.toast("No se pudo abrir el informe", "error"); return; }
     const blob = await r.blob();
     window.open(URL.createObjectURL(blob), "_blank");
   } catch {
-    alert("Error al abrir el informe");
+    dialog.toast("Error al abrir el informe", "error");
   }
 }
 
@@ -78,11 +79,11 @@ export async function abrirJustificante(j) {
       `${API_URL}/api/portales/justificantes/${j.id_justificante}/descargar`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo abrir el justificante"); return; }
+    if (!r.ok) { dialog.toast("No se pudo abrir el justificante", "error"); return; }
     const blob = await r.blob();
     window.open(URL.createObjectURL(blob), "_blank");
   } catch {
-    alert("Error al abrir el justificante");
+    dialog.toast("Error al abrir el justificante", "error");
   }
 }
 
@@ -93,7 +94,7 @@ export async function descargarInforme(informe) {
       `${API_URL}/api/admin/solicitudes/${informe.id_solicitud}/informe`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo descargar el informe"); return; }
+    if (!r.ok) { dialog.toast("No se pudo descargar el informe", "error"); return; }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -102,7 +103,7 @@ export async function descargarInforme(informe) {
     a.click();
     URL.revokeObjectURL(url);
   } catch {
-    alert("Error al descargar el informe");
+    dialog.toast("Error al descargar el informe", "error");
   }
 }
 
@@ -113,7 +114,7 @@ export async function descargarJustificante(j) {
       `${API_URL}/api/portales/justificantes/${j.id_justificante}/descargar`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo descargar el justificante"); return; }
+    if (!r.ok) { dialog.toast("No se pudo descargar el justificante", "error"); return; }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -122,7 +123,7 @@ export async function descargarJustificante(j) {
     a.click();
     URL.revokeObjectURL(url);
   } catch {
-    alert("Error al descargar el justificante");
+    dialog.toast("Error al descargar el justificante", "error");
   }
 }
 
@@ -133,7 +134,7 @@ export async function descargarZipCliente(idCliente, nombreCliente) {
       `${API_URL}/api/admin/clientes/${idCliente}/documentos/zip`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!r.ok) { alert("No se pudo generar el ZIP de documentos"); return; }
+    if (!r.ok) { dialog.toast("No se pudo generar el ZIP de documentos", "error"); return; }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -142,7 +143,7 @@ export async function descargarZipCliente(idCliente, nombreCliente) {
     a.click();
     URL.revokeObjectURL(url);
   } catch {
-    alert("Error al descargar los documentos");
+    dialog.toast("Error al descargar los documentos", "error");
   }
 }
 

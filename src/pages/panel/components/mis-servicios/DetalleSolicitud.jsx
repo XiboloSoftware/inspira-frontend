@@ -1,6 +1,7 @@
 // inspira-frontend/src/pages/panel/components/mis-servicios/DetalleSolicitud.jsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGET, apiPOST } from "../../../../services/api";
+import { dialog } from "../../../../services/dialogService";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 import { SeccionSiempreAbiertoCtx } from "./sections/SeccionPanel";
@@ -184,8 +185,8 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     setSavingForm(true);
     try {
       const r = await apiPOST(`/solicitudes/${idSolicitud}/formulario`, formData);
-      if (!r.ok) { window.alert("No se pudo guardar."); return; }
-      window.alert("Datos guardados.");
+      if (!r.ok) { dialog.toast("No se pudo guardar.", "error"); return; }
+      dialog.toast("Datos guardados.", "success");
       const base5 = Array.from({ length: 5 }, (_, idx) => ({ prioridad: idx + 1, programa: "", comentario: "" }));
       Promise.all([
         apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: [] }).catch(() => {}),
@@ -196,7 +197,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       setSeleccionKey((k) => k + 1);
       cargarCompatibilidad();
     } catch {
-      window.alert("Error al guardar.");
+      dialog.toast("Error al guardar.", "error");
     } finally {
       setSavingForm(false);
     }
@@ -212,12 +213,12 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
     try {
       const payload = data ?? elecciones;
       const r = await apiPOST(`/solicitudes/${idSolicitud}/eleccion-masters`, { elecciones: payload });
-      if (!r.ok) { window.alert("No se pudo guardar la elección de másteres."); return; }
-      window.alert("Elección de másteres guardada.");
+      if (!r.ok) { dialog.toast("No se pudo guardar la elección de másteres.", "error"); return; }
+      dialog.toast("Elección de másteres guardada.", "success");
       setElecciones(payload);
       setPostulacionesKey((k) => k + 1);
     } catch {
-      window.alert("Error al guardar elección de másteres.");
+      dialog.toast("Error al guardar elección de másteres.", "error");
     } finally {
       setSavingElecciones(false);
     }

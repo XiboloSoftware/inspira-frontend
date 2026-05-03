@@ -1,6 +1,7 @@
 // src/pages/backoffice/solicitudes/components/InformeAdmin.jsx
 import { useEffect, useRef, useState } from "react";
 import { boGET, boPATCH, boUpload } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 import { API_URL, formatearFecha } from "../utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -255,7 +256,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
       if (!r.ok) throw new Error(r.msg || "Error al guardar");
       await recargar();
       setEditMode(false);
-    } catch (e) { alert(e.message || "Error al guardar"); }
+    } catch (e) { dialog.toast(e.message || "Error al guardar", "error"); }
     finally { setGuardando(false); }
   }
 
@@ -265,7 +266,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
       const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
       if (!r.ok) throw new Error(r.msg || "Error al restaurar");
       await recargar();
-    } catch (e) { alert(e.message || "Error al restaurar"); }
+    } catch (e) { dialog.toast(e.message || "Error al restaurar", "error"); }
     finally { setGuardando(false); }
   }
 
@@ -275,7 +276,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
     setSubiendoInforme(true);
     try {
       const r = await boUpload(`/api/admin/solicitudes/${detalle.id_solicitud}/informe`, file);
-      if (!r.ok) { alert(r.msg || "No se pudo subir el informe"); return; }
+      if (!r.ok) { dialog.toast(r.msg || "No se pudo subir el informe", "error"); return; }
       await recargar();
     } finally { setSubiendoInforme(false); }
   }
@@ -283,12 +284,12 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   async function manejarInformeAdmin(modo) {
     try {
       const token = localStorage.getItem("bo_token");
-      if (!token) return alert("No existe sesión de backoffice");
+      if (!token) { dialog.toast("No existe sesión de backoffice", "error"); return; }
       const resp = await fetch(
         `${API_URL}/api/admin/solicitudes/${detalle.id_solicitud}/informe${modo === "ver" ? "?view=1" : ""}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (!resp.ok) return alert("No se pudo obtener el informe");
+      if (!resp.ok) { dialog.toast("No se pudo obtener el informe", "error"); return; }
       const blob = await resp.blob();
       const url = window.URL.createObjectURL(blob);
       if (modo === "ver") {
@@ -304,7 +305,7 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
-      alert("Error al abrir/descargar el informe");
+      dialog.toast("Error al abrir/descargar el informe", "error");
     }
   }
 

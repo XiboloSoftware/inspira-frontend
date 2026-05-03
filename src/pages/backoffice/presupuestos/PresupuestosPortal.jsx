@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { boGET, boPUT, boDELETE, boPATCH } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 
 const STATUS_LABEL = {
   new:      "Nueva",
@@ -248,24 +249,24 @@ export default function PresupuestosPortal() {
   }
 
   async function handleArchivar(id) {
-    if (!window.confirm("¿Archivar esta solicitud de presupuesto?")) return;
+    if (!await dialog.confirm("¿Archivar esta solicitud de presupuesto?")) return;
     const r = await boDELETE(`/backoffice/presupuestos/${id}`);
-    if (!r.ok) { alert(r.msg || "No se pudo archivar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo archivar", "error"); return; }
     setRows(prev => prev.filter(x => x.id !== id));
     setModal(null);
   }
 
   async function handleRestaurar(id) {
-    if (!window.confirm("¿Restaurar esta solicitud?")) return;
+    if (!await dialog.confirm("¿Restaurar esta solicitud?")) return;
     const r = await boPATCH(`/backoffice/presupuestos/${id}/restaurar`, {});
-    if (!r.ok) { alert(r.msg || "No se pudo restaurar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo restaurar", "error"); return; }
     setArchivadas(prev => prev.filter(x => x.id !== id));
   }
 
   async function handlePurgar(id) {
-    if (!window.confirm("¿Eliminar PERMANENTEMENTE? Esta acción no se puede deshacer.")) return;
+    if (!await dialog.confirm("¿Eliminar PERMANENTEMENTE? Esta acción no se puede deshacer.")) return;
     const r = await boDELETE(`/backoffice/presupuestos/${id}/purgar`);
-    if (!r.ok) { alert(r.msg || "No se pudo purgar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo purgar", "error"); return; }
     setArchivadas(prev => prev.filter(x => x.id !== id));
   }
 

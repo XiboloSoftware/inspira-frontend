@@ -1,5 +1,6 @@
 // src/pages/backoffice/correos/EmailTemplates.jsx
 import { useEffect, useRef, useState } from "react";
+import { dialog } from "../../../services/dialogService";
 import CodeMirror from "@uiw/react-codemirror";
 import { html as htmlLang } from "@codemirror/lang-html";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -630,7 +631,7 @@ export default function EmailTemplates() {
 
   async function eliminar(t) {
     if (t.activo) { setToast({ tipo: "error", msg: "Desactiva el template antes de eliminarlo." }); return; }
-    if (!confirm(`¿Eliminar "${t.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!await dialog.confirm(`¿Eliminar "${t.nombre}"? Esta acción no se puede deshacer.`)) return;
     const r = await boDELETE(`/backoffice/email-templates/${t.id_template}`);
     if (!r.ok) { setToast({ tipo: "error", msg: r.msg }); return; }
     cargar();

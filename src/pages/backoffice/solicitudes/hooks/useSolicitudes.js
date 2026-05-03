@@ -1,6 +1,7 @@
 // Hook de estado y lógica para SolicitudesList
 import { useEffect, useMemo, useState } from "react";
 import { boGET, boDELETE } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 
 function getBackofficeUser() {
   try {
@@ -50,7 +51,7 @@ export function useSolicitudes() {
 
   async function eliminarSolicitud(id_solicitud) {
     const r = await boDELETE(`/backoffice/solicitudes/${id_solicitud}`);
-    if (!r.ok) { alert(r.msg || "No se pudo eliminar la solicitud"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo eliminar la solicitud", "error"); return; }
     const newPage = solicitudes.length === 1 && page > 1 ? page - 1 : page;
     cargarSolicitudes({ page: newPage });
   }

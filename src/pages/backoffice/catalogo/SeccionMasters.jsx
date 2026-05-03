@@ -1,6 +1,7 @@
 // SeccionMasters.jsx — CRUD Másteres
 import { useCallback, useEffect, useRef, useState } from "react";
 import { boGET, boPOST, boDELETE } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import {
   RAMAS, MODALIDADES, TIENE_PRACTICAS_OPCIONES, CATEGORIAS_CRITERIO,
   formatPrecio, duracionLabel, activoBadge,
@@ -574,11 +575,11 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
 
   async function purgarMaster(e, m) {
     e.stopPropagation();
-    if (!window.confirm(`¿Eliminar permanentemente "${m.nombre_limpio}"? Esta acción no se puede deshacer.`)) return;
+    if (!await dialog.confirm(`¿Eliminar permanentemente "${m.nombre_limpio}"? Esta acción no se puede deshacer.`)) return;
     setPurging(m.id_master);
     try {
       const data = await boDELETE(`/backoffice/catalogo/masters/${m.id_master}`);
-      if (!data.ok) { alert(data.msg || "Error al eliminar"); return; }
+      if (!data.ok) { dialog.toast(data.msg || "Error al eliminar", "error"); return; }
       fetchMasters();
     } finally { setPurging(null); }
   }

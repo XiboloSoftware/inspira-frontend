@@ -1,6 +1,7 @@
 // SeccionComunidades.jsx — CRUD Comunidades Autónomas
 import { useMemo, useState } from "react";
 import { boPOST, boDELETE } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import { formatPrecio, activoBadge, MODAL_OVERLAY, MODAL_PANEL } from "./catalogoConstants";
 
 const FORM_INIT = {
@@ -163,11 +164,11 @@ export default function SeccionComunidades({ comunidades, onReload }) {
   }
 
   async function purgarComunidad(c) {
-    if (!window.confirm(`¿Eliminar permanentemente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!await dialog.confirm(`¿Eliminar permanentemente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
     setPurging(c.id_comunidad);
     try {
       const data = await boDELETE(`/backoffice/catalogo/comunidades/${c.id_comunidad}`);
-      if (!data.ok) { alert(data.msg || "Error al eliminar"); return; }
+      if (!data.ok) { dialog.toast(data.msg || "Error al eliminar", "error"); return; }
       onReload();
     } finally { setPurging(null); }
   }

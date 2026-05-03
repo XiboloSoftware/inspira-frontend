@@ -1,6 +1,7 @@
 // Hook de estado y lógica para InstructivosServicios
 import { useState } from "react";
 import { boGET, boPOST, boPUT, boDELETE, boUpload } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 
 const FORM_INICIAL = {
   id_instructivo: null,
@@ -64,9 +65,9 @@ export function useInstructivos() {
   }
 
   async function eliminarInstructivo(id_instructivo) {
-    if (!window.confirm("¿Eliminar este instructivo?")) return;
+    if (!await dialog.confirm("¿Eliminar este instructivo?")) return;
     const r = await boDELETE(`/backoffice/instructivos/${id_instructivo}`);
-    if (!r.ok) { alert(r.msg || "No se pudo eliminar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo eliminar", "error"); return; }
     if (selectedServicio) cargarInstructivos(selectedServicio);
     cargarServicios();
   }
@@ -77,7 +78,7 @@ export function useInstructivos() {
     setSubiendoArchivo(true);
     try {
       const r = await boUpload("/backoffice/instructivos/upload", file);
-      if (!r.ok) { alert(r.msg || "No se pudo subir el archivo"); return; }
+      if (!r.ok) { dialog.toast(r.msg || "No se pudo subir el archivo", "error"); return; }
       setForm((prev) => ({ ...prev, archivo_url: r.ruta_archivo }));
     } finally {
       setSubiendoArchivo(false);
@@ -86,9 +87,9 @@ export function useInstructivos() {
 
   async function guardar(e) {
     e.preventDefault();
-    if (!selectedServicio) { alert("Selecciona un servicio primero"); return; }
-    if (!form.label.trim()) { alert("Falta el nombre del instructivo"); return; }
-    if (!form.archivo_url) { alert("Sube un archivo primero"); return; }
+    if (!selectedServicio) { dialog.toast("Selecciona un servicio primero", "info"); return; }
+    if (!form.label.trim()) { dialog.toast("Falta el nombre del instructivo", "error"); return; }
+    if (!form.archivo_url) { dialog.toast("Sube un archivo primero", "error"); return; }
 
     setSaving(true);
     try {
@@ -103,7 +104,7 @@ export function useInstructivos() {
         ? await boPOST(`/backoffice/instructivos/servicios/${selectedServicio}/instructivos`, payload)
         : await boPUT(`/backoffice/instructivos/${form.id_instructivo}`, payload);
 
-      if (!r.ok) { alert(r.msg || "No se pudo guardar"); return; }
+      if (!r.ok) { dialog.toast(r.msg || "No se pudo guardar", "error"); return; }
       resetForm();
       cargarInstructivos(selectedServicio);
       cargarServicios();

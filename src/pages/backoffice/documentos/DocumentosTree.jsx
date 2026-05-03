@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { boDELETE, boPATCH } from "../../../services/backofficeApi";
 import DocViewer from "./DocViewer";
+import { dialog } from "../../../services/dialogService";
 import { API_URL, fileIcon, formatBytes, formatDate, descargarDocumento, descargarInforme, descargarJustificante } from "./documentosUtils";
 
 export function DriveIcon({ size = 13 }) {
@@ -72,7 +73,7 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
   async function cambiarRevision(nuevoEstado) {
     let comentario = "";
     if (nuevoEstado === "OBSERVADO") {
-      comentario = window.prompt("Comentario para el cliente (por qué se observa el documento):", "");
+      comentario = await dialog.prompt("Comentario para el cliente (por qué se observa el documento):", "");
       if (comentario === null) return false;
     }
     try {
@@ -80,11 +81,11 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
         estado_revision: nuevoEstado,
         comentario_revision: comentario || null,
       });
-      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo actualizar"); return false; }
+      if (!r.ok) { dialog.toast(r.message || r.msg || "No se pudo actualizar", "error"); return false; }
       setEstadoDoc(nuevoEstado);
       return true;
     } catch {
-      window.alert("Error al actualizar el documento.");
+      dialog.toast("Error al actualizar el documento.", "error");
       return false;
     }
   }
@@ -101,19 +102,19 @@ export function DocRow({ doc, isAdmin, onEliminar }) {
       if (data.ok && data.url) {
         window.open(data.url, "_blank");
       } else {
-        alert(data.msg || "Archivo no disponible en Drive aún. Usa Descargar.");
+        dialog.toast(data.msg || "Archivo no disponible en Drive aún. Usa Descargar.", "info");
       }
     } catch {
-      alert("Error al obtener URL de Drive");
+      dialog.toast("Error al obtener URL de Drive", "error");
     }
     setAbriendo(false);
   }
 
   async function handleEliminar() {
-    if (!window.confirm(`¿Eliminar "${doc.nombre_original}"? Esta acción no se puede deshacer.`)) return;
+    if (!await dialog.confirm(`¿Eliminar "${doc.nombre_original}"? Esta acción no se puede deshacer.`)) return;
     setEliminando(true);
     const r = await boDELETE(`/backoffice/documentos/${doc.id_documento}`);
-    if (!r.ok) { alert(r.msg || "No se pudo eliminar"); setEliminando(false); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo eliminar", "error"); setEliminando(false); return; }
     onEliminar(doc.id_documento);
   }
 

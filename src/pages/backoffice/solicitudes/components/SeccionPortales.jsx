@@ -1,5 +1,6 @@
 // Sección de portales (ministerios o universidades) dentro de una solicitud
 import { boGET, boPATCH, boPOST } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -106,12 +107,12 @@ function PortalRow({ row, idx, tipoPortal, idSolicitud, onChange, onSave, onDele
           <input
             type="file"
             accept="application/pdf"
-            onChange={(e) => {
+            onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              const tipo = window.prompt(`Tipo justificante (${TIPOS_JUSTIFICANTE.join(", ")})`, "RESGUARDO_POSTULACION");
+              const tipo = await dialog.prompt(`Tipo justificante (${TIPOS_JUSTIFICANTE.join(", ")})`, "RESGUARDO_POSTULACION");
               if (!tipo) { e.target.value = ""; return; }
-              const visible = window.confirm("¿Marcar justificante como visible para el cliente?");
+              const visible = await dialog.confirm("¿Marcar justificante como visible para el cliente?");
               onUploadJustificante(idx, file, tipo, visible);
               e.target.value = "";
             }}
@@ -136,7 +137,7 @@ export default function SeccionPortales({ titulo, tipoPortal, items, setItems, i
         tipo_tramite: tipoPortal === "MINISTERIO" ? "NOTA_MEDIA" : "POSTULACION_MASTER",
       },
     ]);
-    window.alert("Portal añadido. Recuerda pulsar Guardar en esa fila.");
+    dialog.toast("Portal añadido. Recuerda pulsar Guardar en esa fila.", "info");
   }
 
   async function handleSaveRow(idx) {
@@ -146,30 +147,30 @@ export default function SeccionPortales({ titulo, tipoPortal, items, setItems, i
       ? `/api/portales/admin/solicitudes/${idSolicitud}/accesos/${row.id_acceso}`
       : `/api/portales/admin/solicitudes/${idSolicitud}/accesos`;
     const r = await method(path, row);
-    if (!r.ok) { window.alert(r.msg || "Error guardando portal"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "Error guardando portal", "error"); return; }
     setItems((prev) => prev.map((p, i) => (i === idx ? r.acceso : p)));
-    window.alert("Portal guardado correctamente.");
+    dialog.toast("Portal guardado correctamente.", "success");
   }
 
   async function handleDeleteRow(idx) {
     const row = items[idx];
     if (!row.id_acceso) {
       setItems((prev) => prev.filter((_, i) => i !== idx));
-      window.alert("Portal eliminado (aún no estaba en base de datos).");
+      dialog.toast("Portal eliminado (aún no estaba en base de datos).", "info");
       return;
     }
-    if (!window.confirm("¿Eliminar este portal y sus justificantes?")) return;
+    if (!await dialog.confirm("¿Eliminar este portal y sus justificantes?")) return;
     const r = await boPATCH(`/api/portales/admin/accesos/${row.id_acceso}`, { _method: "DELETE" });
-    if (!r.ok) { window.alert(r.msg || "No se pudo eliminar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo eliminar", "error"); return; }
     setItems((prev) => prev.filter((_, i) => i !== idx));
-    window.alert("Portal eliminado correctamente.");
+    dialog.toast("Portal eliminado correctamente.", "success");
   }
 
   async function handleUploadJustificante(idx, file, tipo_justificante, visible) {
     const row = items[idx];
-    if (!row.id_acceso) { window.alert("Guarda primero el portal antes de subir justificantes."); return; }
+    if (!row.id_acceso) { dialog.toast("Guarda primero el portal antes de subir justificantes.", "info"); return; }
     const token = localStorage.getItem("bo_token");
-    if (!token) { window.alert("No existe sesión de backoffice."); return; }
+    if (!token) { dialog.toast("No existe sesión de backoffice.", "error"); return; }
 
     const formData = new FormData();
     formData.append("archivo", file);
@@ -183,13 +184,13 @@ export default function SeccionPortales({ titulo, tipoPortal, items, setItems, i
     });
 
     let r;
-    try { r = await resp.json(); } catch { window.alert("Error al procesar la respuesta del servidor."); return; }
-    if (!resp.ok || !r.ok) { window.alert(r?.msg || "Error subiendo justificante"); return; }
+    try { r = await resp.json(); } catch { dialog.toast("Error al procesar la respuesta del servidor.", "error"); return; }
+    if (!resp.ok || !r.ok) { dialog.toast(r?.msg || "Error subiendo justificante", "error"); return; }
 
     setItems((prev) =>
       prev.map((p, i) => i === idx ? { ...p, justificantes: [...(p.justificantes || []), r.justificante] } : p)
     );
-    window.alert("Justificante subido correctamente.");
+    dialog.toast("Justificante subido correctamente.", "success");
   }
 
   return (

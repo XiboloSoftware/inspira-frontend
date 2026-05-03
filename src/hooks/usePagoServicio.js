@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { apiPOST } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { dialog } from "../services/dialogService";
 
 export function usePagoServicio() {
   const { user } = useAuth();
@@ -23,11 +24,11 @@ export function usePagoServicio() {
         window.location.href = res.preferencia.init_point;
       } else {
         console.error("Error preferencia servicio:", res);
-        alert("No se pudo iniciar el pago del servicio.");
+        dialog.toast("No se pudo iniciar el pago del servicio.", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Error de conexión con el sistema de pagos.");
+      dialog.toast("Error de conexión con el sistema de pagos.", "error");
     } finally {
       setLoadingId(null);
     }

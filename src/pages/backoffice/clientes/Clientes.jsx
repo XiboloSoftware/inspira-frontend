@@ -1,6 +1,7 @@
 // src/pages/backoffice/clientes/Clientes.jsx
 import { useEffect, useRef, useState } from "react";
 import { boGET, boPOST, boPUT } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import ClientesTable from "./ClientesTable";
 import ClienteForm from "./ClienteForm";
 import ServiciosClienteModal from "./ServiciosClienteModal";
@@ -170,7 +171,7 @@ export default function Clientes({ user }) {
   async function onToggleActivoCliente(c) {
     if (!isAdmin) return;
     const nuevoEstado = !c.activo;
-    const ok = window.confirm(
+    const ok = await dialog.confirm(
       nuevoEstado ? "¿Activar este cliente?" : "¿Desactivar este cliente?"
     );
     if (!ok) return;
@@ -202,7 +203,7 @@ export default function Clientes({ user }) {
 
   async function onPurgarCliente(c) {
     if (!isAdmin) return;
-    const ok = window.confirm(
+    const ok = await dialog.confirm(
       `¿Purgar a "${c.nombre || c.email_contacto}"?\n\nEsto borrará todos sus datos personales de forma permanente. El registro queda vacío para liberar el correo.`
     );
     if (!ok) return;

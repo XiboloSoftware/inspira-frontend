@@ -1,6 +1,7 @@
 // src/pages/backoffice/solicitudes/SolicitudesList.jsx
 import { useState } from "react";
 import { useSolicitudes, getBackofficeUser } from "./hooks/useSolicitudes";
+import { dialog } from "../../../services/dialogService";
 import { usePapelera } from "./hooks/usePapelera";
 import SolicitudRow, { SolicitudCard } from "./components/SolicitudRow";
 import CreateSolicitudAdmin from "./CreateSolicitudAdmin";
@@ -24,7 +25,7 @@ export default function SolicitudesList({ onVerSolicitud }) {
 
   async function handleEliminar(id) {
     if (!isAdmin) return;
-    if (!window.confirm("¿Seguro que quieres eliminar esta solicitud?")) return;
+    if (!await dialog.confirm("¿Seguro que quieres eliminar esta solicitud?")) return;
     eliminarSolicitud(id);
   }
 

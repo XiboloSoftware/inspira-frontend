@@ -1,6 +1,7 @@
 // src/pages/backoffice/panel-asesoras/PanelAsesoras.jsx
 import { useState, useEffect, useCallback } from "react";
 import { boGET, boPOST, boPATCH, boDELETE } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import { DriveIcon, DriveToast, useDriveToast, openDriveFolder } from "../driveToast";
 
 /* ─── Constantes ─────────────────────────────────────────────────────────── */
@@ -122,7 +123,7 @@ export default function PanelAsesoras() {
     try {
       const r = await boPATCH(`/backoffice/panel-asesoras/${editTarget.item._id}`, body);
       if (r.ok) { setEditTarget(null); await load(); }
-      else alert(r.msg || "Error al guardar");
+      else dialog.toast(r.msg || "Error al guardar", "error");
     } finally { setSaving(false); }
   }
 
@@ -131,7 +132,7 @@ export default function PanelAsesoras() {
     try {
       const r = await boPOST("/backoffice/panel-asesoras", { ...body, panel_servicio: addSvc });
       if (r.ok) { setAddMode(false); setCurTab(addSvc); await load(); }
-      else alert(r.msg || "Error al crear");
+      else dialog.toast(r.msg || "Error al crear", "error");
     } finally { setSaving(false); }
   }
 
@@ -716,7 +717,7 @@ function ClienteForm({ item, svc, saving, onSubmit, onCancel }) {
   function remUni(i) { setUnis(u => u.filter((_, idx) => idx !== i)); }
 
   async function handleSubmit() {
-    if (!form.name?.trim()) { alert("El nombre es obligatorio"); return; }
+    if (!form.name?.trim()) { dialog.toast("El nombre es obligatorio", "error"); return; }
 
     // Para maestrías en modo edición, primero guardamos unis modificadas
     if (isEdit && svc === "master") {

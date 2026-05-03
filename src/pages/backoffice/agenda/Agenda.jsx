@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 
 const DAYS_OPTIONS = [
   { label: "Hoy + 7 días", value: 7 },
@@ -79,7 +80,7 @@ export default function Agenda() {
       });
       if (res.error) throw new Error(res.error);
       closeCancelModal(); loadEvents(days);
-    } catch (err) { alert("Error al cancelar: " + err.message); }
+    } catch (err) { dialog.toast("Error al cancelar: " + err.message, "error"); }
     finally { setCancelling(false); }
   }
 

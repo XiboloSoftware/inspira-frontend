@@ -1,6 +1,7 @@
 // InformeBusqueda.jsx
 import { useState } from "react";
 import { formatearFecha } from "../utils";
+import { dialog } from "../../../../../services/dialogService";
 import SeccionPanel from "./SeccionPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -156,12 +157,12 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
   async function manejarPDF(modo) {
     try {
       const token = localStorage.getItem("token");
-      if (!token) { alert("No existe sesión"); return; }
+      if (!token) { dialog.toast("No existe sesión", "error"); return; }
       const resp = await fetch(
         `${API_URL}/api/panel/solicitudes/${idSolicitud}/informe${modo === "ver" ? "?view=1" : ""}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (!resp.ok) { alert("No se pudo obtener el PDF"); return; }
+      if (!resp.ok) { dialog.toast("No se pudo obtener el PDF", "error"); return; }
       const blob = await resp.blob();
       const url  = window.URL.createObjectURL(blob);
       if (modo === "ver") {
@@ -175,7 +176,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         a.remove();
       }
       window.URL.revokeObjectURL(url);
-    } catch { alert("Error al abrir el PDF"); }
+    } catch { dialog.toast("Error al abrir el PDF", "error"); }
   }
 
   return (

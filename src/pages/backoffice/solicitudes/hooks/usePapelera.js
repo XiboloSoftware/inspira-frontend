@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { boGET, boPATCH, boDELETE } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 
 export function usePapelera({ activo }) {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -27,16 +28,16 @@ export function usePapelera({ activo }) {
   }, [activo]);
 
   async function restaurar(id_solicitud) {
-    if (!window.confirm("¿Restaurar esta solicitud?")) return;
+    if (!await dialog.confirm("¿Restaurar esta solicitud?")) return;
     const r = await boPATCH(`/backoffice/solicitudes/${id_solicitud}/restaurar`, {});
-    if (!r.ok) { alert(r.msg || "No se pudo restaurar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo restaurar", "error"); return; }
     cargar(page);
   }
 
   async function purgar(id_solicitud) {
-    if (!window.confirm("¿Eliminar PERMANENTEMENTE esta solicitud? Esta acción no se puede deshacer.")) return;
+    if (!await dialog.confirm("¿Eliminar PERMANENTEMENTE esta solicitud? Esta acción no se puede deshacer.")) return;
     const r = await boDELETE(`/backoffice/solicitudes/${id_solicitud}/purgar`);
-    if (!r.ok) { alert(r.msg || "No se pudo purgar"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "No se pudo purgar", "error"); return; }
     cargar(page);
   }
 

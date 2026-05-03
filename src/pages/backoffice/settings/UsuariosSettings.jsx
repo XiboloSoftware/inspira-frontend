@@ -1,6 +1,7 @@
 // src/pages/backoffice/settings/UsuariosSettings.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import UsuariosForm from "./components/UsuariosForm";
 import UsuariosTable from "./components/UsuariosTable";
 
@@ -69,9 +70,10 @@ export default function UsuariosSettings({ user }) {
     setSaving(false);
 
     if (!r.ok) {
-      alert(
+      dialog.toast(
         r.msg ||
-          (editingId ? "Error actualizando usuario" : "Error creando usuario")
+          (editingId ? "Error actualizando usuario" : "Error creando usuario"),
+        "error"
       );
       return;
     }
@@ -105,7 +107,7 @@ export default function UsuariosSettings({ user }) {
     });
 
     if (!r.ok) {
-      alert(r.msg || "Error actualizando estado");
+      dialog.toast(r.msg || "Error actualizando estado", "error");
       return;
     }
 

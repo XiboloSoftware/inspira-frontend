@@ -1,6 +1,7 @@
 // src/pages/backoffice/solicitudes/CierreServicioMasterAdmin.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST, boPATCH } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 
 const PASOS_DERIVACION = [
   { label: "Informe de másteres entregado",          subtitulo: "Revisado por asesor" },
@@ -89,7 +90,7 @@ export default function CierreServicioMasterAdmin({ idSolicitud }) {
       `/api/cierre-master/admin/solicitudes/${idSolicitud}/bloque8/decisiones`,
       { id_acceso_portal: row.id_acceso_portal, decision_cliente: row.decision_cliente, es_master_final: row.es_master_final, info_pagos: row.info_pagos }
     );
-    if (!r.ok) { window.alert(r.msg || "Error guardando decisión"); return; }
+    if (!r.ok) { dialog.toast(r.msg || "Error guardando decisión", "error"); return; }
   };
 
   // datos de cabecera

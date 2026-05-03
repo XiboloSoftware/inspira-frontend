@@ -1,6 +1,7 @@
 // Hook de estado y lógica para ProgramacionPostulacionesAdmin
 import { useEffect, useState } from "react";
 import { boGET, boPATCH, boPOST } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 
 function toDateInputValue(d) {
   if (!d) return "";
@@ -84,28 +85,28 @@ export function useProgramacion(idSolicitud) {
         `/api/programacion/admin/solicitudes/${idSolicitud}/master/${m.master_prioridad || idxMaster + 1}`,
         payload
       );
-      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo guardar."); return; }
+      if (!r.ok) { dialog.toast(r.message || r.msg || "No se pudo guardar.", "error"); return; }
       await cargar();
-      window.alert("Programación guardada.");
+      dialog.toast("Programación guardada.", "success");
     } catch (e) {
       console.error(e);
-      window.alert("Error al guardar la programación.");
+      dialog.toast("Error al guardar la programación.", "error");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleGenerar() {
-    if (!window.confirm("Se crearán tareas por defecto según la elección del cliente. ¿Continuar?")) return;
+    if (!await dialog.confirm("Se crearán tareas por defecto según la elección del cliente. ¿Continuar?")) return;
     setSaving(true);
     try {
       const r = await boPOST(`/api/programacion/admin/solicitudes/${idSolicitud}/generar-desde-eleccion`, {});
-      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo generar la programación."); return; }
+      if (!r.ok) { dialog.toast(r.message || r.msg || "No se pudo generar la programación.", "error"); return; }
       await cargar();
-      window.alert("Tareas generadas correctamente.");
+      dialog.toast("Tareas generadas correctamente.", "success");
     } catch (e) {
       console.error(e);
-      window.alert("Error al generar las tareas por defecto.");
+      dialog.toast("Error al generar las tareas por defecto.", "error");
     } finally {
       setSaving(false);
     }

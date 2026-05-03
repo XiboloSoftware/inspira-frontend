@@ -1,6 +1,7 @@
 // src/pages/backoffice/solicitudes/components/ChecklistSolicitudAdmin.jsx
 import { useState } from "react";
 import { boPATCH } from "../../../../services/backofficeApi";
+import { dialog } from "../../../../services/dialogService";
 import { API_URL, formatearFecha } from "../utils";
 import DocViewer from "../../documentos/DocViewer";
 import { DriveToast, useDriveToast } from "../../driveToast";
@@ -45,7 +46,7 @@ export default function ChecklistSolicitudAdmin({
     if (!doc) return false;
     let comentario = "";
     if (nuevoEstado === "OBSERVADO") {
-      comentario = window.prompt(
+      comentario = await dialog.prompt(
         "Comentario para el cliente (por qué se observa el documento):",
         doc.comentario_revision || ""
       );
@@ -56,12 +57,12 @@ export default function ChecklistSolicitudAdmin({
         estado_revision: nuevoEstado,
         comentario_revision: comentario || null,
       });
-      if (!r.ok) { window.alert(r.message || r.msg || "No se pudo actualizar el estado del documento."); return false; }
+      if (!r.ok) { dialog.toast(r.message || r.msg || "No se pudo actualizar el estado del documento.", "error"); return false; }
       await recargar();
       return true;
     } catch (e) {
       console.error(e);
-      window.alert("Error al actualizar el documento.");
+      dialog.toast("Error al actualizar el documento.", "error");
       return false;
     }
   }
@@ -69,11 +70,11 @@ export default function ChecklistSolicitudAdmin({
   async function descargarDocumento(doc) {
     try {
       const token = localStorage.getItem("bo_token");
-      if (!token) return alert("No existe sesión de backoffice");
+      if (!token) { dialog.toast("No existe sesión de backoffice", "error"); return; }
       const resp = await fetch(`${API_URL}/api/admin/documentos/${doc.id_documento}/descargar`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!resp.ok) return alert("No se pudo descargar el archivo");
+      if (!resp.ok) { dialog.toast("No se pudo descargar el archivo", "error"); return; }
       const blob = await resp.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -85,7 +86,7 @@ export default function ChecklistSolicitudAdmin({
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
-      alert("Error al descargar");
+      dialog.toast("Error al descargar", "error");
     }
   }
 
@@ -107,11 +108,11 @@ export default function ChecklistSolicitudAdmin({
           { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData }
         );
         const r = await resp.json();
-        if (!resp.ok || !r.ok) { alert(r.msg || "No se pudo subir"); return; }
+        if (!resp.ok || !r.ok) { dialog.toast(r.msg || "No se pudo subir", "error"); return; }
         await recargar();
       } catch (err) {
         console.error(err);
-        alert("Error al subir documentos");
+        dialog.toast("Error al subir documentos", "error");
       } finally {
         e.target.value = "";
       }

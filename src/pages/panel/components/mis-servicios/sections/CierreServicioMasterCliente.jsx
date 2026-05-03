@@ -1,6 +1,7 @@
 // src/pages/panel/components/mis-servicios/sections/CierreServicioMasterCliente.jsx
 import { useEffect, useState } from "react";
 import { apiGET, apiPOST } from "../../../../../services/api";
+import { dialog } from "../../../../../services/dialogService";
 import SeccionPanel from "./SeccionPanel";
 
 function DerivacionStep({ paso, idx }) {
@@ -126,9 +127,13 @@ export default function CierreServicioMasterCliente({ idSolicitud }) {
   const handleCTA = async () => {
     try {
       const r = await apiPOST(`/cierre-master/panel/solicitudes/${idSolicitud}/bloque8/cta-visa`, {});
-      window.alert(r.ok ? (r.msg || "Hemos registrado tu interés. Te contactaremos pronto.") : (r.msg || "No se pudo iniciar la asesoría."));
+      if (r.ok) {
+        dialog.toast(r.msg || "Hemos registrado tu interés. Te contactaremos pronto.", "success");
+      } else {
+        dialog.toast(r.msg || "No se pudo iniciar la asesoría.", "error");
+      }
     } catch {
-      window.alert("Error al iniciar la asesoría de visa/estancia.");
+      dialog.toast("Error al iniciar la asesoría de visa/estancia.", "error");
     }
   };
 

@@ -1,6 +1,7 @@
 // src/pages/backoffice/precios/PreciosServicios.jsx
 import { useEffect, useState } from "react";
 import { boGET, boPOST, boPUT } from "../../../services/backofficeApi";
+import { dialog } from "../../../services/dialogService";
 import ServiciosList from "./ServiciosList";
 import ServicioForm from "./ServicioForm";
 
@@ -75,7 +76,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
   }
 
   function abrirChecklist(s) {
-    alert("Abrir checklist para servicio: " + s.nombre);
+    dialog.toast("Abrir checklist para servicio: " + s.nombre, "info");
     // Más adelante aquí haremos navigate('/backoffice/checklist/' + s.id_servicio)
   }
 
@@ -87,7 +88,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
     if (saving) return;
 
     if (!isAdmin) {
-      alert("Solo un administrador puede crear o modificar servicios y precios.");
+      dialog.toast("Solo un administrador puede crear o modificar servicios y precios.", "info");
       return;
     }
 
@@ -95,7 +96,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
     try {
       const montoNumber = parseFloat(form.monto);
       if (Number.isNaN(montoNumber)) {
-        alert("Monto inválido");
+        dialog.toast("Monto inválido", "error");
         return;
       }
 
@@ -109,7 +110,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
         });
 
         if (!r.ok) {
-          alert(r.msg || "No se pudo crear el servicio");
+          dialog.toast(r.msg || "No se pudo crear el servicio", "error");
         } else {
           resetForm();
           await cargar();
@@ -126,7 +127,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
         );
 
         if (!r1.ok) {
-          alert(r1.msg || "No se pudo actualizar el servicio");
+          dialog.toast(r1.msg || "No se pudo actualizar el servicio", "error");
           return;
         }
 
@@ -140,7 +141,7 @@ const isAdmin = (usuario?.rol || "").toLowerCase() === "admin";
         );
 
         if (!r2.ok) {
-          alert(r2.msg || "No se pudo actualizar el precio");
+          dialog.toast(r2.msg || "No se pudo actualizar el precio", "error");
           return;
         }
 
