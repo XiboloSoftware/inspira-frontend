@@ -391,7 +391,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 <BlqHead
                   numero="4"
                   titulo="Informe de búsqueda de másteres"
-                  estado={detalle.informe_fecha_subida ? "completado" : "pendiente"}
+                  estado={(detalle.informe_fecha_subida || tieneFormulario) ? "completado" : "pendiente"}
                   open={expanded.has("informe")} onToggle={() => toggleBloque("informe")}
                 />
                 {expanded.has("informe") && (
