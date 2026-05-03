@@ -18,9 +18,12 @@ const AREAS_CARRERA = [
 ];
 
 
-const COMUNIDADES = [
-  "Andalucía", "Madrid", "Cataluña", "Valencia",
-  "Galicia", "Castilla y León", "País Vasco", "Navarra",
+// Lista completa de las 17 CCAAs — usada cuando el plan no restringe
+const TODAS_COMUNIDADES = [
+  "Andalucía", "Aragón", "Asturias", "Baleares", "Canarias",
+  "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña",
+  "Extremadura", "Galicia", "La Rioja", "Madrid", "Murcia",
+  "Navarra", "País Vasco", "Valencia",
 ];
 const COMUNIDAD_INDIFERENTE = "Me da igual / No tengo preferencia";
 
@@ -105,7 +108,7 @@ function detectarAuip(texto) {
   return null;
 }
 
-function validateStep(s, formData) {
+function validateStep(s, formData, planCCAAs = null) {
   const missing = [];
   const coms = Array.isArray(formData.comunidades_preferidas) ? formData.comunidades_preferidas : [];
 
@@ -163,7 +166,7 @@ function validateStep(s, formData) {
       if (!formData.modalidad_preferida)   missing.push("modalidad_preferida");
       break;
     case 8:
-      if (coms.length === 0)         missing.push("comunidades_preferidas");
+      if (!planCCAAs?.bloqueado && coms.length === 0) missing.push("comunidades_preferidas");
       if (!formData.inicio_previsto) missing.push("inicio_previsto");
       break;
     default:
@@ -243,6 +246,7 @@ function ErrBox({ show, children }) {
 
 export default function FormularioDatosAcademicos({
   formData, setFormData, handleSubmitFormulario, onGuardarProgreso, savingForm, hasData,
+  planCCAAs,  // { bloqueado: bool, opciones: string[] } | null
 }) {
   const [modalOpen, setModalOpen]     = useState(false);
   const [step, setStep]               = useState(0);
@@ -290,6 +294,17 @@ export default function FormularioDatosAcademicos({
   // Resetear errores al cambiar de paso
   useEffect(() => { setShowErrors(false); }, [step]);
 
+  // Para planes bloqueados: auto-fijar comunidades_preferidas con las del plan
+  useEffect(() => {
+    if (!planCCAAs?.bloqueado) return;
+    const actual = Array.isArray(formData.comunidades_preferidas) ? formData.comunidades_preferidas : [];
+    const objetivo = planCCAAs.opciones;
+    const iguale = actual.length === objetivo.length && objetivo.every((c) => actual.includes(c));
+    if (!iguale) {
+      setFormData((p) => ({ ...p, comunidades_preferidas: objetivo }));
+    }
+  }, [planCCAAs]); // eslint-disable-line
+
   function set(key, val) { setFormData((p) => ({ ...p, [key]: val })); }
 
   function handleUniChange(val) {
@@ -316,7 +331,7 @@ export default function FormularioDatosAcademicos({
     setSavingX(true);
     if (onGuardarProgreso) await onGuardarProgreso();
     setSavingX(false);
-    const pendientes = STEPS.reduce((acc, _, i) => acc + validateStep(i, formData).length, 0);
+    const pendientes = STEPS.reduce((acc, _, i) => acc + validateStep(i, formData, planCCAAs).length, 0);
     if (pendientes > 0) {
       setXWarning(true);
       return; // no cerrar aún — el usuario verá la advertencia con botón confirmar
@@ -325,7 +340,7 @@ export default function FormularioDatosAcademicos({
   }
 
   function handleNext() {
-    const missing = validateStep(step, formData);
+    const missing = validateStep(step, formData, planCCAAs);
     if (missing.length > 0) {
       setShowErrors(true);
       setTimeout(() => {
@@ -342,14 +357,14 @@ export default function FormularioDatosAcademicos({
 
   async function handleSave(e) {
     e.preventDefault();
-    const missing = validateStep(step, formData);
+    const missing = validateStep(step, formData, planCCAAs);
     if (missing.length > 0) { setShowErrors(true); return; }
     await handleSubmitFormulario(e);
     setModalOpen(false);
   }
 
   // Computed
-  const stepErrors = showErrors ? validateStep(step, formData) : [];
+  const stepErrors = showErrors ? validateStep(step, formData, planCCAAs) : [];
   function has(f) { return stepErrors.includes(f); }
 
   const suggestions = uniQ.length >= 2
@@ -932,82 +947,110 @@ export default function FormularioDatosAcademicos({
       );
 
       // ── PASO 9: Región y fechas ─────────────────────────────────────────
-      case 8: return (
-        <div className="space-y-6">
-          <div>
-            <FLabel>¿Tienes alguna comunidad autónoma preferida en España?</FLabel>
-            <div className={`grid grid-cols-2 gap-2 ${has("comunidades_preferidas") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-              {COMUNIDADES.map((c) => (
-                <button key={c} type="button" onClick={() => toggleComunidad(c)}
-                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
-                    comunidades.includes(c)
-                      ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
-                      : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
-                  }`}>
-                  <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                    comunidades.includes(c) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
-                  }`}>
-                    {comunidades.includes(c) && (
-                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    )}
-                  </span>
-                  {c}
-                </button>
-              ))}
-              {/* Opción especial: "Me da igual" — ocupa toda la fila */}
-              <button type="button" onClick={() => toggleComunidad(COMUNIDAD_INDIFERENTE)}
-                className={`col-span-2 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
-                  comunidades.includes(COMUNIDAD_INDIFERENTE)
-                    ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
-                    : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
-                }`}>
-                <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                  comunidades.includes(COMUNIDAD_INDIFERENTE) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
-                }`}>
-                  {comunidades.includes(COMUNIDAD_INDIFERENTE) && (
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
+      case 8: {
+        const opcionesDisponibles = planCCAAs ? planCCAAs.opciones : TODAS_COMUNIDADES;
+
+        return (
+          <div className="space-y-6">
+            <div>
+              <FLabel>Comunidad autónoma</FLabel>
+
+              {/* Plan bloqueado: solo informativo, sin selección */}
+              {planCCAAs?.bloqueado ? (
+                <div className="rounded-xl border border-[#023A4B]/20 bg-[#023A4B]/[0.04] px-4 py-3">
+                  <p className="text-xs text-neutral-500 mb-2">Tu plan cubre las siguientes comunidades (no se puede cambiar):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {planCCAAs.opciones.map((c) => (
+                      <span key={c} className="px-3 py-1.5 rounded-full bg-[#023A4B] text-white text-sm font-medium">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {planCCAAs && (
+                    <p className="text-xs text-neutral-500 mb-2">
+                      Tu plan incluye estas comunidades. Elige la(s) que prefieras.
+                    </p>
                   )}
-                </span>
-                {COMUNIDAD_INDIFERENTE}
-              </button>
+                  <div className={`grid grid-cols-2 gap-2 ${has("comunidades_preferidas") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+                    {opcionesDisponibles.map((c) => (
+                      <button key={c} type="button" onClick={() => toggleComunidad(c)}
+                        className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
+                          comunidades.includes(c)
+                            ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
+                            : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
+                        }`}>
+                        <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
+                          comunidades.includes(c) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
+                        }`}>
+                          {comunidades.includes(c) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          )}
+                        </span>
+                        {c}
+                      </button>
+                    ))}
+                    {/* "Me da igual" solo en planes sin restricción de CCAA */}
+                    {!planCCAAs && (
+                      <button type="button" onClick={() => toggleComunidad(COMUNIDAD_INDIFERENTE)}
+                        className={`col-span-2 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
+                          comunidades.includes(COMUNIDAD_INDIFERENTE)
+                            ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
+                            : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
+                        }`}>
+                        <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
+                          comunidades.includes(COMUNIDAD_INDIFERENTE) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
+                        }`}>
+                          {comunidades.includes(COMUNIDAD_INDIFERENTE) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          )}
+                        </span>
+                        {COMUNIDAD_INDIFERENTE}
+                      </button>
+                    )}
+                  </div>
+                  <EMsg show={has("comunidades_preferidas")} msg="Selecciona al menos una opción" />
+                </>
+              )}
             </div>
-            <EMsg show={has("comunidades_preferidas")} msg="Selecciona al menos una opción o 'Me da igual'" />
-          </div>
 
-          <div>
-            <FLabel>¿Cuándo planeas empezar el máster?</FLabel>
-            <div className={`flex flex-wrap gap-2 ${has("inicio_previsto") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-              {[
-                { value: "sep_2025", label: "Sep 2025" },
-                { value: "ene_2026", label: "Ene 2026" },
-                { value: "sep_2026", label: "Sep 2026" },
-                { value: "ene_2027", label: "Ene 2027" },
-                { value: "flexible", label: "Flexible / No sé" },
-              ].map((o) => (
-                <Pill key={o.value} active={formData.inicio_previsto === o.value}
-                  onClick={() => set("inicio_previsto", formData.inicio_previsto === o.value ? "" : o.value)}>
-                  {o.label}
-                </Pill>
-              ))}
+            <div>
+              <FLabel>¿Cuándo planeas empezar el máster?</FLabel>
+              <div className={`flex flex-wrap gap-2 ${has("inicio_previsto") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+                {[
+                  { value: "sep_2025", label: "Sep 2025" },
+                  { value: "ene_2026", label: "Ene 2026" },
+                  { value: "sep_2026", label: "Sep 2026" },
+                  { value: "ene_2027", label: "Ene 2027" },
+                  { value: "flexible", label: "Flexible / No sé" },
+                ].map((o) => (
+                  <Pill key={o.value} active={formData.inicio_previsto === o.value}
+                    onClick={() => set("inicio_previsto", formData.inicio_previsto === o.value ? "" : o.value)}>
+                    {o.label}
+                  </Pill>
+                ))}
+              </div>
+              <EMsg show={has("inicio_previsto")} />
             </div>
-            <EMsg show={has("inicio_previsto")} />
-          </div>
 
-          <div>
-            <p className="text-sm font-semibold text-neutral-800 mb-3">Comentario para la IA y tus asesores</p>
-            <p className="text-xs text-neutral-400 mb-3">Situación familiar, doctorado, plazos, restricciones… Todo ayuda.</p>
-            <textarea rows={4}
-              value={formData.comentario_especial || ""}
-              onChange={(e) => set("comentario_especial", e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 px-3.5 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
-              placeholder="Escribe aquí cualquier detalle relevante…" />
+            <div>
+              <p className="text-sm font-semibold text-neutral-800 mb-3">Comentario para la IA y tus asesores</p>
+              <p className="text-xs text-neutral-400 mb-3">Situación familiar, doctorado, plazos, restricciones… Todo ayuda.</p>
+              <textarea rows={4}
+                value={formData.comentario_especial || ""}
+                onChange={(e) => set("comentario_especial", e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 px-3.5 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#023A4B]/20 focus:border-[#023A4B] transition"
+                placeholder="Escribe aquí cualquier detalle relevante…" />
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
 
       default: return null;
     }

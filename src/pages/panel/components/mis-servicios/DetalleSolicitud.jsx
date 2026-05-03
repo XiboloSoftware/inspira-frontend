@@ -144,6 +144,24 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
   const tipoNombre = (detalle?.tipo?.nombre || "").toLowerCase().trim();
   const esVisado = tipoNombre === "visado";
 
+  // Mapa plan → CCAAs permitidas
+  // bloqueado=true: la CCAA está fijada por el plan, el cliente solo ve info
+  // bloqueado=false + opciones: puede elegir dentro de esas CCAAs
+  // null: sin restricción (Premium / Infinity / planes genéricos)
+  const PLAN_CCAAS = {
+    3:  { bloqueado: true,  opciones: ["Andalucía"] },
+    4:  { bloqueado: false, opciones: ["Cantabria", "Asturias", "Castilla-La Mancha"] },
+    5:  { bloqueado: false, opciones: ["Galicia", "Castilla y León"] },
+    6:  { bloqueado: false, opciones: ["Andalucía", "Galicia", "Castilla y León", "Cantabria", "Asturias", "Castilla-La Mancha", "Navarra"] },
+    9:  { bloqueado: true,  opciones: ["Valencia"] },
+    10: { bloqueado: false, opciones: ["La Rioja", "País Vasco", "Murcia", "Extremadura", "Valencia", "Aragón"] },
+    11: { bloqueado: false, opciones: ["Madrid", "Cataluña"] },
+    13: { bloqueado: false, opciones: ["Madrid", "Cataluña"] },
+    14: { bloqueado: true,  opciones: ["Madrid", "Cataluña"] },
+    // 15 (Premium), 16 (Infinity), 7, 8, 12 → null = todas las CCAAs disponibles
+  };
+  const planCCAAs = detalle ? (PLAN_CCAAS[detalle.tipo?.id_tipo_solicitud] ?? null) : null;
+
   return (
     // Ocupa toda la altura disponible, sin scroll externo
     <div className="flex flex-col h-full min-h-0">
@@ -194,6 +212,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
               onGuardarProgreso={guardarFormularioSilencioso}
               savingForm={savingForm}
               hasData={hasFormData}
+              planCCAAs={planCCAAs}
             />
 
             <InformeBusqueda
