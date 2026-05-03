@@ -380,7 +380,7 @@ function MasterPostCard({ post, onUpdate, onSave }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ProgramacionPostulacionesAdmin({ idSolicitud }) {
+export default function ProgramacionPostulacionesAdmin({ idSolicitud, refreshKey }) {
   const [posts, setPosts]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -393,7 +393,7 @@ export default function ProgramacionPostulacionesAdmin({ idSolicitud }) {
       .then((r) => { if (r.ok) setPosts(r.postulaciones || []); else setError("No se pudo cargar."); })
       .catch(() => setError("Error de conexión."))
       .finally(() => setLoading(false));
-  }, [idSolicitud]);
+  }, [idSolicitud, refreshKey]);
 
   async function guardar(nextPosts) {
     setSaving(true);

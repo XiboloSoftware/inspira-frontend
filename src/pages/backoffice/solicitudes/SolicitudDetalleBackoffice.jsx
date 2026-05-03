@@ -178,8 +178,11 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     return { bloques: lista, isVisado: visado };
   }, [detalle, checklistStats]);
 
+  const [progRefreshKey, setProgRefreshKey] = useState(0);
+
   function handleEleccionesActualizadas(nuevasElecciones) {
     setDetalle((prev) => ({ ...prev, eleccion_masters: nuevasElecciones }));
+    setProgRefreshKey((k) => k + 1);
   }
 
   const pct = useMemo(() => {
@@ -437,7 +440,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 {expanded.has("programacion") && (
                   <CBox>
                     <div className="p-5">
-                      <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} />
+                      <ProgramacionPostulacionesAdmin idSolicitud={detalle.id_solicitud} refreshKey={progRefreshKey} />
                     </div>
                   </CBox>
                 )}

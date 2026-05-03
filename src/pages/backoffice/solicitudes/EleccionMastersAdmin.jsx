@@ -79,7 +79,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
     if (!Array.isArray(raw) || raw.length === 0) return [];
     return [...raw]
       .sort((a, b) => (a.prioridad || 0) - (b.prioridad || 0))
-      .map((f) => ({ ...f, plan_incluido: f.plan_incluido ?? true }));
+      .map((f) => ({ ...f, plan_incluido: f.plan_incluido ?? null }));
   }
 
   function extraerNota(raw) {
@@ -283,8 +283,8 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
     );
   }
 
-  const nSi = filas.filter((f) => f.plan_incluido).length;
-  const nNo = filas.filter((f) => !f.plan_incluido).length;
+  const nSi = filas.filter((f) => f.plan_incluido === true).length;
+  const nNo = filas.filter((f) => f.plan_incluido === false).length;
 
   return (
     <div className="space-y-3">
@@ -335,9 +335,11 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
           <div
             key={idx}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
-              ${fila.plan_incluido
+              ${fila.plan_incluido === true
                 ? "border-[#1D6A4A]/25 bg-[#E8F5EE]"
-                : "border-amber-200 bg-amber-50"}`}
+                : fila.plan_incluido === false
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-neutral-200 bg-white"}`}
           >
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 font-mono ${COLORES_PRIORIDAD[idx] ?? "bg-neutral-400"}`}>
               P{fila.prioridad ?? idx + 1}
@@ -360,7 +362,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
                 onClick={() => setPlan(idx, true)}
                 disabled={guardando}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border-[1.5px] transition-all
-                  ${fila.plan_incluido
+                  ${fila.plan_incluido === true
                     ? "bg-[#1D6A4A] border-[#1D6A4A] text-white"
                     : "bg-white border-neutral-300 text-neutral-400 hover:border-[#1D6A4A] hover:text-[#1D6A4A]"}`}
               >
@@ -371,7 +373,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
                 onClick={() => setPlan(idx, false)}
                 disabled={guardando}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border-[1.5px] transition-all
-                  ${!fila.plan_incluido
+                  ${fila.plan_incluido === false
                     ? "bg-amber-500 border-amber-500 text-white"
                     : "bg-white border-neutral-300 text-neutral-400 hover:border-amber-500 hover:text-amber-600"}`}
               >
