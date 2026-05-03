@@ -230,7 +230,10 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   async function regenerar() {
     setCompat(null);
     setEditMode(false);
+    setListaEdit([]);
+    await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
     await cargarCompatibilidad();
+    await recargar();
     onRegenerado?.();
   }
 
@@ -505,15 +508,6 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
           <div className="flex gap-1.5 shrink-0">
             {!editMode ? (
               <>
-                {isCurado && (
-                  <button onClick={restaurarAuto} disabled={guardando}
-                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200 disabled:opacity-50">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Restaurar auto
-                  </button>
-                )}
                 {listaVista.length > 0 && (
                   <button onClick={entrarEdicion}
                     className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg bg-[#1A3557] text-white hover:bg-[#22456e] transition-all duration-200 font-semibold">
