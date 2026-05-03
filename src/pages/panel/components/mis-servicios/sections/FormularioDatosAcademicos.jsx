@@ -165,7 +165,7 @@ function validateStep(s, formData, planCCAAs = null) {
       if (!formData.modalidad_preferida)   missing.push("modalidad_preferida");
       break;
     case 8:
-      if (!planCCAAs?.bloqueado && coms.length === 0) missing.push("comunidades_preferidas");
+      if (coms.length === 0) missing.push("comunidades_preferidas");
       if (!formData.inicio_previsto) missing.push("inicio_previsto");
       break;
     default:
@@ -298,16 +298,6 @@ export default function FormularioDatosAcademicos({
   // Resetear errores al cambiar de paso
   useEffect(() => { setShowErrors(false); }, [step]);
 
-  // Para planes bloqueados: auto-fijar comunidades_preferidas con las del plan
-  useEffect(() => {
-    if (!planCCAAs?.bloqueado) return;
-    const actual = Array.isArray(formData.comunidades_preferidas) ? formData.comunidades_preferidas : [];
-    const objetivo = planCCAAs.opciones;
-    const iguale = actual.length === objetivo.length && objetivo.every((c) => actual.includes(c));
-    if (!iguale) {
-      setFormData((p) => ({ ...p, comunidades_preferidas: objetivo }));
-    }
-  }, [planCCAAs]); // eslint-disable-line
 
   function set(key, val) { setFormData((p) => ({ ...p, [key]: val })); }
 
@@ -959,69 +949,52 @@ export default function FormularioDatosAcademicos({
             <div>
               <FLabel>Comunidad autónoma</FLabel>
 
-              {/* Plan bloqueado: solo informativo, sin selección */}
-              {planCCAAs?.bloqueado ? (
-                <div className="rounded-xl border border-[#023A4B]/20 bg-[#023A4B]/[0.04] px-4 py-3">
-                  <p className="text-xs text-neutral-500 mb-2">Tu plan cubre las siguientes comunidades (no se puede cambiar):</p>
-                  <div className="flex flex-wrap gap-2">
-                    {planCCAAs.opciones.map((c) => (
-                      <span key={c} className="px-3 py-1.5 rounded-full bg-[#023A4B] text-white text-sm font-medium">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {planCCAAs && (
-                    <p className="text-xs text-neutral-500 mb-2">
-                      Tu plan incluye estas comunidades. Elige la(s) que prefieras.
-                    </p>
-                  )}
-                  <div className={`grid grid-cols-2 gap-2 ${has("comunidades_preferidas") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
-                    {opcionesDisponibles.map((c) => (
-                      <button key={c} type="button" onClick={() => toggleComunidad(c)}
-                        className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
-                          comunidades.includes(c)
-                            ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
-                            : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
-                        }`}>
-                        <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                          comunidades.includes(c) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
-                        }`}>
-                          {comunidades.includes(c) && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          )}
-                        </span>
-                        {c}
-                      </button>
-                    ))}
-                    {/* "Me da igual" solo en planes sin restricción de CCAA */}
-                    {!planCCAAs && (
-                      <button type="button" onClick={() => toggleComunidad(COMUNIDAD_INDIFERENTE)}
-                        className={`col-span-2 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
-                          comunidades.includes(COMUNIDAD_INDIFERENTE)
-                            ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
-                            : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
-                        }`}>
-                        <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                          comunidades.includes(COMUNIDAD_INDIFERENTE) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
-                        }`}>
-                          {comunidades.includes(COMUNIDAD_INDIFERENTE) && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          )}
-                        </span>
-                        {COMUNIDAD_INDIFERENTE}
-                      </button>
-                    )}
-                  </div>
-                  <EMsg show={has("comunidades_preferidas")} msg="Selecciona al menos una opción" />
-                </>
+              {planCCAAs && (
+                <p className="text-xs text-neutral-500 mb-2">
+                  Tu plan cuenta con estas comunidades. Selecciona tus favoritas o preferenciales.
+                </p>
               )}
+              <div className={`grid grid-cols-2 gap-2 ${has("comunidades_preferidas") ? "p-2 rounded-xl bg-red-50 border border-red-200" : ""}`}>
+                {opcionesDisponibles.map((c) => (
+                  <button key={c} type="button" onClick={() => toggleComunidad(c)}
+                    className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
+                      comunidades.includes(c)
+                        ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
+                        : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
+                    }`}>
+                    <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
+                      comunidades.includes(c) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
+                    }`}>
+                      {comunidades.includes(c) && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </span>
+                    {c}
+                  </button>
+                ))}
+                {!planCCAAs && (
+                  <button type="button" onClick={() => toggleComunidad(COMUNIDAD_INDIFERENTE)}
+                    className={`col-span-2 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-[0.99] ${
+                      comunidades.includes(COMUNIDAD_INDIFERENTE)
+                        ? "bg-[#023A4B]/8 border-[#023A4B] text-[#023A4B]"
+                        : "border-neutral-200 text-neutral-700 hover:border-neutral-300 bg-white"
+                    }`}>
+                    <span className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
+                      comunidades.includes(COMUNIDAD_INDIFERENTE) ? "bg-[#023A4B] border-[#023A4B]" : "border-neutral-300"
+                    }`}>
+                      {comunidades.includes(COMUNIDAD_INDIFERENTE) && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </span>
+                    {COMUNIDAD_INDIFERENTE}
+                  </button>
+                )}
+              </div>
+              <EMsg show={has("comunidades_preferidas")} msg="Selecciona al menos una opción" />
             </div>
 
             <div>
