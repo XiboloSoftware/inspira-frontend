@@ -304,6 +304,13 @@ function ResumenDatos({ formData, onEditar }) {
 
   return (
     <div className="space-y-3">
+      <button
+        type="button"
+        onClick={onEditar}
+        className="w-full py-2.5 text-sm font-semibold text-[#023A4B] border border-[#023A4B]/30 rounded-xl hover:bg-[#023A4B]/5 transition active:scale-[0.99]"
+      >
+        ✏ Modificar datos
+      </button>
       <div className="grid grid-cols-2 gap-2">
         {campos.map(({ label, value }) => (
           <div key={label} className="bg-neutral-50 rounded-xl px-3 py-2.5">
@@ -318,13 +325,6 @@ function ResumenDatos({ formData, onEditar }) {
           <p className="text-xs text-neutral-700 leading-relaxed">{formData.comentario_especial}</p>
         </div>
       )}
-      <button
-        type="button"
-        onClick={onEditar}
-        className="w-full py-2.5 text-sm font-semibold text-[#023A4B] border border-[#023A4B]/30 rounded-xl hover:bg-[#023A4B]/5 transition active:scale-[0.99]"
-      >
-        ✏ Modificar datos
-      </button>
     </div>
   );
 }
