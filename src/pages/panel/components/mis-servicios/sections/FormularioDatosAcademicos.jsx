@@ -251,24 +251,55 @@ const ING_LABELS = {
   intl: "Cert. internacional", uni: "Cert. universitaria",
   instituto: "Instituto (sin cert.)", sabe_sin_cert: "Inglés sin certificar", no: "Sin inglés",
 };
+const UBIC_LABELS = {
+  tercio: "Tercio superior", quinto: "Quinto superior",
+  decimo: "Décimo superior", ninguno: "No estuvo en ninguno",
+};
+const DUR_LABELS = {
+  indiferente: "Me da igual (1–2 años)", "1": "Máx. 1 año (~60 ECTS)",
+  "1.5": "Máx. 1,5 años", "2": "Máx. 2 años",
+};
+const PRAC_LABELS = {
+  imprescindible: "Imprescindible", deseable: "Deseable", no_importante: "No es criterio",
+};
+const MOD_LABELS = {
+  presencial: "Presencial", semipresencial: "Semipresencial",
+  online: "Online", indiferente: "Me da igual",
+};
 
 function ResumenDatos({ formData, onEditar }) {
   const comunidades = Array.isArray(formData.comunidades_preferidas) ? formData.comunidades_preferidas : [];
   const comunidadesText = comunidades.length > 0
-    ? comunidades.slice(0, 2).join(", ") + (comunidades.length > 2 ? ` +${comunidades.length - 2} más` : "")
+    ? comunidades.slice(0, 3).join(", ") + (comunidades.length > 3 ? ` +${comunidades.length - 3} más` : "")
     : null;
+  const idiomasMaster = [
+    formData.idioma_master_es       && "Español",
+    formData.idioma_master_bilingue && "Bilingüe",
+    formData.idioma_master_ingles   && "Inglés",
+  ].filter(Boolean).join(", ") || null;
+  const otraMaestria = formData.otra_maestria_tiene === "si"
+    ? `Sí${formData.otra_maestria_detalle ? `: ${formData.otra_maestria_detalle}` : ""}`
+    : formData.otra_maestria_tiene === "no" ? "No" : null;
 
   const campos = [
-    { label: "Carrera",         value: formData.carrera_titulo },
-    { label: "Área",            value: formData.area_carrera },
-    { label: "Universidad",     value: formData.universidad_origen },
-    { label: "Promedio",        value: formData.promedio_peru ? `${formData.promedio_peru} / ${formData.promedio_escala || 20}` : null },
-    { label: "Experiencia",     value: EXP_LABELS[formData.experiencia_anios] || formData.experiencia_anios },
-    { label: "Inglés",          value: ING_LABELS[formData.ingles_situacion] || formData.ingles_situacion },
-    { label: "Presupuesto",     value: formData.presupuesto_hasta ? `${Number(formData.presupuesto_hasta).toLocaleString("es-ES")} €/año` : null },
-    { label: "Comunidades",     value: comunidadesText },
-    { label: "Inicio previsto", value: formData.inicio_previsto?.replace(/_/g, " ") },
-    { label: "Becas",           value: formData.beca_desea === "si" ? "Sí" : formData.beca_desea === "no" ? "No" : null },
+    { label: "Carrera",          value: formData.carrera_titulo },
+    { label: "Área de carrera",  value: formData.area_carrera },
+    { label: "Universidad",      value: formData.universidad_origen },
+    { label: "Promedio",         value: formData.promedio_peru ? `${formData.promedio_peru} / ${formData.promedio_escala || 20}` : null },
+    { label: "Ranking",          value: UBIC_LABELS[formData.ubicacion_grupo] },
+    { label: "Otra maestría",    value: otraMaestria },
+    { label: "Experiencia",      value: EXP_LABELS[formData.experiencia_anios] },
+    { label: "Investigación",    value: formData.investigacion_experiencia === "si" ? "Sí" : formData.investigacion_experiencia === "no" ? "No" : null },
+    { label: "Inglés",           value: ING_LABELS[formData.ingles_situacion] },
+    { label: "Idioma del máster", value: idiomasMaster },
+    { label: "Becas",            value: formData.beca_desea === "si" ? "Sí" : formData.beca_desea === "no" ? "No" : null },
+    { label: "Rama de interés",  value: formData.area_interes_master },
+    { label: "Duración",         value: DUR_LABELS[formData.duracion_preferida] },
+    { label: "Prácticas",        value: PRAC_LABELS[formData.practicas_preferencia] },
+    { label: "Presupuesto",      value: formData.presupuesto_hasta ? `${Number(formData.presupuesto_hasta).toLocaleString("es-ES")} €/año` : null },
+    { label: "Modalidad",        value: MOD_LABELS[formData.modalidad_preferida] },
+    { label: "Comunidades",      value: comunidadesText },
+    { label: "Inicio previsto",  value: formData.inicio_previsto?.replace(/_/g, " ") },
   ].filter((c) => c.value);
 
   return (
@@ -277,10 +308,16 @@ function ResumenDatos({ formData, onEditar }) {
         {campos.map(({ label, value }) => (
           <div key={label} className="bg-neutral-50 rounded-xl px-3 py-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-0.5">{label}</p>
-            <p className="text-xs font-semibold text-neutral-800 leading-snug truncate" title={value}>{value}</p>
+            <p className="text-xs font-semibold text-neutral-800 leading-snug" title={value}>{value}</p>
           </div>
         ))}
       </div>
+      {formData.comentario_especial && (
+        <div className="bg-neutral-50 rounded-xl px-3 py-2.5">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-0.5">Comentario especial</p>
+          <p className="text-xs text-neutral-700 leading-relaxed">{formData.comentario_especial}</p>
+        </div>
+      )}
       <button
         type="button"
         onClick={onEditar}
@@ -1113,7 +1150,7 @@ export default function FormularioDatosAcademicos({
         {hasData && !editando ? (
           <ResumenDatos formData={formData} onEditar={() => { setEditando(true); setStep(0); }} />
         ) : (
-          <form onSubmit={handleSaveInline} className="flex flex-col gap-4">
+          <form onSubmit={handleSaveInline} className="flex flex-col gap-3">
             {/* Barra de progreso */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -1147,23 +1184,8 @@ export default function FormularioDatosAcademicos({
               ))}
             </div>
 
-            {/* Contenido del paso */}
-            <div className="bg-white rounded-xl border border-neutral-100 shadow-sm">
-              <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent rounded-t-xl flex items-center gap-2">
-                <span className="text-base shrink-0">{STEPS[step].icon}</span>
-                <h3 className="text-sm font-bold text-[#023A4B]">{STEPS[step].title}</h3>
-              </div>
-              <div ref={scrollAreaRef} className="px-4 py-4">
-                {renderStep()}
-              </div>
-            </div>
-
-            {showErrors && validateStep(step, formData, planCCAAs).length > 0 && (
-              <ErrBox show>Completa todos los campos requeridos antes de continuar.</ErrBox>
-            )}
-
-            {/* Navegación */}
-            <div className="flex items-center justify-between gap-3 pb-1">
+            {/* Navegación — arriba, estática */}
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1190,6 +1212,21 @@ export default function FormularioDatosAcademicos({
                   }
                 </button>
               )}
+            </div>
+
+            {showErrors && validateStep(step, formData, planCCAAs).length > 0 && (
+              <ErrBox show>Completa todos los campos requeridos antes de continuar.</ErrBox>
+            )}
+
+            {/* Contenido del paso — debajo de los botones */}
+            <div className="bg-white rounded-xl border border-neutral-100 shadow-sm">
+              <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent rounded-t-xl flex items-center gap-2">
+                <span className="text-base shrink-0">{STEPS[step].icon}</span>
+                <h3 className="text-sm font-bold text-[#023A4B]">{STEPS[step].title}</h3>
+              </div>
+              <div ref={scrollAreaRef} className="px-4 py-4">
+                {renderStep()}
+              </div>
             </div>
           </form>
         )}
