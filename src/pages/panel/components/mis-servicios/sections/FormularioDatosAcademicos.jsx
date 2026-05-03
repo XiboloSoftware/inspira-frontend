@@ -1178,7 +1178,7 @@ export default function FormularioDatosAcademicos({
                   <button type="button"
                     onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
                     title={s.title}
-                    className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold transition-all active:scale-90 ${
+                    className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-sm font-bold transition-all active:scale-90 ${
                       i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-400 shadow-sm"
                       : i === step ? "bg-[#023A4B] text-white shadow-md ring-[3px] ring-[#023A4B]/25"
                       : hasData    ? "bg-[#046C8C]/15 text-[#046C8C] cursor-pointer hover:bg-[#046C8C]/30"
@@ -1314,7 +1314,7 @@ export default function FormularioDatosAcademicos({
                   <button type="button"
                     onClick={() => { if (i !== step && (i < step || hasData)) setStep(i); }}
                     title={s.title}
-                    className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold transition-all active:scale-90 ${
+                    className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold transition-all active:scale-90 ${
                       i < step   ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-400 shadow-sm"
                       : i === step ? "bg-[#023A4B] text-white shadow-md ring-[3px] ring-[#023A4B]/25"
                       : hasData    ? "bg-[#046C8C]/15 text-[#046C8C] cursor-pointer hover:bg-[#046C8C]/30"
