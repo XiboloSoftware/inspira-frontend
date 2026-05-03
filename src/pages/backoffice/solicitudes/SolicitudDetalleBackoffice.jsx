@@ -64,17 +64,23 @@ function BlqHead({ numero, titulo, estado, open, onToggle }) {
     inactivo:   "— Inactivo",
   };
   const e = estado || "inactivo";
+  const cardBorder = {
+    completado: "border-[#1D6A4A]/20 hover:border-[#1D6A4A]/40",
+    observado:  "border-[#DC2626]/20 hover:border-[#DC2626]/40",
+    pendiente:  "border-[#F59E0B]/30 hover:border-[#F59E0B]/60",
+    inactivo:   "border-[#E2E8F0] hover:border-[#CBD5E1]",
+  };
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center gap-2.5 mb-[13px] flex-wrap w-full text-left group"
+      className={`flex items-center gap-3 w-full text-left px-4 py-3 mb-2 rounded-[12px] bg-white border shadow-sm transition-all active:scale-[0.995] ${cardBorder[e] || cardBorder.inactivo} ${open ? "rounded-b-none mb-0 border-b-0" : ""}`}
     >
-      <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center text-[13px] font-extrabold font-mono shrink-0 ${badge[e] || badge.inactivo}`}>
+      <div className={`w-[28px] h-[28px] rounded-[7px] flex items-center justify-center text-[12px] font-extrabold font-mono shrink-0 ${badge[e] || badge.inactivo}`}>
         {numero}
       </div>
-      <h3 className="font-serif text-[16px] text-[#1A3557] flex-1 group-hover:text-[#023A4B] transition-colors">{titulo}</h3>
-      <span className={`text-[10.5px] font-semibold px-[11px] py-1 rounded-full ${chip[e] || chip.inactivo}`}>
+      <span className="font-serif text-[15px] text-[#1A3557] flex-1 font-semibold">{titulo}</span>
+      <span className={`text-[10px] font-semibold px-[10px] py-1 rounded-full shrink-0 ${chip[e] || chip.inactivo}`}>
         {chipLabel[e] || "—"}
       </span>
       <svg
@@ -89,7 +95,7 @@ function BlqHead({ numero, titulo, estado, open, onToggle }) {
 
 function CBox({ children }) {
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-[14px] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.06)]">
+    <div className="bg-white border border-[#E2E8F0] border-t-0 rounded-b-[12px] overflow-hidden shadow-sm mb-2">
       {children}
     </div>
   );
@@ -104,8 +110,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
     loading, error, cargar,
   } = useSolicitudDetalle(idSolicitud);
 
-  const ALL_IDS = ["cliente","checklist","formulario","informe","eleccion","programacion","portales","cierre","instructivo"];
-  const [expanded, setExpanded] = useState(new Set(ALL_IDS));
+  const [expanded, setExpanded] = useState(new Set());
 
   function toggleBloque(id) {
     setExpanded((prev) => {
@@ -301,7 +306,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
         <div className="p-[22px] pb-20">
 
           {/* B1 — Encabezado del cliente */}
-          <div id="bloque-cliente" className="mb-6 scroll-mt-4">
+          <div id="bloque-cliente" className="scroll-mt-4">
             <BlqHead numero="1" titulo="Encabezado del cliente" estado={calcClienteEstado(detalle)}
               open={expanded.has("cliente")} onToggle={() => toggleBloque("cliente")} />
             {expanded.has("cliente") && (
@@ -317,7 +322,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           </div>
 
           {/* B2 — Documentos requeridos */}
-          <div id="bloque-checklist" className="mb-6 scroll-mt-4">
+          <div id="bloque-checklist" className="scroll-mt-4">
             <BlqHead numero="2" titulo="Documentos requeridos" estado={checklistStats.estado}
               open={expanded.has("checklist")} onToggle={() => toggleBloque("checklist")} />
             {expanded.has("checklist") && (
@@ -336,7 +341,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
 
           {isVisado ? (
             <>
-              <div id="bloque-instructivo" className="mb-6 scroll-mt-4">
+              <div id="bloque-instructivo" className="scroll-mt-4">
                 <BlqHead numero="3" titulo="Instructivo y plantillas" estado="inactivo"
                   open={expanded.has("instructivo")} onToggle={() => toggleBloque("instructivo")} />
                 {expanded.has("instructivo") && (
@@ -350,7 +355,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 )}
               </div>
 
-              <div id="bloque-portales" className="mb-6 scroll-mt-4">
+              <div id="bloque-portales" className="scroll-mt-4">
                 <BlqHead numero="4" titulo="Portales, claves y justificantes" estado="pendiente"
                   open={expanded.has("portales")} onToggle={() => toggleBloque("portales")} />
                 {expanded.has("portales") && (
@@ -365,7 +370,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           ) : (
             <>
               {/* B3 — Formulario académico */}
-              <div id="bloque-formulario" className="mb-6 scroll-mt-4">
+              <div id="bloque-formulario" className="scroll-mt-4">
                 <BlqHead
                   numero="3"
                   titulo="Formulario de datos académicos"
@@ -382,7 +387,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </div>
 
               {/* B4 — Informe de búsqueda */}
-              <div id="bloque-informe" className="mb-6 scroll-mt-4">
+              <div id="bloque-informe" className="scroll-mt-4">
                 <BlqHead
                   numero="4"
                   titulo="Informe de búsqueda de másteres"
@@ -399,7 +404,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </div>
 
               {/* B5 — Elección de másteres */}
-              <div id="bloque-eleccion" className="mb-6 scroll-mt-4">
+              <div id="bloque-eleccion" className="scroll-mt-4">
                 <BlqHead
                   numero="5"
                   titulo="Elección de másteres (cliente)"
@@ -420,7 +425,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </div>
 
               {/* B6 — Programación de postulaciones */}
-              <div id="bloque-programacion" className="mb-6 scroll-mt-4">
+              <div id="bloque-programacion" className="scroll-mt-4">
                 <BlqHead numero="6" titulo="Programación de postulaciones" estado="pendiente"
                   open={expanded.has("programacion")} onToggle={() => toggleBloque("programacion")} />
                 {expanded.has("programacion") && (
@@ -433,7 +438,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </div>
 
               {/* B7 — Portales y justificantes */}
-              <div id="bloque-portales" className="mb-6 scroll-mt-4">
+              <div id="bloque-portales" className="scroll-mt-4">
                 <BlqHead numero="7" titulo="Portales, claves y justificantes" estado="pendiente"
                   open={expanded.has("portales")} onToggle={() => toggleBloque("portales")} />
                 {expanded.has("portales") && (
@@ -446,7 +451,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
               </div>
 
               {/* B8 — Cierre de servicio */}
-              <div id="bloque-cierre" className="mb-6 scroll-mt-4">
+              <div id="bloque-cierre" className="scroll-mt-4">
                 <BlqHead numero="8" titulo="Cierre de servicio y derivación" estado="pendiente"
                   open={expanded.has("cierre")} onToggle={() => toggleBloque("cierre")} />
                 {expanded.has("cierre") && (
