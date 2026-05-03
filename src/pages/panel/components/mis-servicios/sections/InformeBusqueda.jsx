@@ -14,18 +14,20 @@ function formatPrecio(precio) {
 
 function formatDuracion(anios) {
   if (!anios) return null;
-  if (anios === 1)   return "1 año";
-  if (anios === 1.5) return "18 meses";
-  return `${anios} años`;
+  const n = Number(anios);
+  if (n === 1)   return "1 año";
+  if (n === 1.5) return "18 meses";
+  return `${n} años`;
 }
 
 function scoreColors(score) {
-  if (score >= 80) return { text: "text-emerald-600", bar: "#10b981", tag: "bg-emerald-50 text-emerald-700" };
-  if (score >= 60) return { text: "text-amber-600",   bar: "#f59e0b", tag: "bg-amber-50 text-amber-700" };
-  return           { text: "text-red-500",             bar: "#ef4444", tag: "bg-red-50 text-red-600" };
+  if (score == null) return { text: "text-neutral-400", bar: "#d1d5db", tag: "bg-neutral-100 text-neutral-500" };
+  if (score >= 80)   return { text: "text-emerald-600", bar: "#10b981", tag: "bg-emerald-50 text-emerald-700" };
+  if (score >= 60)   return { text: "text-amber-600",   bar: "#f59e0b", tag: "bg-amber-50 text-amber-700" };
+  return               { text: "text-red-500",           bar: "#ef4444", tag: "bg-red-50 text-red-600" };
 }
 
-// ── MasterRow — fila de un máster con score ───────────────────────────────────
+// ── MasterRow ─────────────────────────────────────────────────────────────────
 
 function MasterRow({ posicion, resultado }) {
   const { master, score } = resultado;
@@ -63,17 +65,17 @@ function MasterRow({ posicion, resultado }) {
             </span>
           )}
           <span className={`text-[11px] px-2 py-0.5 rounded-md font-semibold ${col.tag}`}>
-            {score}% match
+            {score != null ? `${score}% match` : "Seleccionado por asesor"}
           </span>
         </div>
       </div>
       <div className="shrink-0 text-center w-14">
-        <div className={`text-xl font-black ${col.text}`}>{score}</div>
-        <div className="text-[10px] text-neutral-400">match</div>
+        <div className={`text-xl font-black ${col.text}`}>{score != null ? score : "—"}</div>
+        <div className="text-[10px] text-neutral-400">{score != null ? "match" : ""}</div>
         <div className="mt-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
-            style={{ width: `${score}%`, background: col.bar }}
+            style={{ width: `${score ?? 0}%`, background: col.bar }}
           />
         </div>
       </div>
@@ -81,9 +83,9 @@ function MasterRow({ posicion, resultado }) {
   );
 }
 
-// ── Modal listado completo ────────────────────────────────────────────────────
+// ── Modal listado completo ─────────────────────────────────────────────────────
 
-function ModalListadoCompleto({ resultados, total, onClose }) {
+function ModalListadoCompleto({ resultados, total, curado, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-0 sm:px-4"
@@ -92,8 +94,10 @@ function ModalListadoCompleto({ resultados, total, onClose }) {
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
           <div>
-            <p className="text-sm font-bold text-neutral-800">Todos los programas compatibles</p>
-            <p className="text-xs text-neutral-500">{total} programas encontrados</p>
+            <p className="text-sm font-bold text-neutral-800">
+              {curado ? "Programas seleccionados por tu asesor" : "Todos los programas compatibles"}
+            </p>
+            <p className="text-xs text-neutral-500">{total} programas</p>
           </div>
           <button
             onClick={onClose}
@@ -121,7 +125,6 @@ function ModalListadoCompleto({ resultados, total, onClose }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
-// compat y loadingCompat vienen del padre (DetalleSolicitud) — un solo fetch compartido
 
 export default function InformeBusqueda({ idSolicitud, informe, hasFormData, compat, loadingCompat }) {
   const [modalAbierto, setModal] = useState(false);
@@ -129,6 +132,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
   const disponible    = !!informe?.informe_fecha_subida;
   const resultados    = compat?.resultados || [];
   const perfil        = compat?.perfil;
+  const curado        = !!compat?.curado;
   const hayResultados = resultados.length > 0;
 
   const estado = disponible || hayResultados
@@ -140,7 +144,9 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
   const subtitulo = disponible
     ? `PDF disponible desde ${formatearFecha(informe.informe_fecha_subida)}`
     : hayResultados
-      ? `${compat.total} programas compatibles encontrados`
+      ? curado
+        ? `${compat.total} programa${compat.total !== 1 ? "s" : ""} seleccionado${compat.total !== 1 ? "s" : ""} por tu asesor`
+        : `${compat.total} programas compatibles encontrados`
       : loadingCompat
         ? "Calculando tu informe…"
         : hasFormData
@@ -180,7 +186,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
       estado={estado}
       sectionId="4"
     >
-      {/* ── Formulario incompleto ──────────────────────────────────────── */}
+      {/* ── Formulario incompleto ─────────────────────────────────────────── */}
       {!hasFormData && !loadingCompat && (
         <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
           <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 text-xl">
@@ -195,7 +201,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         </div>
       )}
 
-      {/* ── Tu informe está cargando ──────────────────────────────────── */}
+      {/* ── Cargando ──────────────────────────────────────────────────────── */}
       {loadingCompat && (
         <div className="flex flex-col items-center gap-4 py-10">
           <div className="w-14 h-14 rounded-2xl bg-[#023A4B]/10 flex items-center justify-center">
@@ -210,7 +216,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         </div>
       )}
 
-      {/* ── Formulario guardado pero sin resultado aún (error de API) ─── */}
+      {/* ── Formulario guardado pero sin resultado aún ────────────────────── */}
       {hasFormData && !loadingCompat && !compat && !disponible && (
         <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
           <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
@@ -227,11 +233,11 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         </div>
       )}
 
-      {/* ── Informe disponible (Modo A y/o B) ────────────────────────── */}
+      {/* ── Informe disponible ─────────────────────────────────────────────── */}
       {!loadingCompat && (disponible || compat) && (
         <div className="space-y-4">
 
-          {/* MODO A — PDF manual subido por asesor */}
+          {/* MODO A — PDF manual */}
           {disponible && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
@@ -269,12 +275,16 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
             </div>
           )}
 
-          {/* MODO B — Informe automático de compatibilidad */}
+          {/* MODO B — Lista de compatibilidad (auto o curada) */}
           {compat && (
             <div>
               <div className="flex items-center gap-3 flex-wrap mb-4">
-                <div className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-lg">
-                  ✓ Informe listo · Generado el {new Date().toLocaleDateString("es-ES")}
+                <div className={`text-xs font-semibold px-3 py-1.5 rounded-lg ${
+                  curado
+                    ? "bg-[#1D6A4A]/10 text-[#1D6A4A]"
+                    : "bg-emerald-100 text-emerald-800"
+                }`}>
+                  {curado ? "✏️ Lista personalizada por tu asesor" : `✓ Informe listo · Generado el ${new Date().toLocaleDateString("es-ES")}`}
                 </div>
               </div>
 
@@ -297,9 +307,21 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
 
                 <div className="px-5 py-4">
                   <p className="text-sm text-neutral-600 mb-1">
-                    Se encontraron{" "}
-                    <strong className="text-neutral-800">{compat.total} programas compatibles</strong>.
-                    {compat.total > 0 && " Top 5 recomendados:"}
+                    {curado ? (
+                      <>
+                        Tu asesor ha preparado{" "}
+                        <strong className="text-neutral-800">
+                          {compat.total} programa{compat.total !== 1 ? "s" : ""}
+                        </strong>{" "}
+                        seleccionado{compat.total !== 1 ? "s" : ""} para ti.
+                      </>
+                    ) : (
+                      <>
+                        Se encontraron{" "}
+                        <strong className="text-neutral-800">{compat.total} programas compatibles</strong>.
+                        {compat.total > 0 && " Top 5 recomendados:"}
+                      </>
+                    )}
                   </p>
 
                   {resultados.length === 0 ? (
@@ -335,6 +357,7 @@ export default function InformeBusqueda({ idSolicitud, informe, hasFormData, com
         <ModalListadoCompleto
           resultados={resultados}
           total={compat?.total || 0}
+          curado={curado}
           onClose={() => setModal(false)}
         />
       )}
