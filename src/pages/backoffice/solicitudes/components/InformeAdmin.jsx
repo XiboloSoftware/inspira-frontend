@@ -275,8 +275,11 @@ export default function InformeAdmin({ detalle, recargar, onRegenerado }) {
   async function publicarInforme() {
     setPublicando(true);
     try {
-      if (listaEdit.length) {
-        await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: listaEdit });
+      const listaParaPublicar = listaEdit.length
+        ? listaEdit
+        : (detalle.informe_compat_curado ?? compat?.resultados?.slice(0, 20) ?? []);
+      if (listaParaPublicar.length) {
+        await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: listaParaPublicar });
       }
       const r = await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/publicar-informe`, {});
       if (!r.ok) throw new Error(r.msg || "Error al publicar");
