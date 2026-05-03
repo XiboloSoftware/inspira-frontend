@@ -4,6 +4,8 @@ import { apiGET } from "../../services/api";
 import PanelSidebar from "./components/PanelSidebar";
 import PerfilCliente from "./components/PerfilCliente";
 import MisServicios from "./components/MisServicios";
+import WizardPerfilCliente from "./components/WizardPerfilCliente";
+import { usePerfilIncompletoBool } from "./hooks/usePerfilIncompletoBool";
 
 const BecasEspana   = lazy(() => import("./BecasEspana"));
 const GuiaMaster    = lazy(() => import("./GuiaMaster"));
@@ -32,6 +34,9 @@ export default function PanelCliente() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tieneSolicitudes, setTieneSolicitudes] = useState(null);
+
+  const perfilIncompleto = usePerfilIncompletoBool(user);
+  const mostrarWizard = user !== null && tieneSolicitudes !== null && tieneSolicitudes && perfilIncompleto;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -152,6 +157,13 @@ export default function PanelCliente() {
           )}
         </div>
       </main>
+
+      {mostrarWizard && (
+        <WizardPerfilCliente
+          user={user}
+          onComplete={(updatedUser) => setUser(updatedUser)}
+        />
+      )}
     </div>
   );
 }
