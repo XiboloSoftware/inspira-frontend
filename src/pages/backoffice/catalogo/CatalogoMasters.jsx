@@ -8,15 +8,15 @@ import SeccionMasters       from "./SeccionMasters";
 import SeccionCriterios     from "./SeccionCriterios";
 
 const TABS = [
+  { key: "masters",       label: "Másteres" },
   { key: "ramas",         label: "Ramas" },
   { key: "comunidades",   label: "Comunidades Autónomas" },
   { key: "universidades", label: "Universidades" },
-  { key: "masters",       label: "Másteres" },
   { key: "criterios",     label: "Criterios" },
 ];
 
 export default function CatalogoMasters() {
-  const [tab,           setTab]           = useState("ramas");
+  const [tab,           setTab]           = useState("masters");
   const [ramas,         setRamas]         = useState([]);
   const [comunidades,   setComunidades]   = useState([]);
   const [universidades, setUniversidades] = useState([]);
@@ -56,7 +56,7 @@ export default function CatalogoMasters() {
       <div className="px-6 pt-6 pb-0 shrink-0">
         <h1 className="text-xl font-bold text-neutral-900">Catálogo de Másteres</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Ramas · Comunidades Autónomas · Universidades · Másteres
+          Másteres · Ramas · Comunidades Autónomas · Universidades
           <span className="ml-2 text-neutral-400">precio = ECTS × €/crédito CCAA</span>
         </p>
 
