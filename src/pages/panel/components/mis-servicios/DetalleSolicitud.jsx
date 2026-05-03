@@ -201,6 +201,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                 informe_nombre_original: detalle.informe_nombre_original,
                 informe_fecha_subida: detalle.informe_fecha_subida,
               }}
+              hasFormData={hasFormData}
             />
 
             {!esVisado && (

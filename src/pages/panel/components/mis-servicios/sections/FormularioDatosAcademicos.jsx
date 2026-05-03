@@ -827,6 +827,27 @@ export default function FormularioDatosAcademicos({
                 </div>
               </div>
             )}
+
+            <div>
+              <FLabel>¿Cuál es tu principal objetivo con el máster? <span className="font-normal text-neutral-400">(opcional)</span></FLabel>
+              <div className="flex flex-col gap-2 mt-1">
+                {[
+                  { val: "laboral",       label: "Mejorar mis opciones laborales y sueldo" },
+                  { val: "investigacion", label: "Acceder a la investigación o doctorado" },
+                  { val: "indiferente",   label: "Indiferente / No lo tengo claro" },
+                ].map(({ val, label }) => (
+                  <button key={val} type="button"
+                    onClick={() => set("objetivo_master", formData.objetivo_master === val ? "" : val)}
+                    className={`text-left px-4 py-3 rounded-xl border text-sm transition-all active:scale-[0.99] ${
+                      formData.objetivo_master === val
+                        ? "border-[#023A4B] bg-[#023A4B]/10 text-[#023A4B] font-semibold"
+                        : "border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300"
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
       }
