@@ -384,7 +384,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
           </div>
 
           {/* ── Panel derecho: contenido de la sección activa ── */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <SeccionSiempreAbiertoCtx.Provider value={true}>
 
               {activeSection === "docs" && (

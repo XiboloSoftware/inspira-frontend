@@ -1150,7 +1150,7 @@ export default function FormularioDatosAcademicos({
         {hasData && !editando ? (
           <ResumenDatos formData={formData} onEditar={() => { setEditando(true); setStep(0); }} />
         ) : (
-          <form onSubmit={handleSaveInline} className="flex flex-col gap-3">
+          <form onSubmit={handleSaveInline} className="flex-1 min-h-0 flex flex-col gap-3">
             {/* Barra de progreso */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -1218,13 +1218,13 @@ export default function FormularioDatosAcademicos({
               <ErrBox show>Completa todos los campos requeridos antes de continuar.</ErrBox>
             )}
 
-            {/* Contenido del paso — debajo de los botones */}
-            <div className="bg-white rounded-xl border border-neutral-100 shadow-sm">
-              <div className="px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent rounded-t-xl flex items-center gap-2">
+            {/* Contenido del paso — scroll interno aquí */}
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden border border-neutral-100 rounded-xl shadow-sm">
+              <div className="shrink-0 px-4 py-3 border-b border-neutral-100 bg-gradient-to-r from-[#023A4B]/6 to-transparent flex items-center gap-2">
                 <span className="text-base shrink-0">{STEPS[step].icon}</span>
                 <h3 className="text-sm font-bold text-[#023A4B]">{STEPS[step].title}</h3>
               </div>
-              <div ref={scrollAreaRef} className="px-4 py-4">
+              <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-4">
                 {renderStep()}
               </div>
             </div>
