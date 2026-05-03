@@ -1,6 +1,6 @@
 // src/pages/panel/components/mis-servicios/sections/ProgramacionPostulacionesCliente.jsx
 import { useEffect, useRef, useState } from "react";
-import { apiGET, apiPOST } from "../../../../../services/api";
+import { apiGET, apiPOST, apiUpload } from "../../../../../services/api";
 import SeccionPanel from "./SeccionPanel";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -20,6 +20,22 @@ function fmtFecha(str) {
   return str;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+async function verArchivo(idSolicitud, storagePath) {
+  try {
+    const token = localStorage.getItem("token");
+    const url = `${API_URL}/solicitudes/${idSolicitud}/justificante-stream?path=${encodeURIComponent(storagePath)}`;
+    const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) throw new Error("No se pudo cargar el archivo");
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    window.open(objUrl, "_blank");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const P_COLORS = ["#1A3557", "#1D6A4A", "#f59e0b", "#9ca3af", "#d1d5db"];
@@ -33,8 +49,6 @@ const ESTADOS_OPT = [
   { val: "lista",     label: "⏳ Lista espera" },
 ];
 
-const PORTAL_ESTADOS = ["abierto", "cerrado", "mantenimiento"];
-
 const TABS = [
   { id: "fec", label: "📅 Fechas" },
   { id: "por", label: "🔗 Portal y claves" },
@@ -42,9 +56,8 @@ const TABS = [
   { id: "seg", label: "📝 Seguimiento" },
 ];
 
-const DOC_SIGUIENTE = { falta: "pendiente", pendiente: "ok", ok: "falta" };
-const DOC_LABEL     = { falta: "Falta", pendiente: "En revisión", ok: "Subido" };
-const DOC_CLS       = {
+const DOC_LABEL = { falta: "Falta", pendiente: "En revisión", ok: "Subido" };
+const DOC_CLS   = {
   falta:    "bg-red-50 text-red-600 border-red-200",
   pendiente:"bg-amber-50 text-amber-600 border-amber-200",
   ok:       "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -92,9 +105,9 @@ function AlertaBanner({ posts }) {
   );
 }
 
-// ── TabFechas ─────────────────────────────────────────────────────────────────
+// ── TabFechas (read-only + toggles alertas) ───────────────────────────────────
 
-function FechaBox({ label, valor, field, onChange, onSave }) {
+function FechaBox({ label, valor, field }) {
   const dias = field === "fecha_cierre" ? diasHasta(valor) : null;
   const urgente = dias !== null && dias > 0 && dias <= 7;
   const pronto  = dias !== null && dias > 7  && dias <= 30;
@@ -107,14 +120,7 @@ function FechaBox({ label, valor, field, onChange, onSave }) {
     }`}>
       {urgente && <div className="w-2 h-2 rounded-full bg-red-500 mx-auto mb-1 animate-pulse" />}
       <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-1">{label}</p>
-      <input
-        type="text"
-        value={valor}
-        onChange={(e) => onChange(field, e.target.value)}
-        onBlur={(e) => onSave(field, e.target.value)}
-        placeholder="AAAA-MM-DD"
-        className="w-full text-center text-xs font-semibold bg-transparent outline-none placeholder:text-neutral-300 text-neutral-700"
-      />
+      <p className="text-sm font-semibold text-neutral-700">{fmtFecha(valor)}</p>
       {dias !== null && dias > 0 && (
         <p className={`text-[10px] mt-1 font-mono font-bold ${urgente ? "text-red-600" : pronto ? "text-amber-600" : "text-neutral-400"}`}>
           {urgente ? `⚠ ${dias} días` : `~${dias} días`}
@@ -127,15 +133,14 @@ function FechaBox({ label, valor, field, onChange, onSave }) {
   );
 }
 
-function TabFechas({ post, onChange, onSave }) {
+function TabFechas({ post, onSave }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
-        <FechaBox label="Apertura"    valor={post.fecha_apertura}   field="fecha_apertura"   onChange={onChange} onSave={onSave} />
-        <FechaBox label="Cierre"      valor={post.fecha_cierre}     field="fecha_cierre"     onChange={onChange} onSave={onSave} />
-        <FechaBox label="Resultados"  valor={post.fecha_resultados} field="fecha_resultados" onChange={onChange} onSave={onSave} />
+        <FechaBox label="Apertura"   valor={post.fecha_apertura}   field="fecha_apertura" />
+        <FechaBox label="Cierre"     valor={post.fecha_cierre}     field="fecha_cierre" />
+        <FechaBox label="Resultados" valor={post.fecha_resultados} field="fecha_resultados" />
       </div>
-
       <div>
         <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400 mb-2">
           Alertas automáticas programadas
@@ -163,132 +168,167 @@ function TabFechas({ post, onChange, onSave }) {
   );
 }
 
-// ── TabPortal ─────────────────────────────────────────────────────────────────
+// ── TabPortal (admin read-only + portales propios del cliente) ────────────────
 
-function TabPortal({ post, onChange, onSave, showPw, togglePw }) {
+function InfoField({ label, value, secret }) {
+  const [visible, setVisible] = useState(false);
+  if (!value) return null;
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
-      {/* Columna izquierda */}
-      <div className="space-y-2.5">
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">URL del portal</label>
-          <div className="flex gap-1.5">
-            <input
-              type="url"
-              value={post.portal_url}
-              onChange={(e) => onChange("portal_url", e.target.value)}
-              onBlur={(e) => onSave("portal_url", e.target.value)}
-              placeholder="https://..."
-              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-            />
-            {post.portal_url && (
-              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_url)}
-                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
-                📋
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Estado del portal</label>
-          <div className="flex gap-1.5">
-            {PORTAL_ESTADOS.map((e) => (
-              <button key={e} type="button"
-                onClick={() => onSave("portal_estado", e)}
-                className={`flex-1 text-[10px] font-semibold py-1.5 rounded-lg border transition ${
-                  post.portal_estado === e
-                    ? "bg-[#023A4B] border-[#023A4B] text-white"
-                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-                }`}>
-                {e === "abierto" ? "✓ Abierto" : e === "cerrado" ? "Cerrado" : "Mant."}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">N.º expediente</label>
-          <input type="text" value={post.expediente}
-            onChange={(e) => onChange("expediente", e.target.value)}
-            onBlur={(e) => onSave("expediente", e.target.value)}
-            placeholder="Ej: UA-2026-89432"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-          />
-        </div>
-      </div>
-
-      {/* Columna derecha */}
-      <div className="space-y-2.5">
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Usuario</label>
-          <input type="text" value={post.portal_usuario}
-            onChange={(e) => onChange("portal_usuario", e.target.value)}
-            onBlur={(e) => onSave("portal_usuario", e.target.value)}
-            placeholder="email@ejemplo.com"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Contraseña</label>
-          <div className="flex gap-1.5">
-            <input type={showPw ? "text" : "password"} value={post.portal_password}
-              onChange={(e) => onChange("portal_password", e.target.value)}
-              onBlur={(e) => onSave("portal_password", e.target.value)}
-              placeholder="Contraseña del portal"
-              className="flex-1 min-w-0 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-            />
-            <button type="button" onClick={togglePw}
-              className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
-              {showPw ? "🙈" : "👁"}
-            </button>
-            {post.portal_password && (
-              <button type="button" onClick={() => navigator.clipboard?.writeText(post.portal_password)}
-                className="shrink-0 text-[11px] border border-neutral-200 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
-                📋
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">Notas de acceso</label>
-          <input type="text" value={post.portal_notas}
-            onChange={(e) => onChange("portal_notas", e.target.value)}
-            onBlur={(e) => onSave("portal_notas", e.target.value)}
-            placeholder="Ej: verificar email con código SMS"
-            className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-          />
-        </div>
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <span className="flex-1 text-xs text-neutral-700 font-mono break-all">
+          {secret && !visible ? "••••••••" : value}
+        </span>
+        {secret && (
+          <button type="button" onClick={() => setVisible((v) => !v)}
+            className="shrink-0 text-[11px] border border-neutral-200 rounded px-1.5 py-1 hover:bg-neutral-50">
+            {visible ? "🙈" : "👁"}
+          </button>
+        )}
+        <button type="button" onClick={() => navigator.clipboard?.writeText(value)}
+          className="shrink-0 text-[11px] border border-neutral-200 rounded px-1.5 py-1 hover:bg-neutral-50">
+          📋
+        </button>
       </div>
     </div>
   );
 }
 
-// ── TabDocs ───────────────────────────────────────────────────────────────────
+const PORTAL_FIELDS = [
+  { key: "label",    label: "Nombre / descripción", placeholder: "Ej: Mi acceso propio" },
+  { key: "url",      label: "URL",                  placeholder: "https://..." },
+  { key: "usuario",  label: "Usuario",              placeholder: "" },
+  { key: "password", label: "Contraseña",           placeholder: "" },
+  { key: "notas",    label: "Notas",                placeholder: "" },
+];
 
-function TabDocs({ post, onSave }) {
-  const [nueva, setNueva] = useState("");
+const PORTAL_VACIO = { label: "", url: "", usuario: "", password: "", notas: "" };
 
-  function toggle(idx) {
-    const docs = (post.documentos || []).map((d, i) =>
-      i === idx ? { ...d, estado: DOC_SIGUIENTE[d.estado] ?? "falta" } : d
-    );
-    onSave("documentos", docs);
+function TabPortal({ post, onSave }) {
+  const [nuevo, setNuevo] = useState(PORTAL_VACIO);
+  const [adding, setAdding] = useState(false);
+
+  const tieneAdmin = post.portal_url || post.portal_usuario || post.portal_password;
+  const portalesCliente = Array.isArray(post.portales_cliente) ? post.portales_cliente : [];
+
+  function addPortalCliente() {
+    if (!nuevo.url && !nuevo.label) return;
+    onSave("portales_cliente", [...portalesCliente, { ...nuevo }]);
+    setNuevo(PORTAL_VACIO);
+    setAdding(false);
   }
 
-  function remove(idx) {
-    const docs = (post.documentos || []).filter((_, i) => i !== idx);
-    onSave("documentos", docs);
+  function removePortalCliente(idx) {
+    onSave("portales_cliente", portalesCliente.filter((_, i) => i !== idx));
   }
 
-  function add() {
-    const nombre = nueva.trim();
-    if (!nombre) return;
-    const docs = [...(post.documentos || []), { nombre, estado: "falta" }];
-    onSave("documentos", docs);
-    setNueva("");
+  return (
+    <div className="space-y-4">
+      {/* Portal del asesor — solo lectura */}
+      {tieneAdmin ? (
+        <div className="space-y-2">
+          <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400">
+            Portal configurado por tu asesor
+          </p>
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 space-y-2">
+            <InfoField label="URL del portal"  value={post.portal_url} />
+            <InfoField label="Usuario"         value={post.portal_usuario} />
+            <InfoField label="Contraseña"      value={post.portal_password} secret />
+            <InfoField label="N.º expediente"  value={post.expediente} />
+            <InfoField label="Notas de acceso" value={post.portal_notas} />
+            {post.portal_estado && (
+              <p className="text-[10px] text-neutral-400">
+                Estado: <span className="font-semibold text-neutral-600">{post.portal_estado}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-neutral-400 italic">Tu asesor aún no ha configurado el portal.</p>
+      )}
+
+      {/* Portales propios del cliente */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[9px] font-bold uppercase tracking-widest font-mono text-neutral-400">
+            Mis portales adicionales
+          </p>
+          <button type="button" onClick={() => setAdding((v) => !v)}
+            className="text-[11px] font-semibold text-[#023A4B] hover:underline">
+            + Añadir
+          </button>
+        </div>
+
+        {portalesCliente.map((p, idx) => (
+          <div key={idx} className="bg-white border border-neutral-200 rounded-xl px-3 py-2.5 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-neutral-700">{p.label || p.url}</p>
+              <button type="button" onClick={() => removePortalCliente(idx)}
+                className="text-neutral-300 hover:text-red-400 text-xs">✕</button>
+            </div>
+            <InfoField label="URL"        value={p.url} />
+            <InfoField label="Usuario"    value={p.usuario} />
+            <InfoField label="Contraseña" value={p.password} secret />
+            {p.notas && <p className="text-[10px] text-neutral-500">{p.notas}</p>}
+          </div>
+        ))}
+
+        {adding && (
+          <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-xl px-3 py-3 space-y-2">
+            {PORTAL_FIELDS.map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 font-mono mb-1">
+                  {label}
+                </label>
+                <input
+                  type={key === "password" ? "password" : "text"}
+                  value={nuevo[key]}
+                  onChange={(e) => setNuevo((v) => ({ ...v, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  className="w-full text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
+                />
+              </div>
+            ))}
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={addPortalCliente}
+                className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-[#023A4B] text-white">
+                Guardar
+              </button>
+              <button type="button" onClick={() => setAdding(false)}
+                className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-neutral-200 text-neutral-500">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TabDocs (upload por ítem, sin borrar) ─────────────────────────────────────
+
+function TabDocs({ post, idSolicitud, onSave }) {
+  const [uploading, setUploading] = useState({});
+
+  async function handleUpload(idx, file) {
+    setUploading((v) => ({ ...v, [idx]: true }));
+    try {
+      const form = new FormData();
+      form.append("archivo", file);
+      const data = await apiUpload(`/solicitudes/${idSolicitud}/upload-justificante`, form);
+      if (data.ok) {
+        const docs = (post.documentos || []).map((d, i) =>
+          i === idx ? { ...d, estado: "pendiente", url_archivo: data.path, nombre_archivo: data.nombre } : d
+        );
+        onSave("documentos", docs);
+      }
+    } catch (e) {
+      console.error("Error subiendo justificante:", e);
+    } finally {
+      setUploading((v) => ({ ...v, [idx]: false }));
+    }
   }
 
   return (
@@ -300,55 +340,48 @@ function TabDocs({ post, onSave }) {
         <div key={idx} className="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2">
           <span className="text-sm shrink-0">📄</span>
           <span className="flex-1 min-w-0 text-xs text-neutral-700 truncate">{doc.nombre}</span>
-          <button type="button" onClick={() => toggle(idx)}
-            className={`shrink-0 text-[10px] font-bold border rounded-full px-2 py-0.5 transition ${DOC_CLS[doc.estado] ?? ""}`}>
+          {doc.url_archivo && (
+            <button type="button"
+              onClick={() => verArchivo(idSolicitud, doc.url_archivo)}
+              className="shrink-0 text-[10px] text-[#023A4B] underline">
+              Ver
+            </button>
+          )}
+          <span className={`shrink-0 text-[10px] font-bold border rounded-full px-2 py-0.5 ${DOC_CLS[doc.estado] ?? ""}`}>
             {DOC_LABEL[doc.estado] ?? doc.estado}
-          </button>
-          <button type="button" onClick={() => remove(idx)}
-            className="shrink-0 text-neutral-300 hover:text-red-400 text-xs leading-none">✕</button>
+          </span>
+          <label className="shrink-0 cursor-pointer text-[10px] border border-neutral-200 rounded-lg px-2 py-0.5 hover:bg-neutral-100 text-neutral-500">
+            {uploading[idx] ? "⏳" : "↑ Subir"}
+            <input type="file" className="hidden"
+              onChange={(e) => e.target.files[0] && handleUpload(idx, e.target.files[0])} />
+          </label>
         </div>
       ))}
-
-      <div className="flex gap-1.5 pt-1">
-        <input type="text" value={nueva}
-          onChange={(e) => setNueva(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
-          placeholder="Añadir documento…"
-          className="flex-1 text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#023A4B]"
-        />
-        <button type="button" onClick={add}
-          className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition">
-          + Añadir
-        </button>
-      </div>
     </div>
   );
 }
 
-// ── TabSeguimiento ────────────────────────────────────────────────────────────
+// ── TabSeguimiento (solo lectura) ─────────────────────────────────────────────
 
-function TabSeguimiento({ post, onChange, onSave }) {
+function TabSeguimiento({ post }) {
+  if (!post.seguimiento) {
+    return <p className="text-xs text-neutral-400 italic py-2">Sin notas de seguimiento aún.</p>;
+  }
   return (
-    <textarea
-      rows={4}
-      value={post.seguimiento}
-      onChange={(e) => onChange("seguimiento", e.target.value)}
-      onBlur={(e) => onSave("seguimiento", e.target.value)}
-      placeholder="Notas de seguimiento: llamadas, compromisos, pendientes del portal…"
-      className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#023A4B] resize-none leading-relaxed placeholder:text-neutral-300"
-    />
+    <div className="text-xs text-neutral-700 leading-relaxed whitespace-pre-wrap bg-neutral-50 rounded-xl px-3 py-2.5 border border-neutral-100">
+      {post.seguimiento}
+    </div>
   );
 }
 
 // ── MasterPostCard ────────────────────────────────────────────────────────────
 
-function MasterPostCard({ post, onUpdate, onSave }) {
-  const [tab, setTab]     = useState("fec");
-  const [showPw, setShowPw] = useState(false);
+function MasterPostCard({ post, idSolicitud, onUpdate, onSave }) {
+  const [tab, setTab] = useState("fec");
 
-  const idx   = Math.max(0, (post.prioridad || 1) - 1);
-  const color = P_COLORS[idx] ?? "#9ca3af";
-  const dias  = diasHasta(post.fecha_cierre);
+  const idx     = Math.max(0, (post.prioridad || 1) - 1);
+  const color   = P_COLORS[idx] ?? "#9ca3af";
+  const dias    = diasHasta(post.fecha_cierre);
   const urgente = dias !== null && dias > 0 && dias <= 20;
 
   const subtitle = [
@@ -357,8 +390,7 @@ function MasterPostCard({ post, onUpdate, onSave }) {
     post.fecha_cierre ? `Cierre: ${fmtFecha(post.fecha_cierre)}${urgente ? " 🔴" : ""}` : null,
   ].filter(Boolean).join(" · ");
 
-  const onChange = (field, value) => onUpdate(post.id_master, field, value);
-  const onSaveF  = (field, value) => onSave(post.id_master, field, value);
+  const onSaveF = (field, value) => onSave(post.id_master, field, value);
 
   return (
     <div className="border border-neutral-200 rounded-xl overflow-hidden bg-white">
@@ -403,10 +435,10 @@ function MasterPostCard({ post, onUpdate, onSave }) {
 
       {/* Contenido */}
       <div className="px-4 py-3">
-        {tab === "fec" && <TabFechas     post={post} onChange={onChange} onSave={onSaveF} />}
-        {tab === "por" && <TabPortal     post={post} onChange={onChange} onSave={onSaveF} showPw={showPw} togglePw={() => setShowPw((v) => !v)} />}
-        {tab === "doc" && <TabDocs       post={post} onSave={onSaveF} />}
-        {tab === "seg" && <TabSeguimiento post={post} onChange={onChange} onSave={onSaveF} />}
+        {tab === "fec" && <TabFechas      post={post} onSave={onSaveF} />}
+        {tab === "por" && <TabPortal      post={post} onSave={onSaveF} />}
+        {tab === "doc" && <TabDocs        post={post} idSolicitud={idSolicitud} onSave={onSaveF} />}
+        {tab === "seg" && <TabSeguimiento post={post} />}
       </div>
     </div>
   );
@@ -420,7 +452,6 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
   const [saving, setSaving]   = useState(false);
   const isMount = useRef(true);
 
-  // Carga inicial
   useEffect(() => {
     setLoading(true);
     apiGET(`/solicitudes/${idSolicitud}/postulaciones`)
@@ -429,7 +460,6 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
       .finally(() => setLoading(false));
   }, [idSolicitud]);
 
-  // Re-fetch cuando el usuario guarda su elección de másteres (paso 5)
   useEffect(() => {
     if (!reloadKey) return;
     setLoading(true);
@@ -439,7 +469,6 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
       .finally(() => setLoading(false));
   }, [reloadKey]); // eslint-disable-line
 
-  // Cuando se regenera el informe (formulario re-guardado), limpiar postulaciones localmente
   useEffect(() => {
     if (isMount.current) { isMount.current = false; return; }
     setPosts([]);
@@ -453,12 +482,10 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
     finally { setSaving(false); }
   }
 
-  // Actualiza campo en local state solamente
   function handleUpdate(id_master, field, value) {
     setPosts((prev) => prev.map((p) => p.id_master === id_master ? { ...p, [field]: value } : p));
   }
 
-  // Actualiza campo en local state Y guarda en backend
   function handleSave(id_master, field, value) {
     let next;
     setPosts((prev) => {
@@ -513,6 +540,7 @@ export default function ProgramacionPostulacionesCliente({ idSolicitud, resetKey
             <MasterPostCard
               key={post.id_master}
               post={post}
+              idSolicitud={idSolicitud}
               onUpdate={handleUpdate}
               onSave={handleSave}
             />
