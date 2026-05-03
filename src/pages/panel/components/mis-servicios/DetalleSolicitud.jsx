@@ -17,14 +17,19 @@ import CierreServicioMasterCliente from "./sections/CierreServicioMasterCliente"
 
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
-  "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
+  "experiencia_anios", "ingles_situacion",
   "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
 ];
 
 function formCompleto(datos) {
-  return CAMPOS_REQUERIDOS_FORMULARIO.every(
+  const base = CAMPOS_REQUERIDOS_FORMULARIO.every(
     (campo) => datos?.[campo] != null && datos?.[campo] !== ""
   );
+  if (!base) return false;
+  if (datos.experiencia_anios && datos.experiencia_anios !== "sin") {
+    if (!datos.experiencia_vinculada) return false;
+  }
+  return true;
 }
 
 const DOT_COLORS = {
