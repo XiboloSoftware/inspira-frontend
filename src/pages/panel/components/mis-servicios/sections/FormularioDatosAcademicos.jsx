@@ -18,12 +18,11 @@ const AREAS_CARRERA = [
 ];
 
 
-// Lista completa de las 17 CCAAs — usada cuando el plan no restringe
-const TODAS_COMUNIDADES = [
-  "Andalucía", "Aragón", "Asturias", "Baleares", "Canarias",
-  "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña",
-  "Extremadura", "Galicia", "La Rioja", "Madrid", "Murcia",
-  "Navarra", "País Vasco", "Valencia",
+// Fallback estático (nombres exactos del seed) — solo si la API falla
+const TODAS_COMUNIDADES_FALLBACK = [
+  "Andalucía", "Aragón", "Asturias", "Cantabria", "Castilla-La Mancha",
+  "Castilla y León", "Cataluña", "Comunidad de Madrid", "Comunidad Valenciana",
+  "Extremadura", "Galicia", "La Rioja", "Murcia", "Navarra", "País Vasco",
 ];
 const COMUNIDAD_INDIFERENTE = "Me da igual / No tengo preferencia";
 
@@ -253,6 +252,7 @@ export default function FormularioDatosAcademicos({
   const [showErrors, setShowErrors]   = useState(false);
   const [ramas, setRamas]             = useState([]);
   const [subareas, setSubareas]       = useState([]);
+  const [todasComunidades, setTodasComunidades] = useState(TODAS_COMUNIDADES_FALLBACK);
   const [xWarning, setXWarning]       = useState(false);
   const [savingX, setSavingX]         = useState(false);
 
@@ -262,6 +262,10 @@ export default function FormularioDatosAcademicos({
     }).catch(() => {});
     apiGET("/api/catalogo/subareas").then((r) => {
       if (r.ok && Array.isArray(r.subareas)) setSubareas(r.subareas);
+    }).catch(() => {});
+    apiGET("/api/catalogo/comunidades").then((r) => {
+      if (r.ok && Array.isArray(r.comunidades) && r.comunidades.length > 0)
+        setTodasComunidades(r.comunidades);
     }).catch(() => {});
   }, []);
 
@@ -948,7 +952,7 @@ export default function FormularioDatosAcademicos({
 
       // ── PASO 9: Región y fechas ─────────────────────────────────────────
       case 8: {
-        const opcionesDisponibles = planCCAAs ? planCCAAs.opciones : TODAS_COMUNIDADES;
+        const opcionesDisponibles = planCCAAs ? planCCAAs.opciones : todasComunidades;
 
         return (
           <div className="space-y-6">
