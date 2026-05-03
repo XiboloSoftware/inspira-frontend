@@ -502,13 +502,14 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   const [modalVer,   setModalVer]   = useState(null); // { item } → solo lectura
   const [toggling,   setToggling]   = useState(null);
   const [purging,    setPurging]    = useState(null);
+  const [subTab,     setSubTab]     = useState("activos"); // "activos" | "inactivos"
 
   const [search,       setSearch]       = useState("");
   const [filtroCC,     setFiltroCC]     = useState("");
   const [filtroUniv,   setFiltroUniv]   = useState("");
   const [filtroRama,   setFiltroRama]   = useState("");
   const [filtroMod,    setFiltroMod]    = useState("");
-  const [filtroActivo, setFiltroActivo] = useState("");
+  const [filtroActivo, setFiltroActivo] = useState("true");
   const [sortCol, setSortCol] = useState("nombre_limpio");
   const [sortDir, setSortDir] = useState("asc");
 
@@ -563,6 +564,14 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
     finally { setToggling(null); }
   }
 
+  function cambiarSubTab(tab) {
+    const activo = tab === "activos" ? "true" : "false";
+    setSubTab(tab);
+    setFiltroActivo(activo);
+    setPage(1);
+    fetchMasters({ page: 1, filtroActivo: activo });
+  }
+
   async function purgarMaster(e, m) {
     e.stopPropagation();
     if (!window.confirm(`¿Eliminar permanentemente "${m.nombre_limpio}"? Esta acción no se puede deshacer.`)) return;
@@ -586,7 +595,7 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   return (
     <div>
       {/* Encabezado */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-base font-bold text-neutral-800">Másteres</h2>
           <p className="text-xs text-neutral-500 mt-0.5">
@@ -598,6 +607,24 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-95 transition shadow-sm">
           <span className="text-base leading-none">+</span> Nuevo máster
         </button>
+      </div>
+
+      {/* Sub-tabs Activos / Inactivos */}
+      <div className="flex gap-1 mb-3">
+        {[["activos", "Activos"], ["inactivos", "Inactivos ·  papelera"]].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => cambiarSubTab(key)}
+            className={[
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+              subTab === key
+                ? key === "inactivos" ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
+                : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Filtros */}
@@ -622,7 +649,6 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
           { value: filtroUniv,   onChange: (v) => handleFilter("filtroUniv", v, setFiltroUniv),  placeholder: "Todas las universidades",  opts: universidadesFiltradas.map((u) => ({ value: u.id_universidad, label: `${u.sigla} — ${u.nombre_completo}` })) },
           { value: filtroRama,   onChange: (v) => handleFilter("filtroRama", v, setFiltroRama),  placeholder: "Todas las ramas",          opts: RAMAS.map((r) => ({ value: r.value, label: r.label })) },
           { value: filtroMod,    onChange: (v) => handleFilter("filtroMod",  v, setFiltroMod),   placeholder: "Todas las modalidades",    opts: MODALIDADES.map((m) => ({ value: m.value, label: m.label })) },
-          { value: filtroActivo, onChange: (v) => handleFilter("filtroActivo",v,setFiltroActivo),placeholder: "Activos e inactivos",      opts: [{ value:"true", label:"Solo activos" }, { value:"false", label:"Solo inactivos" }] },
         ].map(({ value, onChange, placeholder, opts }) => (
           <select key={placeholder}
             className="border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white text-neutral-700"
@@ -737,7 +763,7 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
                         title={m.activo ? "Desactivar" : "Activar"}>
                         {toggling === m.id_master ? "…" : m.activo ? "Desactivar" : "Activar"}
                       </button>
-                      {!m.activo && (
+                      {subTab === "inactivos" && (
                         <button
                           disabled={purging === m.id_master}
                           onClick={(e) => purgarMaster(e, m)}

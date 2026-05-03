@@ -151,7 +151,7 @@ export default function SeccionComunidades({ comunidades, onReload }) {
       const cmp = typeof valA === "number" ? valA - valB : valA.localeCompare(valB, "es");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [comunidades, sortCol, sortDir]);
+  }, [comunidades, search, sortCol, sortDir]);
 
   const thProps = { sortCol, sortDir, onSort: toggleSort };
 
