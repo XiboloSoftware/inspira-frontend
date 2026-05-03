@@ -277,8 +277,15 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
       id:       "informe",
       num:      4,
       titulo:   "Informe másteres",
-      subtitulo: compat ? `${compat.total} programas` : detalle?.informe_fecha_subida ? "PDF disponible" : loadingCompat ? "Calculando…" : "Pendiente",
-      estado:   (compat || detalle?.informe_fecha_subida) ? "completado" : loadingCompat ? "cargando" : formGuardado ? "pendiente" : null,
+      subtitulo: compat?.estado === "en_creacion" ? "En preparación"
+               : compat?.total != null ? `${compat.total} programas`
+               : detalle?.informe_fecha_subida ? "PDF disponible"
+               : loadingCompat ? "Calculando…" : "Pendiente",
+      estado:   detalle?.informe_fecha_subida ? "completado"
+              : compat?.estado === "en_creacion" ? "pendiente"
+              : compat?.total != null ? "completado"
+              : loadingCompat ? "cargando"
+              : formGuardado ? "pendiente" : null,
       show:     !esVisado,
     },
     {
