@@ -1,6 +1,6 @@
 // SeccionMasters.jsx — CRUD Másteres
 import { useCallback, useEffect, useRef, useState } from "react";
-import { boGET, boPOST } from "../../../services/backofficeApi";
+import { boGET, boPOST, boDELETE } from "../../../services/backofficeApi";
 import {
   RAMAS, MODALIDADES, TIENE_PRACTICAS_OPCIONES, CATEGORIAS_CRITERIO,
   formatPrecio, duracionLabel, activoBadge,
@@ -501,6 +501,7 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
   const [modal,      setModal]      = useState(null); // { item } → editar/crear
   const [modalVer,   setModalVer]   = useState(null); // { item } → solo lectura
   const [toggling,   setToggling]   = useState(null);
+  const [purging,    setPurging]    = useState(null);
 
   const [search,       setSearch]       = useState("");
   const [filtroCC,     setFiltroCC]     = useState("");
@@ -560,6 +561,17 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
     setToggling(m.id_master);
     try { await boPOST(`/backoffice/catalogo/masters/${m.id_master}/estado`, { activo: !m.activo }); fetchMasters(); }
     finally { setToggling(null); }
+  }
+
+  async function purgarMaster(e, m) {
+    e.stopPropagation();
+    if (!window.confirm(`¿Eliminar permanentemente "${m.nombre_limpio}"? Esta acción no se puede deshacer.`)) return;
+    setPurging(m.id_master);
+    try {
+      const data = await boDELETE(`/backoffice/catalogo/masters/${m.id_master}`);
+      if (!data.ok) { alert(data.msg || "Error al eliminar"); return; }
+      fetchMasters();
+    } finally { setPurging(null); }
   }
 
   const totalPages = Math.ceil(total / LIMIT);
@@ -725,6 +737,19 @@ export default function SeccionMasters({ universidades, comunidades, ramas }) {
                         title={m.activo ? "Desactivar" : "Activar"}>
                         {toggling === m.id_master ? "…" : m.activo ? "Desactivar" : "Activar"}
                       </button>
+                      {!m.activo && (
+                        <button
+                          disabled={purging === m.id_master}
+                          onClick={(e) => purgarMaster(e, m)}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition disabled:opacity-40"
+                          title="Purgar (eliminar permanentemente)">
+                          {purging === m.id_master ? "…" : (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
