@@ -74,11 +74,8 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function InformeAdmin({ detalle, recargar }) {
-  // ── PDF / Sheets state (existente) ──
+  // ── PDF state (existente) ──
   const [subiendoInforme, setSubiendoInforme] = useState(false);
-  const [sheetsOpen, setSheetsOpen]           = useState(false);
-  const [sheetsUrl, setSheetsUrl]             = useState("");
-  const [sheetsStatus, setSheetsStatus]       = useState(null);
 
   // ── Compatibilidad state ──
   const [compat, setCompat]       = useState(null);
@@ -93,7 +90,7 @@ export default function InformeAdmin({ detalle, recargar }) {
   async function cargarCompatibilidad() {
     setLoading(true);
     try {
-      const r = await boGET(`/api/backoffice/solicitudes/${detalle.id_solicitud}/compatibilidad`);
+      const r = await boGET(`/backoffice/solicitudes/${detalle.id_solicitud}/compatibilidad`);
       if (r.ok) setCompat(r);
     } catch { /* silencioso */ }
     finally { setLoading(false); }
@@ -139,7 +136,7 @@ export default function InformeAdmin({ detalle, recargar }) {
   async function guardarCurado() {
     setGuardando(true);
     try {
-      await boPATCH(`/api/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, {
+      await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, {
         lista: listaEdit,
       });
       await recargar();
@@ -151,7 +148,7 @@ export default function InformeAdmin({ detalle, recargar }) {
   async function restaurarAuto() {
     setGuardando(true);
     try {
-      await boPATCH(`/api/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
+      await boPATCH(`/backoffice/solicitudes/${detalle.id_solicitud}/informe-compat`, { lista: null });
       await recargar();
     } catch { alert("Error al restaurar"); }
     finally { setGuardando(false); }
@@ -210,18 +207,6 @@ export default function InformeAdmin({ detalle, recargar }) {
     }
   }
 
-  async function verificarSheets() {
-    if (!sheetsUrl.trim()) return;
-    setSheetsStatus("loading");
-    try {
-      const r = await fetch(sheetsUrl.trim());
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      setSheetsStatus("ok");
-    } catch {
-      setSheetsStatus("err");
-    }
-  }
-
   const datos    = detalle?.datos_formulario || {};
   const planLabel = detalle?.titulo || "Plan contratado";
   const filtros  = [
@@ -249,35 +234,11 @@ export default function InformeAdmin({ detalle, recargar }) {
               📦 {planLabel}
             </span>
           )}
-          <div className="flex gap-2 shrink-0">
-            <button type="button" onClick={() => setSheetsOpen((v) => !v)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/12 text-white/80 border border-white/20 hover:bg-white/20 transition">
-              📊 Sheets
-            </button>
-          </div>
+          <button onClick={regenerar} disabled={loadingCompat}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/12 text-white/80 border border-white/20 hover:bg-white/20 transition disabled:opacity-50 shrink-0">
+            🔄 Regenerar
+          </button>
         </div>
-
-        {sheetsOpen && (
-          <div className="mt-3 bg-[#F0FDF4] border border-[#1D6A4A]/20 rounded-xl p-3">
-            <p className="text-xs font-bold text-[#1D6A4A] mb-1">📊 Base de datos · Google Sheets</p>
-            <p className="text-[11px] text-[#155a3d] mb-2 leading-relaxed">
-              Publica el Sheet como CSV: <em>Archivo → Compartir → Publicar en la web → CSV</em>
-            </p>
-            <div className="flex gap-2">
-              <input type="url" value={sheetsUrl}
-                onChange={(e) => { setSheetsUrl(e.target.value); setSheetsStatus(null); }}
-                placeholder="URL del Sheet publicado como CSV..."
-                className="flex-1 text-xs px-3 py-1.5 border border-[#1D6A4A]/30 rounded-lg outline-none focus:border-[#1D6A4A] bg-white text-neutral-800"
-              />
-              <button type="button" onClick={verificarSheets} disabled={sheetsStatus === "loading"}
-                className="px-3 py-1.5 bg-[#1D6A4A] text-white text-xs font-semibold rounded-lg hover:bg-[#155a3d] transition whitespace-nowrap disabled:opacity-60">
-                {sheetsStatus === "loading" ? "…" : "Verificar"}
-              </button>
-            </div>
-            {sheetsStatus === "ok"  && <p className="text-[11px] text-[#1D6A4A] mt-1 font-mono">✓ Sheet accesible</p>}
-            {sheetsStatus === "err" && <p className="text-[11px] text-red-600 mt-1 font-mono">✗ No se pudo acceder</p>}
-          </div>
-        )}
       </div>
 
       {/* ── PDF manual ─────────────────────────────────────── */}
@@ -342,10 +303,6 @@ export default function InformeAdmin({ detalle, recargar }) {
                     Restaurar auto
                   </button>
                 )}
-                <button onClick={regenerar} disabled={loadingCompat}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition disabled:opacity-50">
-                  🔄 Regenerar
-                </button>
                 {listaVista.length > 0 && (
                   <button onClick={entrarEdicion}
                     className="text-[11px] px-2.5 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition">
