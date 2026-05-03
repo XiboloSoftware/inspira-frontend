@@ -1,70 +1,137 @@
 // src/pages/backoffice/solicitudes/components/InformeAdmin.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { boGET, boPATCH, boUpload } from "../../../../services/backofficeApi";
 import { API_URL, formatearFecha } from "../utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function normalizar(str = "") {
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
 
 function scoreColor(s) {
   if (s >= 80) return "text-emerald-600";
   if (s >= 60) return "text-amber-600";
   return "text-red-500";
 }
-function barColor(s) {
+
+function scoreStroke(s) {
   if (s >= 80) return "#10b981";
   if (s >= 60) return "#f59e0b";
   return "#ef4444";
 }
 
+function scoreChip(s) {
+  if (s >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (s >= 60) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-red-50 text-red-600 border-red-200";
+}
+
+function durLabel(anios) {
+  if (anios === 1) return "1 año";
+  if (anios === 1.5) return "18 meses";
+  return `${anios} años`;
+}
+
+// ── Score ring SVG ─────────────────────────────────────────────────────────────
+
+function ScoreRing({ score }) {
+  const r = 16;
+  const circ = 2 * Math.PI * r; // ≈ 100.53
+  return (
+    <div className="relative w-10 h-10 shrink-0">
+      <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r={r} fill="none" stroke="#f0f0f0" strokeWidth="3.5" />
+        <circle
+          cx="20" cy="20" r={r} fill="none"
+          stroke={scoreStroke(score)}
+          strokeWidth="3.5"
+          strokeDasharray={`${(score / 100) * circ} ${circ}`}
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-[10px] font-black leading-none ${scoreColor(score)}`}>{score}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Master row ─────────────────────────────────────────────────────────────────
+
 function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEliminar, esFirst, esLast }) {
   const { master, score } = resultado;
-  const dur =
-    master.duracion_anios === 1 ? "1 año"
-    : master.duracion_anios === 1.5 ? "18 meses"
-    : `${master.duracion_anios} años`;
+  const dur = master.duracion_anios ? durLabel(master.duracion_anios) : null;
   const precio = master.precio_total_estimado
     ? `€${Math.round(master.precio_total_estimado).toLocaleString("es-ES")}`
     : null;
 
+  const numBg =
+    posicion === 1 ? "bg-[#1A3557] text-white"
+    : posicion === 2 ? "bg-[#1D6A4A] text-white"
+    : posicion === 3 ? "bg-amber-400 text-white"
+    : "bg-neutral-100 text-neutral-500";
+
   return (
-    <div className="flex items-center gap-2 py-2.5 border-b border-neutral-100 last:border-0">
+    <div className={`group relative flex items-center gap-2.5 p-3 rounded-xl border transition-all duration-200 ${
+      editMode
+        ? "border-neutral-200 bg-white hover:border-[#1D6A4A]/30 hover:shadow-sm"
+        : "border-transparent hover:bg-neutral-50/80"
+    }`}>
+
+      {/* Reorder arrows */}
       {editMode && (
-        <div className="flex flex-col gap-0.5 shrink-0">
+        <div className="flex flex-col gap-0.5 shrink-0 transition-opacity opacity-40 group-hover:opacity-100">
           <button onClick={onArriba} disabled={esFirst}
-            className="w-5 h-5 rounded text-neutral-400 hover:text-neutral-700 disabled:opacity-20 text-[10px] flex items-center justify-center leading-none">▲</button>
+            className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-[#1D6A4A] hover:bg-[#E8F5EE] disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 transition-all duration-150">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
           <button onClick={onAbajo} disabled={esLast}
-            className="w-5 h-5 rounded text-neutral-400 hover:text-neutral-700 disabled:opacity-20 text-[10px] flex items-center justify-center leading-none">▼</button>
+            className="w-6 h-6 rounded-md flex items-center justify-center text-neutral-400 hover:text-[#1D6A4A] hover:bg-[#E8F5EE] disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-neutral-400 transition-all duration-150">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
       )}
-      <div className="shrink-0 w-5 h-5 rounded-full bg-neutral-100 text-neutral-500 text-[10px] font-bold flex items-center justify-center">
+
+      {/* Número posición */}
+      <div className={`shrink-0 w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${numBg}`}>
         {posicion}
       </div>
+
+      {/* Datos máster */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-neutral-800 leading-tight">{master.nombre_limpio}</p>
-        <p className="text-[11px] text-neutral-500 leading-tight mt-0.5">
+        <p className="text-xs font-semibold text-[#1A3557] leading-tight">{master.nombre_limpio}</p>
+        <p className="text-[11px] text-neutral-500 leading-tight mt-0.5 truncate">
           {master.universidad.nombre_completo}
           {master.universidad.ciudad ? ` · ${master.universidad.ciudad}` : ""}
         </p>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {precio && <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{precio}</span>}
-          <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{dur}</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-            score >= 80 ? "bg-emerald-50 text-emerald-700"
-            : score >= 60 ? "bg-amber-50 text-amber-700"
-            : "bg-red-50 text-red-600"
-          }`}>{score}%</span>
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {precio && (
+            <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-md">{precio}</span>
+          )}
+          {dur && (
+            <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-md">{dur}</span>
+          )}
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(score)}`}>
+            {score}% match
+          </span>
         </div>
       </div>
-      <div className="shrink-0 w-9 text-center">
-        <div className={`text-sm font-black ${scoreColor(score)}`}>{score}</div>
-        <div className="mt-0.5 h-1 bg-neutral-100 rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${score}%`, background: barColor(score) }} />
-        </div>
-      </div>
+
+      {/* Score ring */}
+      <ScoreRing score={score} />
+
+      {/* Eliminar */}
       {editMode && (
         <button onClick={onEliminar}
-          className="shrink-0 w-6 h-6 rounded-full bg-red-50 text-red-500 hover:bg-red-100 text-xs flex items-center justify-center ml-1 transition">
-          ✕
+          className="shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 ml-0.5">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       )}
     </div>
@@ -74,16 +141,15 @@ function MasterRowAdmin({ posicion, resultado, editMode, onArriba, onAbajo, onEl
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function InformeAdmin({ detalle, recargar }) {
-  // ── PDF state (existente) ──
   const [subiendoInforme, setSubiendoInforme] = useState(false);
-
-  // ── Compatibilidad state ──
-  const [compat, setCompat]       = useState(null);
+  const [compat, setCompat]         = useState(null);
   const [loadingCompat, setLoading] = useState(true);
-  const [editMode, setEditMode]   = useState(false);
-  const [listaEdit, setListaEdit] = useState([]);
-  const [searchQ, setSearchQ]     = useState("");
-  const [guardando, setGuardando] = useState(false);
+  const [editMode, setEditMode]     = useState(false);
+  const [listaEdit, setListaEdit]   = useState([]);
+  const [searchQ, setSearchQ]       = useState("");
+  const [guardando, setGuardando]   = useState(false);
+  const [showParams, setShowParams] = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => { cargarCompatibilidad(); }, [detalle.id_solicitud]); // eslint-disable-line
 
@@ -131,6 +197,7 @@ export default function InformeAdmin({ detalle, recargar }) {
     if (listaEdit.some((e) => e.master.id_master === r.master.id_master)) return;
     setListaEdit((prev) => [...prev, r]);
     setSearchQ("");
+    searchRef.current?.focus();
   }
 
   async function guardarCurado() {
@@ -154,20 +221,6 @@ export default function InformeAdmin({ detalle, recargar }) {
     finally { setGuardando(false); }
   }
 
-  // ── Derived ──
-  const listaVista   = detalle.informe_compat_curado ?? compat?.resultados?.slice(0, 20) ?? [];
-  const isCurado     = !!detalle.informe_compat_curado;
-  const todosCompat  = compat?.resultados ?? [];
-  const sugerencias  = searchQ.length >= 2
-    ? todosCompat
-        .filter((r) =>
-          r.master.nombre_limpio.toLowerCase().includes(searchQ.toLowerCase()) &&
-          !listaEdit.some((e) => e.master.id_master === r.master.id_master)
-        )
-        .slice(0, 8)
-    : [];
-
-  // ── PDF / Sheets functions (existente) ──
   async function handleUploadInforme(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -207,73 +260,144 @@ export default function InformeAdmin({ detalle, recargar }) {
     }
   }
 
-  const datos    = detalle?.datos_formulario || {};
+  // ── Derived ──────────────────────────────────────────────────────────────────
+
+  const datos     = detalle?.datos_formulario || {};
   const planLabel = detalle?.titulo || "Plan contratado";
-  const filtros  = [
+  const filtros   = [
     datos.comunidades_preferidas
-      ? (Array.isArray(datos.comunidades_preferidas) ? datos.comunidades_preferidas.join(", ") : datos.comunidades_preferidas)
+      ? (Array.isArray(datos.comunidades_preferidas)
+          ? datos.comunidades_preferidas.join(", ")
+          : datos.comunidades_preferidas)
       : null,
     datos.presupuesto_hasta
       ? `Máx. ${Number(datos.presupuesto_hasta).toLocaleString("es-ES")} €`
       : null,
   ].filter(Boolean).join(" · ");
 
+  const listaVista  = detalle.informe_compat_curado ?? compat?.resultados?.slice(0, 20) ?? [];
+  const isCurado    = !!detalle.informe_compat_curado;
+  const todosCompat = compat?.resultados ?? [];
+  const sugerencias = searchQ.length >= 2
+    ? todosCompat
+        .filter((r) =>
+          normalizar(r.master.nombre_limpio).includes(normalizar(searchQ)) &&
+          !listaEdit.some((e) => e.master.id_master === r.master.id_master)
+        )
+        .slice(0, 8)
+    : [];
+
+  const paramRows = [
+    ["Rama del máster",    datos.area_interes_master],
+    ["Sub-área",           datos.sub_area_interes || compat?.perfil?.area],
+    ["Área de carrera",    datos.area_carrera],
+    ["Promedio",           datos.promedio_peru ? `${datos.promedio_peru} / ${datos.promedio_escala || 10}` : null],
+    ["Posición académica", datos.ubicacion_grupo],
+    ["Experiencia",        datos.experiencia_anios],
+    ["Vinculada al área",  datos.experiencia_vinculada],
+    ["Inglés",             datos.ingles_situacion],
+    ["Objetivo",           datos.objetivo_master],
+    ["Investigación",      datos.investigacion_experiencia],
+    ["Modalidad",          datos.modalidad_preferida],
+    ["Duración",           datos.duracion_preferida],
+    ["Prácticas",          datos.practicas_preferencia],
+    ["Presupuesto",        datos.presupuesto_hasta ? `€${Number(datos.presupuesto_hasta).toLocaleString("es-ES")}` : null],
+    ["CCAA preferidas",    compat?.perfil?.ccaa?.join(", ")],
+  ];
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-0 -mx-5 -mt-4 overflow-hidden">
 
-      {/* ── Banner generador IA ─────────────────────────────── */}
-      <div className="px-5 pt-4 pb-4" style={{ background: "linear-gradient(135deg, #1D6A4A, #1A3557)" }}>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-lg shrink-0">✦</div>
+      {/* ── Banner IA ────────────────────────────────────────────── */}
+      <div className="px-5 pt-5 pb-5" style={{ background: "linear-gradient(135deg, #1D6A4A 0%, #1A3557 100%)" }}>
+        <div className="flex items-start gap-3 flex-wrap">
+          <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-lg shrink-0">
+            ✦
+          </div>
           <div className="flex-1 min-w-0">
             <p className="font-serif text-sm font-bold text-white mb-0.5">Generador de Informe con IA</p>
-            <p className="text-xs text-white/70">{filtros ? `Filtros: ${filtros}` : planLabel}</p>
+            <p className="text-xs text-white/60">{filtros ? `Filtros: ${filtros}` : planLabel}</p>
           </div>
-          {planLabel && (
-            <span className="bg-[#F5C842] text-[#1A3557] text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
-              📦 {planLabel}
-            </span>
-          )}
-          <button onClick={regenerar} disabled={loadingCompat}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/12 text-white/80 border border-white/20 hover:bg-white/20 transition disabled:opacity-50 shrink-0">
-            🔄 Regenerar
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {planLabel && (
+              <span className="bg-[#F5C842] text-[#1A3557] text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
+                📦 {planLabel}
+              </span>
+            )}
+            <button onClick={regenerar} disabled={loadingCompat}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/12 text-white/80 border border-white/20 hover:bg-white/22 transition-all duration-200 disabled:opacity-50 shrink-0">
+              <svg className={`w-3 h-3 ${loadingCompat ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Regenerar
+            </button>
+          </div>
         </div>
+
+        {/* Stats rápidas */}
+        {!loadingCompat && compat && (
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5">
+              <span className="text-white/50 text-[10px]">Programas totales</span>
+              <span className="text-white font-bold text-[11px]">{compat.total}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-lg px-2.5 py-1.5">
+              <span className="text-white/50 text-[10px]">En informe</span>
+              <span className="text-white font-bold text-[11px]">{listaVista.length}</span>
+            </div>
+            {isCurado && (
+              <div className="flex items-center gap-1.5 bg-[#F5C842]/20 border border-[#F5C842]/30 rounded-lg px-2.5 py-1.5">
+                <span className="text-[#F5C842] text-[10px] font-semibold">✏️ Lista curada</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ── PDF manual ─────────────────────────────────────── */}
-      <div className="px-5 pt-4 pb-3 space-y-3 border-b border-neutral-100">
+      {/* ── PDF manual ────────────────────────────────────────────── */}
+      <div className="px-5 pt-4 pb-4 border-b border-neutral-100">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {detalle.informe_fecha_subida ? (
             <p className="text-xs text-neutral-500">
               PDF subido el <span className="font-medium text-neutral-700">{formatearFecha(detalle.informe_fecha_subida)}</span>
             </p>
           ) : (
-            <p className="text-xs text-neutral-500">Aún no se ha subido un PDF de informe.</p>
+            <p className="text-xs text-neutral-400 italic">Aún no se ha subido un PDF de informe.</p>
           )}
-          <label className="inline-flex items-center text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer font-medium transition">
+          <label className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer font-medium transition-all duration-200">
+            <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
             {subiendoInforme ? "Subiendo…" : "Subir / reemplazar PDF"}
             <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx"
               onChange={handleUploadInforme} />
           </label>
         </div>
+
         {detalle.informe_fecha_subida && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border border-neutral-100 rounded-xl bg-neutral-50 px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-neutral-800 truncate">
-                {detalle.informe_nombre_original || "Informe de búsqueda"}
-              </p>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                {formatearFecha(detalle.informe_fecha_subida)}
-              </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-3 border border-neutral-100 rounded-xl bg-neutral-50/70 px-4 py-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-800 truncate">
+                  {detalle.informe_nombre_original || "Informe de búsqueda"}
+                </p>
+                <p className="text-xs text-neutral-500">{formatearFecha(detalle.informe_fecha_subida)}</p>
+              </div>
             </div>
             <div className="flex gap-2 shrink-0">
               <button type="button" onClick={() => manejarInformeAdmin("ver")}
-                className="text-xs px-3 py-1.5 rounded-lg border border-neutral-300 hover:bg-white transition">
+                className="text-xs px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-white transition-all duration-200">
                 Ver
               </button>
               <button type="button" onClick={() => manejarInformeAdmin("descargar")}
-                className="text-xs px-3 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition">
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition-all duration-200">
                 Descargar
               </button>
             </div>
@@ -281,159 +405,230 @@ export default function InformeAdmin({ detalle, recargar }) {
         )}
       </div>
 
-      {/* ── Compatibilidad automática ───────────────────────── */}
+      {/* ── Compatibilidad automática ─────────────────────────────── */}
       <div className="px-5 pt-4 pb-5">
 
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Compatibilidad automática</p>
-            {isCurado && !editMode && (
-              <span className="text-[10px] bg-[#023A4B]/10 text-[#023A4B] font-semibold px-2 py-0.5 rounded-md">
-                Lista curada
-              </span>
-            )}
-          </div>
+        {/* Header controles */}
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest">
+            Compatibilidad automática
+          </p>
           <div className="flex gap-1.5 shrink-0">
-            {!editMode && (
+            {!editMode ? (
               <>
                 {isCurado && (
                   <button onClick={restaurarAuto} disabled={guardando}
-                    className="text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition disabled:opacity-50">
+                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200 disabled:opacity-50">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                     Restaurar auto
                   </button>
                 )}
                 {listaVista.length > 0 && (
                   <button onClick={entrarEdicion}
-                    className="text-[11px] px-2.5 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition">
-                    ✏️ Modificar
+                    className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg bg-[#1A3557] text-white hover:bg-[#22456e] transition-all duration-200 font-semibold">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modificar lista
                   </button>
                 )}
               </>
-            )}
-            {editMode && (
+            ) : (
               <>
                 <button onClick={() => setEditMode(false)}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition">
+                  className="text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200">
                   Cancelar
                 </button>
                 <button onClick={guardarCurado} disabled={guardando}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg bg-[#023A4B] text-white hover:bg-[#035670] transition disabled:opacity-50">
-                  {guardando ? "Guardando…" : "Guardar curaduría"}
+                  className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-[#1D6A4A] text-white hover:bg-[#175a3d] transition-all duration-200 disabled:opacity-50 font-semibold">
+                  {guardando ? (
+                    <>
+                      <svg className="w-3 h-3 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Guardando…
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Guardar curaduría
+                    </>
+                  )}
                 </button>
               </>
             )}
           </div>
         </div>
 
-        {/* Parámetros de scoring */}
-        {datos && (
-          <details className="mb-3 group">
-            <summary className="text-[11px] font-semibold text-neutral-500 cursor-pointer select-none hover:text-neutral-700 list-none flex items-center gap-1">
-              <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+        {/* Banner modo edición */}
+        {editMode && (
+          <div className="mb-4 flex items-center gap-2.5 bg-[#1A3557]/5 border border-[#1A3557]/15 rounded-xl px-3.5 py-2.5">
+            <div className="w-2 h-2 rounded-full bg-[#1D6A4A] animate-pulse shrink-0" />
+            <p className="text-[11px] text-[#1A3557] font-medium">
+              Modo edición activo · {listaEdit.length} programa{listaEdit.length !== 1 ? "s" : ""} en la lista
+            </p>
+          </div>
+        )}
+
+        {/* Parámetros colapsables */}
+        {datos && !editMode && (
+          <div className="mb-4">
+            <button onClick={() => setShowParams((p) => !p)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 transition-colors duration-150">
+              <svg className={`w-3 h-3 transition-transform duration-200 ${showParams ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
               Parámetros usados en el cálculo
-            </summary>
-            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 bg-neutral-50 rounded-xl px-4 py-3 text-[11px]">
-              {[
-                ["Rama del máster",    datos.area_interes_master],
-                ["Sub-área",           datos.sub_area_interes || compat?.perfil?.area],
-                ["Área de carrera",    datos.area_carrera],
-                ["Promedio",           datos.promedio_peru ? `${datos.promedio_peru} / ${datos.promedio_escala || 10}` : null],
-                ["Posición académica", datos.ubicacion_grupo],
-                ["Experiencia",        datos.experiencia_anios],
-                ["Vinculada al área",  datos.experiencia_vinculada],
-                ["Inglés",             datos.ingles_situacion],
-                ["Objetivo",           datos.objetivo_master],
-                ["Investigación",      datos.investigacion_experiencia],
-                ["Modalidad",          datos.modalidad_preferida],
-                ["Duración",           datos.duracion_preferida],
-                ["Prácticas",          datos.practicas_preferencia],
-                ["Presupuesto",        datos.presupuesto_hasta ? `€${Number(datos.presupuesto_hasta).toLocaleString("es-ES")}` : null],
-                ["CCAA preferidas",    compat?.perfil?.ccaa?.join(", ")],
-              ].map(([label, val]) => (
-                <div key={label} className="flex justify-between gap-2 border-b border-neutral-100 pb-1 last:border-0">
-                  <span className="text-neutral-400 shrink-0">{label}</span>
-                  <span className="font-medium text-neutral-700 text-right truncate">{val || "—"}</span>
-                </div>
-              ))}
-            </div>
-          </details>
+            </button>
+            {showParams && (
+              <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1.5 bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-3 text-[11px]">
+                {paramRows.map(([label, val]) => (
+                  <div key={label} className="flex justify-between gap-2 border-b border-neutral-100 pb-1 last:border-0">
+                    <span className="text-neutral-400 shrink-0">{label}</span>
+                    <span className="font-medium text-neutral-700 text-right truncate">{val || "—"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Cargando */}
         {loadingCompat && (
-          <div className="flex items-center gap-2 py-4 text-neutral-400">
-            <div className="w-4 h-4 border-2 border-[#046C8C] border-t-transparent rounded-full animate-spin shrink-0" />
-            <span className="text-xs">Calculando compatibilidad…</span>
+          <div className="flex flex-col items-center gap-3 py-12">
+            <div className="w-8 h-8 border-2 border-[#1D6A4A] border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-neutral-400">Calculando compatibilidad…</p>
           </div>
         )}
 
-        {/* Sin datos */}
+        {/* Sin datos de formulario */}
         {!loadingCompat && !compat && (
-          <p className="text-xs text-neutral-400 italic py-2">
-            No se pudo calcular. El cliente quizás no ha completado el formulario.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center text-2xl">🔍</div>
+            <p className="text-xs text-neutral-500 max-w-[220px]">
+              No se pudo calcular. El cliente quizás no ha completado el formulario.
+            </p>
+          </div>
         )}
 
+        {/* Sin compatibles */}
         {!loadingCompat && compat && compat.total === 0 && (
-          <p className="text-xs text-neutral-400 italic py-2">
-            Sin programas compatibles. El cliente no ha indicado área de interés.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center text-2xl">📭</div>
+            <p className="text-xs text-neutral-500">Sin programas compatibles. El cliente no ha indicado área de interés.</p>
+          </div>
         )}
 
         {/* Vista normal */}
         {!loadingCompat && !editMode && listaVista.length > 0 && (
-          <>
-            <p className="text-[11px] text-neutral-400 mb-2">
-              {compat?.total ?? listaVista.length} programas ≥ 40% · mostrando {listaVista.length}
-            </p>
-            <div>
-              {listaVista.map((r, i) => (
-                <MasterRowAdmin key={r.master.id_master} posicion={i + 1} resultado={r}
-                  editMode={false} />
-              ))}
-            </div>
-          </>
+          <div className="space-y-0.5">
+            {listaVista.map((r, i) => (
+              <MasterRowAdmin key={r.master.id_master} posicion={i + 1} resultado={r}
+                editMode={false} />
+            ))}
+          </div>
         )}
 
         {/* Modo edición */}
         {!loadingCompat && editMode && (
           <div className="space-y-3">
-            {/* Buscador para añadir */}
+
+            {/* Buscador */}
             <div className="relative">
-              <input type="text" value={searchQ} onChange={(e) => setSearchQ(e.target.value)}
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="Buscar máster para añadir…"
-                className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#023A4B] bg-white"
+                className="w-full text-xs pl-8 pr-8 py-2.5 border border-neutral-200 rounded-xl outline-none focus:border-[#1D6A4A] focus:ring-2 focus:ring-[#1D6A4A]/10 bg-white transition-all duration-200"
               />
+              {searchQ && (
+                <button onClick={() => setSearchQ("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-neutral-200 hover:bg-neutral-300 flex items-center justify-center transition-colors duration-150">
+                  <svg className="w-2.5 h-2.5 text-neutral-500" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Dropdown sugerencias */}
               {sugerencias.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg z-10 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-neutral-200 rounded-xl shadow-xl z-20 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-neutral-100 bg-neutral-50">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">
+                      {sugerencias.length} resultado{sugerencias.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
                   {sugerencias.map((r) => (
                     <button key={r.master.id_master} type="button" onClick={() => añadirItem(r)}
-                      className="w-full text-left px-3 py-2 hover:bg-neutral-50 transition border-b border-neutral-100 last:border-0">
-                      <p className="text-xs font-medium text-neutral-800">{r.master.nombre_limpio}</p>
-                      <p className="text-[11px] text-neutral-500">{r.master.universidad.nombre_completo} · <span className={`font-bold ${scoreColor(r.score)}`}>{r.score}%</span></p>
+                      className="w-full text-left px-3 py-2.5 hover:bg-[#E8F5EE] transition-colors duration-150 border-b border-neutral-50 last:border-0 group">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-neutral-800 group-hover:text-[#1D6A4A] transition-colors leading-tight">
+                            {r.master.nombre_limpio}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
+                            {r.master.universidad.nombre_completo}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${scoreChip(r.score)}`}>
+                          {r.score}%
+                        </span>
+                        <div className="w-5 h-5 rounded-full bg-[#1D6A4A] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                      </div>
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Sin resultados */}
+              {searchQ.length >= 2 && sugerencias.length === 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-neutral-200 rounded-xl shadow-lg z-20 px-4 py-4 text-center">
+                  <p className="text-xs text-neutral-400">
+                    Sin resultados para <span className="font-semibold text-neutral-600">"{searchQ}"</span>
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Lista editable */}
             <div>
-              {listaEdit.length === 0 && (
-                <p className="text-xs text-neutral-400 italic py-3 text-center">
-                  Lista vacía. Busca y añade programas.
-                </p>
+              {listaEdit.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/50">
+                  <span className="text-3xl">📋</span>
+                  <p className="text-xs text-neutral-400">Lista vacía. Busca y añade programas arriba.</p>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {listaEdit.map((r, i) => (
+                    <MasterRowAdmin
+                      key={r.master.id_master}
+                      posicion={i + 1}
+                      resultado={r}
+                      editMode={true}
+                      esFirst={i === 0}
+                      esLast={i === listaEdit.length - 1}
+                      onArriba={() => moverArriba(i)}
+                      onAbajo={() => moverAbajo(i)}
+                      onEliminar={() => eliminarItem(i)}
+                    />
+                  ))}
+                </div>
               )}
-              {listaEdit.map((r, i) => (
-                <MasterRowAdmin key={r.master.id_master} posicion={i + 1} resultado={r}
-                  editMode={true}
-                  esFirst={i === 0} esLast={i === listaEdit.length - 1}
-                  onArriba={() => moverArriba(i)}
-                  onAbajo={() => moverAbajo(i)}
-                  onEliminar={() => eliminarItem(i)}
-                />
-              ))}
             </div>
           </div>
         )}
