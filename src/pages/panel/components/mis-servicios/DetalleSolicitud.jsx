@@ -407,7 +407,7 @@ export default function DetalleSolicitud({ solicitudBase, onVolver }) {
                   handleSubmitFormulario={handleSubmitFormulario}
                   onGuardarProgreso={guardarFormularioSilencioso}
                   savingForm={savingForm}
-                  hasData={hasFormData}
+                  hasData={hasFormData || formGuardado}
                   planCCAAs={planCCAAs}
                 />
               )}
