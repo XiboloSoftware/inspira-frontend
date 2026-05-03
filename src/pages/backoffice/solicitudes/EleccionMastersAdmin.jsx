@@ -1,14 +1,79 @@
 // src/pages/backoffice/solicitudes/EleccionMastersAdmin.jsx
-// Bloque 5 — Elección de másteres del cliente + control de plan Sí/No por parte del asesor.
-import { useState } from "react";
-import { boPATCH } from "../../../services/backofficeApi";
+// Bloque 5 — Elección de másteres.
+// MODO A: admin selecciona en nombre del cliente (cuando no hay selección o tras "Rehacer")
+// MODO B: asesor decide Sí/No para cada master elegido por el cliente
+import { useEffect, useState } from "react";
+import { boGET, boPATCH } from "../../../services/backofficeApi";
 
 const COLORES_PRIORIDAD = ["bg-[#1A3557]", "bg-[#1D6A4A]", "bg-amber-500", "bg-neutral-400", "bg-neutral-300"];
 
+// ── Tarjeta máster para el modo picker ───────────────────────────────────────
+
+function MasterPickCard({ r, selected, prioridad, onToggle }) {
+  const { master, score } = r;
+  const dur =
+    master.duracion_anios === 1    ? "1 año"
+    : master.duracion_anios === 1.5 ? "18 meses"
+    : master.duracion_anios         ? `${master.duracion_anios} años`
+    : null;
+  const precio = master.precio_total_estimado
+    ? `€${Math.round(master.precio_total_estimado).toLocaleString("es-ES")}`
+    : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${
+        selected
+          ? "border-[#1A3557] bg-[#1A3557]/[0.04]"
+          : "border-neutral-200 bg-white hover:border-neutral-300"
+      }`}
+    >
+      <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+        selected ? "border-[#1A3557] bg-[#1A3557]" : "border-neutral-300 bg-white"
+      }`}>
+        {selected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+      </div>
+      {selected && (
+        <div className="shrink-0 w-5 h-5 rounded-full bg-[#1A3557] text-white text-[10px] font-black flex items-center justify-center">
+          {prioridad}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-[#1A3557] leading-tight">{master.nombre_limpio}</p>
+        <p className="text-[11px] text-neutral-500 leading-tight truncate mt-0.5">
+          {master.universidad.nombre_completo}
+          {master.universidad.ciudad ? ` · ${master.universidad.ciudad}` : ""}
+        </p>
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {precio && <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{precio}</span>}
+          {dur    && <span className="text-[10px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{dur}</span>}
+          {score  && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              score >= 80 ? "bg-emerald-50 text-emerald-700"
+              : score >= 60 ? "bg-amber-50 text-amber-700"
+              : "bg-red-50 text-red-600"
+            }`}>{score}% match</span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
 export default function EleccionMastersAdmin({ elecciones, idSolicitud, onEleccionesActualizadas }) {
-  const [filas, setFilas]         = useState(() => normalizar(elecciones));
-  const [guardando, setGuardando] = useState(false);
-  const [nota, setNota]           = useState(() => extraerNota(elecciones));
+  const [filas, setFilas]           = useState(() => normalizar(elecciones));
+  const [guardando, setGuardando]   = useState(false);
+  const [nota, setNota]             = useState(() => extraerNota(elecciones));
+
+  // MODO PICKER (selección inicial o "Rehacer")
+  const [modoSeleccion, setModoSeleccion] = useState(() => !elecciones || elecciones.length === 0);
+  const [informe, setInforme]             = useState(null);
+  const [loadingInf, setLoadingInf]       = useState(false);
+  const [selAdmin, setSelAdmin]           = useState([]); // selección admin en modo picker
 
   function normalizar(raw) {
     if (!Array.isArray(raw) || raw.length === 0) return [];
@@ -19,14 +84,57 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
 
   function extraerNota(raw) {
     if (!Array.isArray(raw) || raw.length === 0) return "";
-    // La nota global se guarda en el primer elemento con key _nota_asesor
     return raw[0]?._nota_asesor ?? "";
   }
 
+  // Cargar informe cuando entramos en modo picker
+  useEffect(() => {
+    if (!modoSeleccion || !idSolicitud || informe) return;
+    setLoadingInf(true);
+    boGET(`/backoffice/solicitudes/${idSolicitud}/compatibilidad`)
+      .then((r) => { if (r.ok) setInforme(r); })
+      .catch(() => {})
+      .finally(() => setLoadingInf(false));
+  }, [modoSeleccion, idSolicitud]);
+
+  // ── Modo Picker: toggle selección ────────────────────────────────────────────
+
+  const selectedIds = new Set(selAdmin.map((s) => s.id_master));
+
+  function toggleAdmin(r) {
+    const id = r.master.id_master;
+    if (selectedIds.has(id)) {
+      setSelAdmin((prev) =>
+        prev.filter((s) => s.id_master !== id).map((s, i) => ({ ...s, prioridad: i + 1 }))
+      );
+    } else {
+      setSelAdmin((prev) => [
+        ...prev,
+        {
+          id_master:     id,
+          nombre_limpio: r.master.nombre_limpio,
+          universidad:   r.master.universidad.nombre_completo,
+          ciudad:        r.master.universidad.ciudad,
+          score:         r.score,
+          prioridad:     prev.length + 1,
+          comentario:    "",
+          plan_incluido: true,
+        },
+      ]);
+    }
+  }
+
+  async function guardarSeleccionAdmin() {
+    if (selAdmin.length === 0) return;
+    await guardar(selAdmin, nota);
+    setFilas(selAdmin.map((s, i) => ({ ...s, prioridad: i + 1 })));
+    setModoSeleccion(false);
+  }
+
+  // ── Modo B: toggle plan_incluido ──────────────────────────────────────────────
+
   async function setPlan(idx, valor) {
-    const nuevas = filas.map((f, i) =>
-      i === idx ? { ...f, plan_incluido: valor } : f
-    );
+    const nuevas = filas.map((f, i) => i === idx ? { ...f, plan_incluido: valor } : f);
     setFilas(nuevas);
     await guardar(nuevas, nota);
   }
@@ -57,10 +165,120 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
     }
   }
 
+  // ── MODO PICKER ───────────────────────────────────────────────────────────────
+
+  if (modoSeleccion) {
+    const resultados = informe?.resultados ?? [];
+    const noSel      = resultados.filter((r) => !selectedIds.has(r.master.id_master));
+
+    return (
+      <div className="space-y-3">
+        {/* Banner */}
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm"
+          style={{ background: "linear-gradient(135deg, #1A3557, #1D6A4A)" }}
+        >
+          <span className="text-base shrink-0">🎯</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-serif text-[13px] font-bold">Seleccionar másteres (desde backoffice)</p>
+            <p className="text-[11px] text-white/70">Elige en nombre del cliente. El orden importa.</p>
+          </div>
+          {filas.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setModoSeleccion(false)}
+              className="text-[11px] text-white/70 hover:text-white underline shrink-0 transition"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+
+        {loadingInf && (
+          <div className="flex items-center gap-2 py-4 text-neutral-400">
+            <div className="w-4 h-4 border-2 border-[#1A3557] border-t-transparent rounded-full animate-spin shrink-0" />
+            <span className="text-sm">Cargando informe…</span>
+          </div>
+        )}
+
+        {!loadingInf && informe && (
+          <div className="space-y-1.5">
+            {selAdmin.length > 0 && (
+              <>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-1">
+                  Seleccionados · {selAdmin.length}
+                </p>
+                {selAdmin.map((s) => {
+                  const r = resultados.find((r) => r.master.id_master === s.id_master);
+                  if (!r) return null;
+                  return (
+                    <MasterPickCard
+                      key={s.id_master}
+                      r={r}
+                      selected={true}
+                      prioridad={s.prioridad}
+                      onToggle={() => toggleAdmin(r)}
+                    />
+                  );
+                })}
+              </>
+            )}
+            {noSel.length > 0 && (
+              <>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide px-1 pt-2">
+                  {selAdmin.length > 0 ? "Otros del informe" : `Del informe · ${informe.total} programas`}
+                </p>
+                {noSel.map((r) => (
+                  <MasterPickCard
+                    key={r.master.id_master}
+                    r={r}
+                    selected={false}
+                    prioridad={null}
+                    onToggle={() => toggleAdmin(r)}
+                  />
+                ))}
+              </>
+            )}
+            {resultados.length === 0 && (
+              <p className="text-sm text-neutral-400 italic py-6 text-center">
+                No hay másteres compatibles en el informe.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <p className="text-xs text-neutral-500">
+            {selAdmin.length > 0
+              ? `${selAdmin.length} seleccionado${selAdmin.length > 1 ? "s" : ""}`
+              : "Ninguno seleccionado"}
+          </p>
+          <button
+            type="button"
+            onClick={guardarSeleccionAdmin}
+            disabled={guardando || selAdmin.length === 0}
+            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-[#1A3557] text-white hover:bg-[#142a45] disabled:opacity-40 transition"
+          >
+            {guardando ? "Guardando…" : "Guardar selección"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MODO B — Sí/No ───────────────────────────────────────────────────────────
+
   if (filas.length === 0) {
     return (
       <p className="text-sm text-neutral-500">
-        El cliente aún no ha registrado másteres preferidos en este bloque.
+        El cliente aún no ha registrado másteres preferidos en este bloque.{" "}
+        <button
+          type="button"
+          onClick={() => setModoSeleccion(true)}
+          className="underline text-[#1A3557] hover:text-[#1D6A4A] transition"
+        >
+          Seleccionar desde el backoffice
+        </button>
       </p>
     );
   }
@@ -70,7 +288,7 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
 
   return (
     <div className="space-y-3">
-      {/* Banner plan */}
+      {/* Banner */}
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm"
         style={{ background: "linear-gradient(135deg, #1D6A4A, #1A3557)" }}
       >
@@ -81,9 +299,18 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
             El cliente eligió libremente. Tú decides cuáles entran en el plan contratado.
           </p>
         </div>
-        {guardando && (
-          <span className="text-[10px] text-white/60 font-mono shrink-0">Guardando…</span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {guardando && (
+            <span className="text-[10px] text-white/60 font-mono">Guardando…</span>
+          )}
+          <button
+            type="button"
+            onClick={() => { setSelAdmin([]); setModoSeleccion(true); }}
+            className="text-[10px] text-white/70 hover:text-white underline transition"
+          >
+            Rehacer
+          </button>
+        </div>
       </div>
 
       {/* Contadores */}
@@ -112,12 +339,9 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
                 ? "border-[#1D6A4A]/25 bg-[#E8F5EE]"
                 : "border-amber-200 bg-amber-50"}`}
           >
-            {/* Número de prioridad */}
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 font-mono ${COLORES_PRIORIDAD[idx] ?? "bg-neutral-400"}`}>
               P{fila.prioridad ?? idx + 1}
             </div>
-
-            {/* Info */}
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-[#1A3557] leading-snug truncate">
                 {fila.nombre_limpio || fila.programa || "(Sin título)"}
@@ -129,8 +353,6 @@ export default function EleccionMastersAdmin({ elecciones, idSolicitud, onElecci
                 </p>
               )}
             </div>
-
-            {/* Toggle plan Sí/No */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] text-neutral-500 hidden sm:block">Plan:</span>
               <button

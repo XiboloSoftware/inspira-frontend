@@ -109,28 +109,35 @@ export default function EleccionMastersCliente({
   const resultados  = informe?.resultados ?? [];
   const selectedIds = new Set(seleccion.map((s) => s.id_master));
 
+  function deseleccionar(id_master) {
+    setSeleccion((prev) =>
+      prev.filter((s) => s.id_master !== id_master).map((s, i) => ({ ...s, prioridad: i + 1 }))
+    );
+  }
+
   function toggleMaster(r) {
     const id = r.master.id_master;
     if (selectedIds.has(id)) {
-      // Deseleccionar y renumerar
-      setSeleccion((prev) =>
-        prev.filter((s) => s.id_master !== id).map((s, i) => ({ ...s, prioridad: i + 1 }))
-      );
+      deseleccionar(id);
     } else {
-      // Seleccionar
       setSeleccion((prev) => [
         ...prev,
         {
-          id_master:    id,
+          id_master:     id,
           nombre_limpio: r.master.nombre_limpio,
-          universidad:  r.master.universidad.nombre_completo,
-          ciudad:       r.master.universidad.ciudad,
-          score:        r.score,
-          prioridad:    prev.length + 1,
-          comentario:   comentarios[id] || "",
+          universidad:   r.master.universidad.nombre_completo,
+          ciudad:        r.master.universidad.ciudad,
+          score:         r.score,
+          prioridad:     prev.length + 1,
+          comentario:    comentarios[id] || "",
         },
       ]);
     }
+  }
+
+  function limpiarSeleccion() {
+    setSeleccion([]);
+    setComentarios({});
   }
 
   function setComentario(id_master, texto) {
@@ -216,7 +223,7 @@ export default function EleccionMastersCliente({
                         prioridad={s.prioridad}
                         selected={true}
                         comentario={comentarios[s.id_master] || ""}
-                        onToggle={() => r && toggleMaster(r)}
+                        onToggle={() => r ? toggleMaster(r) : deseleccionar(s.id_master)}
                         onComentario={(txt) => setComentario(s.id_master, txt)}
                       />
                     );
@@ -256,11 +263,22 @@ export default function EleccionMastersCliente({
 
         {/* Pie fijo */}
         <div className="shrink-0 border-t border-neutral-100 bg-white px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-xs text-neutral-500">
-            {filled > 0
-              ? `${filled} seleccionado${filled > 1 ? "s" : ""}`
-              : "Ninguno seleccionado"}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-neutral-500">
+              {filled > 0
+                ? `${filled} seleccionado${filled > 1 ? "s" : ""}`
+                : "Ninguno seleccionado"}
+            </p>
+            {filled > 0 && (
+              <button
+                type="button"
+                onClick={limpiarSeleccion}
+                className="text-[11px] text-neutral-400 hover:text-red-500 underline transition"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
           <button
             onClick={handleGuardar}
             disabled={saving || filled === 0}
