@@ -41,27 +41,41 @@ function calcClienteEstado(detalle) {
 
 const CAMPOS_REQUERIDOS_FORMULARIO = [
   "promedio_peru", "ubicacion_grupo", "otra_maestria_tiene",
-  "experiencia_anios", "experiencia_vinculada", "ingles_situacion",
-  "beca_desea", "duracion_preferida", "practicas_preferencia", "presupuesto_hasta",
+  "experiencia_anios", "ingles_situacion",
+  "beca_desea", "duracion_preferida", "practicas_preferencia",
 ];
+
+function formCompleto(datos) {
+  const base = CAMPOS_REQUERIDOS_FORMULARIO.every(
+    (c) => datos[c] !== undefined && datos[c] !== null && datos[c] !== ""
+  );
+  if (!base) return false;
+  if (datos.experiencia_anios && datos.experiencia_anios !== "sin") {
+    if (!datos.experiencia_vinculada) return false;
+  }
+  return true;
+}
 
 function BlqHead({ numero, titulo, estado, open, onToggle }) {
   const badge = {
     completado: "bg-[#1D6A4A] text-white",
     observado:  "bg-[#DC2626] text-white",
     pendiente:  "bg-[#FFFBEA] text-[#F59E0B] border-2 border-[#F59E0B]/30",
+    revision:   "bg-[#6D28D9] text-white",
     inactivo:   "bg-[#F4F6F9] text-[#6B7280] border-2 border-[#E2E8F0]",
   };
   const chip = {
     completado: "bg-[#E8F5EE] text-[#1D6A4A]",
     observado:  "bg-[#FEF2F2] text-[#DC2626]",
     pendiente:  "bg-[#FFFBEA] text-[#F59E0B]",
+    revision:   "bg-[#EDE9FE] text-[#6D28D9]",
     inactivo:   "bg-[#F4F6F9] text-[#6B7280]",
   };
   const chipLabel = {
     completado: "✓ Completo",
     observado:  "⚠ Observado",
     pendiente:  "● En progreso",
+    revision:   "◎ Pendiente revisión",
     inactivo:   "— Inactivo",
   };
   const e = estado || "inactivo";
@@ -69,6 +83,7 @@ function BlqHead({ numero, titulo, estado, open, onToggle }) {
     completado: "border-[#1D6A4A]/20 hover:border-[#1D6A4A]/40",
     observado:  "border-[#DC2626]/20 hover:border-[#DC2626]/40",
     pendiente:  "border-[#F59E0B]/30 hover:border-[#F59E0B]/60",
+    revision:   "border-[#6D28D9]/20 hover:border-[#6D28D9]/40",
     inactivo:   "border-[#E2E8F0] hover:border-[#CBD5E1]",
   };
   return (
@@ -157,10 +172,10 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
       tituloLower.includes("visado");
 
     const datos = detalle.datos_formulario || {};
-    const tieneForm = CAMPOS_REQUERIDOS_FORMULARIO.every(
-      (c) => datos[c] !== undefined && datos[c] !== null && datos[c] !== ""
-    );
-    const hayEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
+    const tieneForm = formCompleto(datos);
+    const elecciones = Array.isArray(detalle.eleccion_masters) ? detalle.eleccion_masters : [];
+    const hayEleccion = elecciones.length > 0;
+    const adminDecidioTodo = hayEleccion && elecciones.every((e) => e.plan_incluido !== null && e.plan_incluido !== undefined);
     const clienteEstado = calcClienteEstado(detalle);
 
     const lista = visado
@@ -175,7 +190,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
           { id: "checklist",    numero: "2", label: "Documentos",              estado: checklistStats.estado },
           { id: "formulario",   numero: "3", label: "Formulario académico",    estado: tieneForm ? "completado" : "pendiente" },
           { id: "informe",      numero: "4", label: "Informe IA másteres",     estado: (detalle.informe_fecha_subida || tieneForm) ? "completado" : "pendiente" },
-          { id: "eleccion",     numero: "5", label: "Elección del cliente",    estado: (hayEleccion && !eleccionEnPicker) ? "completado" : "pendiente" },
+          { id: "eleccion",     numero: "5", label: "Elección del cliente",    estado: !hayEleccion ? "pendiente" : adminDecidioTodo ? "completado" : "revision" },
           { id: "programacion", numero: "6", label: "Postulaciones · Portales", estado: "pendiente" },
           { id: "portales",     numero: "7", label: "Portales y justificantes", estado: "pendiente" },
           { id: "cierre",       numero: "8", label: "Cierre y derivación",     estado: "pendiente" },
@@ -225,15 +240,16 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
   if (!detalle) return null;
 
   const datos = detalle.datos_formulario || {};
-  const tieneFormulario = CAMPOS_REQUERIDOS_FORMULARIO.every(
-    (campo) => datos[campo] !== undefined && datos[campo] !== null && datos[campo] !== ""
-  );
-  const tieneEleccion = Array.isArray(detalle.eleccion_masters) && detalle.eleccion_masters.length > 0;
+  const tieneFormulario = formCompleto(datos);
+  const eleccionesBody = Array.isArray(detalle.eleccion_masters) ? detalle.eleccion_masters : [];
+  const tieneEleccion = eleccionesBody.length > 0;
+  const adminDecidioTodoBody = tieneEleccion && eleccionesBody.every((e) => e.plan_incluido !== null && e.plan_incluido !== undefined);
 
   function dotColor(estado) {
     if (estado === "completado") return "bg-[#1D6A4A]";
     if (estado === "observado")  return "bg-[#DC2626]";
     if (estado === "pendiente")  return "bg-[#F59E0B]";
+    if (estado === "revision")   return "bg-[#6D28D9]";
     return "bg-[#E2E8F0]";
   }
 
@@ -430,7 +446,7 @@ export default function SolicitudDetalleBackoffice({ idSolicitud, onVolver }) {
                 <BlqHead
                   numero="5"
                   titulo="Elección de másteres (cliente)"
-                  estado={(tieneEleccion && !eleccionEnPicker) ? "completado" : "pendiente"}
+                  estado={!tieneEleccion ? "pendiente" : adminDecidioTodoBody ? "completado" : "revision"}
                   open={expanded.has("eleccion")} onToggle={() => toggleBloque("eleccion")}
                 />
                 {expanded.has("eleccion") && (
