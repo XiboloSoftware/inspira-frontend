@@ -326,16 +326,39 @@ export default function InformeAdmin({ detalle, recargar }) {
           </div>
         </div>
 
-        {/* Perfil del cliente */}
-        {compat?.perfil && (() => {
-          const p = compat.perfil;
-          const partes = [p.area, p.ccaa?.length ? p.ccaa.join(", ") : null, p.presupuesto ? `Máx. €${Number(p.presupuesto).toLocaleString("es-ES")}` : null].filter(Boolean);
-          return partes.length > 0 ? (
-            <p className="text-[11px] text-neutral-500 mb-3 bg-neutral-50 rounded-lg px-3 py-2">
-              {partes.join(" · ")}
-            </p>
-          ) : null;
-        })()}
+        {/* Parámetros de scoring */}
+        {datos && (
+          <details className="mb-3 group">
+            <summary className="text-[11px] font-semibold text-neutral-500 cursor-pointer select-none hover:text-neutral-700 list-none flex items-center gap-1">
+              <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+              Parámetros usados en el cálculo
+            </summary>
+            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 bg-neutral-50 rounded-xl px-4 py-3 text-[11px]">
+              {[
+                ["Rama del máster",    datos.area_interes_master],
+                ["Sub-área",           datos.sub_area_interes || compat?.perfil?.area],
+                ["Área de carrera",    datos.area_carrera],
+                ["Promedio",           datos.promedio_peru ? `${datos.promedio_peru} / ${datos.promedio_escala || 10}` : null],
+                ["Posición académica", datos.ubicacion_grupo],
+                ["Experiencia",        datos.experiencia_anios],
+                ["Vinculada al área",  datos.experiencia_vinculada],
+                ["Inglés",             datos.ingles_situacion],
+                ["Objetivo",           datos.objetivo_master],
+                ["Investigación",      datos.investigacion_experiencia],
+                ["Modalidad",          datos.modalidad_preferida],
+                ["Duración",           datos.duracion_preferida],
+                ["Prácticas",          datos.practicas_preferencia],
+                ["Presupuesto",        datos.presupuesto_hasta ? `€${Number(datos.presupuesto_hasta).toLocaleString("es-ES")}` : null],
+                ["CCAA preferidas",    compat?.perfil?.ccaa?.join(", ")],
+              ].map(([label, val]) => (
+                <div key={label} className="flex justify-between gap-2 border-b border-neutral-100 pb-1 last:border-0">
+                  <span className="text-neutral-400 shrink-0">{label}</span>
+                  <span className="font-medium text-neutral-700 text-right truncate">{val || "—"}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         {/* Cargando */}
         {loadingCompat && (
