@@ -1161,7 +1161,7 @@ export default function FormularioDatosAcademicos({
         {hasData && !editando ? (
           <ResumenDatos formData={formData} onEditar={() => { setEditando(true); setStep(0); }} />
         ) : (
-          <form onSubmit={handleSaveInline} className="flex-1 min-h-0 flex flex-col gap-3">
+          <form onSubmit={(e) => e.preventDefault()} className="flex-1 min-h-0 flex flex-col gap-3">
             {/* Barra de progreso */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -1218,7 +1218,7 @@ export default function FormularioDatosAcademicos({
                   Continuar →
                 </button>
               ) : (
-                <button type="submit" disabled={savingForm}
+                <button type="button" onClick={handleSaveInline} disabled={savingForm}
                   className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold rounded-xl bg-[#023A4B] text-white hover:bg-[#035670] disabled:opacity-50 transition active:scale-95">
                   {savingForm
                     ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Guardando…</>
