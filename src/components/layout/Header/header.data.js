@@ -16,6 +16,7 @@ export const navItems = [
 
 // Enlaces secundarios: viven en la barra superior fina, no en la principal.
 export const navSecundarios = [
+  { label: "¿Visa o estancia?", href: "/visa-o-estancia" },
   { label: "Método Inspira", href: "/metodo-inspira" },
   { label: "Eventos", href: "/eventos" },
   { label: "Tiendita", href: "/tienda" },
@@ -29,6 +30,7 @@ export const navItemsMovil = [
   { label: "Asistente gratis", href: "/asistente", ia: true },
   { label: "Calculadora gratis", href: "/calculadora-master" },
   { label: "Método Inspira", href: "/metodo-inspira" },
+  { label: "¿Visa o estancia?", href: "/visa-o-estancia" },
   { label: "Casos de éxito", href: "/casos-de-exito" },
   { label: "Nuestro sistema", href: "/plataforma" },
   { label: "Eventos", href: "/eventos" },

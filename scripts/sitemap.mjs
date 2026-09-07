@@ -28,6 +28,7 @@ const hoy = new Date().toISOString().slice(0, 10);
 const paginas = [
   { loc: "/", freq: "weekly", prio: "1.0" },
   { loc: "/metodo-inspira", freq: "monthly", prio: "0.9" },
+  { loc: "/visa-o-estancia", freq: "monthly", prio: "0.9" },
   { loc: "/servicios", freq: "weekly", prio: "0.9" },
   { loc: "/servicios/master", freq: "weekly", prio: "0.9" },
   { loc: "/servicios/estancia", freq: "weekly", prio: "0.9" },

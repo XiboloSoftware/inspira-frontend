@@ -32,6 +32,7 @@ const PanelCliente = lazy(() => import("./pages/panel/PanelCliente"));
 const ReservarCita = lazy(() => import("./pages/reservar/ReservarCita"));
 const MasterAdsLanding = lazy(() => import("./pages/landing/MasterAdsLanding"));
 const MetodoInspira = lazy(() => import("./pages/metodo/MetodoInspira"));
+const VisaOEstancia = lazy(() => import("./pages/decidir/VisaOEstancia"));
 const Eventos = lazy(() => import("./pages/eventos/Eventos"));
 const CasosExito = lazy(() => import("./pages/casos/CasosExito"));
 const Asistente = lazy(() => import("./pages/asistente/Asistente"));
@@ -110,6 +111,12 @@ const SEO_PAGES = {
     description:
       "Admisión, carta, visado y llegada: las cuatro etapas del Método Inspira, qué incluye cada una y cuándo se paga. Paquetes de máster desde 219 € y asesoría de visado desde 109 €.",
     path: "/metodo-inspira",
+  },
+  "/visa-o-estancia": {
+    title: "¿Visa o estancia por estudios? Test rápido — Inspira Legal",
+    description:
+      "Cinco preguntas para saber si calificas para el visado de estudios o para la estancia por estudios en España, con el paquete que te conviene y cuánto dinero tienes que acreditar.",
+    path: "/visa-o-estancia",
   },
   "/eventos": {
     title: "Eventos gratuitos – Estudia en España en 5 pasos",
@@ -317,6 +324,7 @@ const PUBLIC_PATHS = [
   "/calculadora-master",
   "/master-espana",
   "/metodo-inspira",
+  "/visa-o-estancia",
   "/panel",
   "/pago-exitoso",
   "/pago-fallido",
@@ -434,6 +442,7 @@ export default function App() {
       {path === "/reservar" && <ReservarCita />}
       {path === "/master-espana" && <MasterAdsLanding />}
       {path === "/metodo-inspira" && <MetodoInspira />}
+      {path === "/visa-o-estancia" && <VisaOEstancia />}
       {path === "/pago-exitoso" && <PagoExitoso />}
       {path === "/pago-fallido" && <PagoFallido />}
       {path === "/pago-pendiente" && <PagoPendiente />}
