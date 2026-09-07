@@ -31,6 +31,7 @@ const CalculadoraMaster = lazy(() => import("./pages/calculadora/CalculadoraMast
 const PanelCliente = lazy(() => import("./pages/panel/PanelCliente"));
 const ReservarCita = lazy(() => import("./pages/reservar/ReservarCita"));
 const MasterAdsLanding = lazy(() => import("./pages/landing/MasterAdsLanding"));
+const MetodoInspira = lazy(() => import("./pages/metodo/MetodoInspira"));
 const Eventos = lazy(() => import("./pages/eventos/Eventos"));
 const CasosExito = lazy(() => import("./pages/casos/CasosExito"));
 const Asistente = lazy(() => import("./pages/asistente/Asistente"));
@@ -103,6 +104,12 @@ const SEO_PAGES = {
     description:
       "Guías claras de extranjería, visados, nacionalidad y vida académica en España, escritas por el equipo legal de Inspira.",
     path: "/blog",
+  },
+  "/metodo-inspira": {
+    title: "Método Inspira — Tu proceso por etapas, tu inversión distribuida",
+    description:
+      "Admisión, carta, visado y llegada: las cuatro etapas del Método Inspira, qué incluye cada una y cuándo se paga. Paquetes de máster desde 219 € y asesoría de visado desde 109 €.",
+    path: "/metodo-inspira",
   },
   "/eventos": {
     title: "Eventos gratuitos – Estudia en España en 5 pasos",
@@ -309,6 +316,7 @@ const PUBLIC_PATHS = [
   "/ruta/tramites",
   "/calculadora-master",
   "/master-espana",
+  "/metodo-inspira",
   "/panel",
   "/pago-exitoso",
   "/pago-fallido",
@@ -425,6 +433,7 @@ export default function App() {
       {isPanel && <PanelCliente path={path} />}
       {path === "/reservar" && <ReservarCita />}
       {path === "/master-espana" && <MasterAdsLanding />}
+      {path === "/metodo-inspira" && <MetodoInspira />}
       {path === "/pago-exitoso" && <PagoExitoso />}
       {path === "/pago-fallido" && <PagoFallido />}
       {path === "/pago-pendiente" && <PagoPendiente />}
